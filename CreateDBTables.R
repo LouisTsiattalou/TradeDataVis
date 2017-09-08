@@ -6,7 +6,7 @@
 
 
 # SCRIPT START ###############################################################
-install.packages("RPostgreSQL")
+#install.packages("RPostgreSQL")
 library('RPostgreSQL')
 
 # make names db safe: no '.' or other illegal characters,
@@ -58,14 +58,14 @@ dispatches <- paste("CREATE TABLE dispatches
   ", eutradecols[14] ," bigint,
   ", eutradecols[15] ," bigint,
   ", eutradecols[16] ," bigint,
-  ", eutradecols[17] ," bigint,
-  CONSTRAINT dispatches_pkey PRIMARY KEY (", eutradecols[1], ")
+  ", eutradecols[17] ," bigint
 )
 WITH (
 OIDS=FALSE
 );
 ALTER TABLE dispatches
 OWNER TO postgres;")
+#CONSTRAINT dispatches_pkey PRIMARY KEY (", eutradecols[1], ")
 # sends the command and creates the table
 dbGetQuery(con, dispatches)
 
@@ -90,8 +90,7 @@ arrivals <- paste("CREATE TABLE arrivals
                     ", eutradecols[14] ," bigint,
                     ", eutradecols[15] ," bigint,
                     ", eutradecols[16] ," bigint,
-                    ", eutradecols[17] ," bigint,
-                    CONSTRAINT arrivals_pkey PRIMARY KEY (", eutradecols[1], ")
+                    ", eutradecols[17] ," bigint
                     )
                     WITH (
                     OIDS=FALSE
@@ -127,8 +126,7 @@ exports <- paste("CREATE TABLE exports
                    ", noneuexportcols[19] ," bigint,
                    ", noneuexportcols[20] ," bigint,
                    ", noneuexportcols[21] ," bigint,  
-                   ", noneuexportcols[22] ," character(15),
-                   CONSTRAINT exports_pkey PRIMARY KEY (", noneuexportcols[1], ")
+                   ", noneuexportcols[22] ," character(15)
                    )
                    WITH (
                    OIDS=FALSE
@@ -169,8 +167,7 @@ imports <- paste("CREATE TABLE imports
                  ", noneuimportcols[23] ," character(3),
                  ", noneuimportcols[24] ," bigint,
                  ", noneuimportcols[25] ," bigint,  
-                 ", noneuimportcols[26] ," bigint,
-                 CONSTRAINT imports_pkey PRIMARY KEY (", noneuimportcols[1], ")
+                 ", noneuimportcols[26] ," bigint
                  )
                  WITH (
                  OIDS=FALSE
