@@ -4,13 +4,16 @@
 # Adapted by Louis Tsiattalou for Imports Tool
 
 # TODO
+# Create importer/exporter data code
 
 # SCRIPT START ###############################################################
 
 # Constant setup =============================================================
 
-# Set working directory to datafiles
-#setwd("./R/ImportTool/datafiles/")
+# Set working directory
+setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
+suppressWarnings(dir.create(paste(getwd(), "datafiles", sep = "")))
+setwd("datafiles")
 
 start <- Sys.time()
 errors <- character()
@@ -167,6 +170,7 @@ sapply(datafiles, FUN = function(txt) {
 end <- Sys.time()
 
 print(paste("Time taken:", end - start))
-print(paste("The following files were not found:",errors))
+print("The following files were not found:")
+print(errors)
 
 # END SCRIPT #################################################################

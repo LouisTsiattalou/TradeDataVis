@@ -8,12 +8,17 @@
 
 # SCRIPT START ###############################################################
 
+# Library import and constants ===============================================
+
 # install.packages("RPostgreSQL")
-# setwd("./R/ImportTool/datafiles/")
 library('RPostgreSQL')
 
+setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
+suppressWarnings(dir.create(paste(getwd(), "datafiles", sep = "")))
+setwd("datafiles")
+
 start <- Sys.time()
-error <- character()
+errors <- character()
 
 # make names db safe: no '.' or other illegal characters,
 # all lower case and unique
@@ -37,6 +42,9 @@ eutradecols <- c("SMK-COMCODE","SMK-RECORD-TYPE","SMK-COD-SEQ","SMK-COD-ALPHA","
 noneuexportcols <- c("COMCODE","SITC","RECORD-TYPE","COD-SEQUENCE","COD-ALPHA","ACCOUNT-DATE","PORT-SEQUENCE","PORT-ALPHA","FLAG-SEQUENCE","FLAG-ALPHA","TRADE-INDICATOR","CONTAINER","MODE-OF-TRANSPORT","INLAND-MOT","GOLO-SEQUENCE","GOLO-ALPHA","SUITE-INDICATOR","PROCEDURE-CODE","VALUE","QUANTITY-1","QUANTITY-2","INDUSTRIAL-PLANT-COMCODE")
 noneuimportcols <- c("COMCODE","SITC","RECORD-TYPE","COD-SEQUENCE","COD-ALPHA","COO-SEQUENCE","COO-ALPHA","ACCOUNT-DATE","PORT-SEQUENCE","PORT-ALPHA","FLAG-SEQUENCE","FLAG-ALPHA","COUNTRY-SEQUENCE-COO-IMP","COUNTRY-ALPHA-COO-IMP","TRADE-INDICATOR","CONTAINER","MODE-OF-TRANSPORT","INLAND-MOT","GOLO-SEQUENCE","GOLO-ALPHA","SUITE-INDICATOR","PROCEDURE-CODE","CB-CODE","VALUE","QUANTITY-1","QUANTITY-2")
 controlfilecols <- c("MK-COMCODE","MK-INTRA-EXTRA-IND","MK-INTRA-MMYY-ON","MK-INTRA-MMYY-OFF","MK-EXTRA-MMYY-ON","MK-EXTRA-MMYY-OFF","MK-NON-TRADE-ID","MK-SITC-NO","MK-SITC-IND","MK-SITC-CONV-A","MK-SITC-CONV-B","MK-CN-Q2","MK-SUPP-ARRIVALS","MK-SUPP-DESPATCHES","MK-SUPP-IMPORTS","MK-SUPP-EXPORTS","MK-SUB-GROUP-ARR","MK-ITEM-ARR","MK-SUB-GROUP-DESP","MK-ITEM-DESP","MK-SUB-GROUP-IMP","MK-ITEM-IMP","MK-SUB-GROUP-EXP","MK-ITEM-EXP","MK-QTY1-ALPHA","MK-QTY2-ALPHA","MK-COMMODITY-ALPHA-1")
+
+
+# Read Dataframes from file ==================================================
 
 dispatches <- read.table(paste(files["disp"], "0901", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["disp"], "0901", sep = "")))-1, col.names = eutradecols, fill = TRUE, colClasses = "character")
 colnames(dispatches) = dbSafeNames(colnames(dispatches))
@@ -62,25 +70,42 @@ imports$comcode <- substr(imports$comcode,1,8)
 #colnames(control) = dbSafeNames(colnames(control))
 
 
-# Local Postgres.app database; no password by default
-# Of course, you fill in your own database information here.
+# Connect to Database, Create tables =========================================
+
 tradedata = dbConnect(pg, user="postgres", password="postgres",
                 host="localhost", port=5432, dbname="tradedata")
 
 dbWriteTable(tradedata,'dispatches', dispatches, row.names=FALSE)
 dbSendQuery(tradedata, "delete from dispatches")
+dbSendQuery(tradedata, "alter table dispatches alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
+dbSendQuery(tradedata, "alter table dispatches alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
+dbSendQuery(tradedata, "alter table dispatches alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
+dbSendQuery(tradedata, "alter table dispatches alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
 
 dbWriteTable(tradedata,'arrivals', arrivals, row.names=FALSE)
 dbSendQuery(tradedata, "delete from arrivals")
+dbSendQuery(tradedata, "alter table arrivals alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
+dbSendQuery(tradedata, "alter table arrivals alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
+dbSendQuery(tradedata, "alter table arrivals alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
+dbSendQuery(tradedata, "alter table arrivals alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
 
 dbWriteTable(tradedata,'exports', exports, row.names=FALSE)
 dbSendQuery(tradedata, "delete from exports")
+dbSendQuery(tradedata, "alter table exports alter column value type bigint using (value::bigint)")
+dbSendQuery(tradedata, "alter table exports alter column quantity_1 type bigint using (quantity_1::bigint)")
+dbSendQuery(tradedata, "alter table exports alter column quantity_2 type bigint using (quantity_2::bigint)")
 
 dbWriteTable(tradedata, 'imports', imports, row.names=FALSE)
 dbSendQuery(tradedata, "delete from imports")
+dbSendQuery(tradedata, "alter table imports alter column value type bigint using (value::bigint)")
+dbSendQuery(tradedata, "alter table imports alter column quantity_1 type bigint using (quantity_1::bigint)")
+dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint using (quantity_2::bigint)")
 
 #dbWriteTable(tradedata, 'control', control, row.names=FALSE)
 #dbSendQuery(tradedata, "delete from control")
+
+
+# Write to the four database tables ========================================
 
 yrs <- as.character(sprintf("%02d", c(09:17)))
 mths <- as.character(sprintf("%02d",c(1:12)))
