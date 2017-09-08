@@ -110,6 +110,25 @@ for (i in syrs) {
   }
 }
 
+# Convoluted way for special ~1 case in Feb 2009 - otherwise just ignored!
+dirFeb09 <- "0902"
+fullDirFeb09 <- paste(getwd(),"/", dirFeb09, sep = "")
+suppressWarnings(dir.create(dirFeb09))
+unzip(paste("SMKE190902.zip", sep = ""), exdir = fullDirFeb09)
+unzip(paste("SMKI190902.zip", sep = ""), exdir = fullDirFeb09)
+unzip(paste("SMKX460902.zip", sep = ""), exdir = fullDirFeb09)
+unzip(paste("SMKM460902.zip", sep = ""), exdir = fullDirFeb09)
+unzip(paste("SMKA120902.zip", sep = ""), exdir = fullDirFeb09)
+unzip(paste("SIAI110902.zip", sep = ""), exdir = fullDirFeb09)
+datafiles <- list.files(fullDirFeb09, full.names = TRUE)
+# Double Sub - replace ~1 with 0902, and move to working directory. Then delete folder.
+sapply(datafiles, FUN = function(txt) {
+  file.rename(
+    from = txt,
+    to = sub(fullDirFeb09, getwd(), sub(pattern = "~1", replacement = "0902", txt))
+    )
+})
+unlink(fullDirFeb09, recursive = TRUE)
 
 # Cleanup =====================================================================
 
