@@ -1,10 +1,11 @@
 # 20170904
+# Updated 20170921
 # Script to download and process hmrc trade data from uktradeinfo.com.
 # Written by David Lee at DEFRA
 # Adapted by Louis Tsiattalou for Imports Tool
+# Github: https://github.com/LouisTsiattalou/TradeDataVis
 
 # TODO
-# Create importer/exporter data code
 
 # SCRIPT START ###############################################################
 
@@ -12,41 +13,49 @@
 
 # Set working directory
 setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
-suppressWarnings(dir.create(paste(getwd(), "datafiles", sep = "")))
+suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
 setwd("datafiles")
 
 start <- Sys.time()
 errors <- character()
 
-# Download annual archives
 years <- c(2009:2017)
-
 
 # File Downloads =============================================================
 for (i in years ) {
   tryCatch({ suppressWarnings(
     download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_", i , "archive.zip", sep = ""), paste("SMKE19_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SMKE19_",i,"archive.zip", sep = ""))})
+  )}, error = function(e){errors <<- c(errors, paste("SMKE19_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
     download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_", i , "archive.zip", sep = ""), paste("SMKI19_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SMKI19_",i,"archive.zip", sep = ""))})
+  )}, error = function(e){errors <<- c(errors, paste("SMKI19_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
     download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_", i , "archive.zip", sep = ""), paste("SMKX46_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SMKX46_",i,"archive.zip", sep = ""))})
+  )}, error = function(e){errors <<- c(errors, paste("SMKX46_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
     download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_", i , "archive.zip", sep = ""), paste("SMKM46_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SMKM46_",i,"archive.zip", sep = ""))})
+  )}, error = function(e){errors <<- c(errors, paste("SMKM46_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
     download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_", i , "archive.zip", sep = ""), paste("SMKA12_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SMKA12_",i,"archive.zip", sep = ""))})
+  )}, error = function(e){errors <<- c(errors, paste("SMKA12_", i,"archive.zip", sep = ""))})
   
-  tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SIAI11_", i , "archive.zip", sep = ""), paste("SIAI11_", i, "archive.zip", sep = ""))
-  )},error = function(e){errors <<- c(errors, paste("SIAI11_",i,"archive.zip", sep = ""))})
+  # Importers/Exporters requires special treatment from 2016 onwards
+  if (i < 2016) {
+    tryCatch({ suppressWarnings(
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SIAI11_", i , "archive.zip", sep = ""), paste("SIAI11_", i, "archive.zip", sep = ""))
+    )}, error = function(e){errors <<- c(errors, paste("SIAI11_", i,"archive.zip", sep = ""))})
+  } else {
+    tryCatch({ suppressWarnings(
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/importers_", i , "archive.zip", sep = ""), paste("importers_", i, "archive.zip", sep = ""))
+    )}, error = function(e){errors <<- c(errors, paste("importers_", i,"archive.zip", sep = ""))})
+    tryCatch({ suppressWarnings(
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/exporters_", i , "archive.zip", sep = ""), paste("exporters_", i, "archive.zip", sep = ""))
+    )}, error = function(e){errors <<- c(errors, paste("exporters_", i,"archive.zip", sep = ""))})
+  }
   
 #  tryCatch({ suppressWarnings(
 #    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SESX16_", i , "archive.zip", sep = ""), paste("SESX16_", i, "archive.zip", sep = ""))
@@ -56,6 +65,7 @@ for (i in years ) {
 #    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SESM16_", i , "archive.zip", sep = ""), paste("SESM16_", i, "archive.zip", sep = ""))
 #  )},error = function(e){errors <<- c(errors, paste("SESM16_",i,"archive.zip", sep = ""))})
   }
+
 
 # Special Cases --------------------------------------------------------------
 
@@ -68,8 +78,13 @@ download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_2016archi
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_2016archive_JulDec.zip", "SMKX46_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_2016archive_JulDec.zip", "SMKM46_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_2016archive_JulDec.zip", "SMKA12_2016archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/importers_2016archive_JulDec.zip", "importers_2016archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/exporters_2016archive_JulDec.zip", "exporters_2016archive_JulDec.zip")
 #download.file("https://www.uktradeinfo.com/Statistics/Documents/SESX16_2016archive_JulDec.zip", "SESX16_2016archive_JulDec.zip")
 #download.file("https://www.uktradeinfo.com/Statistics/Documents/SESM16_2016archive_JulDec.zip", "SESM16_2016archive_JulDec.zip")
+
+
+
 
 # Unzip scripts ==============================================================
 
@@ -80,7 +95,12 @@ for (i in years) {
   unzip(paste("SMKX46_", i, "archive.zip", sep = ""), exdir = getwd())
   unzip(paste("SMKM46_", i, "archive.zip", sep = ""), exdir = getwd())
   unzip(paste("SMKA12_", i, "archive.zip", sep = ""), exdir = getwd())
-  unzip(paste("SIAI11_", i, "archive.zip", sep = ""), exdir = getwd())
+  if (i < 2016) {
+    unzip(paste("SIAI11_", i, "archive.zip", sep = ""), exdir = getwd())
+  } else {
+    unzip(paste("importers_", i, "archive.zip", sep = ""), exdir = getwd())
+    unzip(paste("exporters_", i, "archive.zip", sep = ""), exdir = getwd())
+  }
 #  unzip(paste("SESX16_", i, "archive.zip", sep = ""), exdir = getwd())
 #  unzip(paste("SESM16_", i, "archive.zip", sep = ""), exdir = getwd())
   }
@@ -91,7 +111,8 @@ for (i in years) {
   unzip("SMKX46_2016archive_JulDec.zip", exdir = getwd())
   unzip("SMKM46_2016archive_JulDec.zip", exdir = getwd())
   unzip("SMKA12_2016archive_JulDec.zip", exdir = getwd())
-  unzip("SIAI11_2016archive_JulDec.zip", exdir = getwd())
+  unzip("importers_2016archive_JulDec.zip", exdir = getwd())
+  unzip("exporters_2016archive_JulDec.zip", exdir = getwd())
 #  unzip("SESX16_2016archive_JulDec.zip", exdir = getwd())
 #  unzip("SESM16_2016archive_JulDec.zip", exdir = getwd())
 
@@ -108,10 +129,14 @@ for (i in syrs) {
     unzip(paste("SMKM46", i, j, ".zip", sep = ""), exdir = getwd())
     unzip(paste("SMKA12", i, j, ".zip", sep = ""), exdir = getwd())
     unzip(paste("SIAI11", i, j, ".zip", sep = ""), exdir = getwd())
+    unzip(paste("importers", i, j, ".zip", sep = ""), exdir = getwd())
+    unzip(paste("exporters", i, j, ".zip", sep = ""), exdir = getwd())
 #    unzip(paste("SESX16", i, j, ".zip", sep = ""), exdir = getwd())   
 #    unzip(paste("SESM16", i, j, ".zip", sep = ""), exdir = getwd())    
   }
 }
+
+# You may notice no if statement here for SIAI/impexp - unzip silently fails if not found.
 
 # Convoluted way for special ~1 case in Feb 2009 - otherwise just ignored!
 dirFeb09 <- "0902"
@@ -132,6 +157,8 @@ sapply(datafiles, FUN = function(txt) {
     )
 })
 unlink(fullDirFeb09, recursive = TRUE)
+
+
 
 # Cleanup =====================================================================
 
@@ -164,6 +191,7 @@ datafiles <- list.files(getwd())
 sapply(datafiles, FUN = function(txt) {
   file.rename(from = txt, to = sub(pattern = "V2", replacement = "", txt))
 })
+
 
 
 # Print info =================================================================

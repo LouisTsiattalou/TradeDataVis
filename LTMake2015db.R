@@ -1,7 +1,9 @@
 # 20170904
+# Updated 20170921
 # Script to write Trade Data to a PostgreSQL database.
 # Written by David Lee at DEFRA
 # Adapted by Louis Tsiattalou for Imports Tool
+# Github: https://github.com/LouisTsiattalou/TradeDataVis
 
 # TODO
 # >importers/exporters files need to be entered after comcode issue sorted
@@ -10,11 +12,11 @@
 
 # Library import and constants ===============================================
 
-# install.packages("RPostgreSQL")
+install.packages("RPostgreSQL")
 library('RPostgreSQL')
 
 setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
-suppressWarnings(dir.create(paste(getwd(), "datafiles", sep = "")))
+suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
 setwd("datafiles")
 
 start <- Sys.time()
@@ -46,28 +48,30 @@ controlfilecols <- c("MK-COMCODE","MK-INTRA-EXTRA-IND","MK-INTRA-MMYY-ON","MK-IN
 
 # Read Dataframes from file ==================================================
 
-dispatches <- read.table(paste(files["disp"], "0901", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["disp"], "0901", sep = "")))-1, col.names = eutradecols, fill = TRUE, colClasses = "character")
+dispatches <- read.table(paste(files["disp"], "0901", sep = ""), sep = "|", skip = 1, col.names = eutradecols, fill = TRUE, colClasses = "character")
 colnames(dispatches) = dbSafeNames(colnames(dispatches))
-dispatches <- dispatches[dispatches$smk_comcode != "999999999",]
-dispatches$smk_comcode <- substr(dispatches$smk_comcode,1,8)
+dispatches <- dispatches[-length(dispatches$smk_comcode),]
+dispatches$smk_comcode <- substr(dispatches$smk_comcode, 1, 8)
 
-arrivals <- read.table(paste(files["arr"], "0901", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["arr"], "0901", sep = "")))-1, col.names = eutradecols, fill = TRUE, colClasses = "character")
+arrivals <- read.table(paste(files["arr"], "0901", sep = ""), sep = "|", skip = 1, col.names = eutradecols, fill = TRUE, colClasses = "character")
 colnames(arrivals) = dbSafeNames(colnames(arrivals))
-arrivals <- arrivals[arrivals$smk_comcode != "999999999",]
-arrivals$smk_comcode <- substr(arrivals$smk_comcode,1,8)
+arrivals <- arrivals[-length(arrivals$smk_comcode),]
+arrivals$smk_comcode <- substr(arrivals$smk_comcode, 1, 8)
 
-exports <- read.table(paste(files["exp"], "0901", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["exp"], "0901", sep = "")))-1, col.names = noneuexportcols, fill = TRUE, colClasses = "character")
+exports <- read.table(paste(files["exp"], "0901", sep = ""), sep = "|", skip = 1, col.names = noneuexportcols, fill = TRUE, colClasses = "character")
 colnames(exports) = dbSafeNames(colnames(exports))
-exports <- exports[exports$comcode != "999999999",]
-exports$comcode <- substr(exports$comcode,1,8)
+exports <- exports[-length(exports$comcode),]
+exports$comcode <- substr(exports$comcode, 1, 8)
 
-imports <- read.table(paste(files["imp"], "0901", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["imp"], "0901", sep = "")))-1, col.names = noneuimportcols, fill = TRUE, colClasses = "character")
+imports <- read.table(paste(files["imp"], "0901", sep = ""), sep = "|", skip = 1, col.names = noneuimportcols, fill = TRUE, colClasses = "character")
 colnames(imports) = dbSafeNames(colnames(imports))
-imports <- imports[imports$comcode != "999999999",]
-imports$comcode <- substr(imports$comcode,1,8)
+imports <- imports[-length(imports$mk_comcode),]
+imports$comcode <- substr(imports$comcode, 1, 8)
 
-#control <- read.table(paste(files["control"], "1206", sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["control"], "1206", sep = "")))-2, col.names = controlfilecols)
-#colnames(control) = dbSafeNames(colnames(control))
+control <- read.table(paste(files["control"], "1206", sep = ""), sep = "|", skip = 1, col.names = controlfilecols, fill = TRUE, colClasses = "character")
+colnames(control) = dbSafeNames(colnames(control))
+control <- control[-length(control$mk_comcode),]
+control$mk_comcode <- substr(control$mk_comcode, 1, 8)
 
 
 # Connect to Database, Create tables =========================================
@@ -101,11 +105,11 @@ dbSendQuery(tradedata, "alter table imports alter column value type bigint using
 dbSendQuery(tradedata, "alter table imports alter column quantity_1 type bigint using (quantity_1::bigint)")
 dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint using (quantity_2::bigint)")
 
-#dbWriteTable(tradedata, 'control', control, row.names=FALSE)
-#dbSendQuery(tradedata, "delete from control")
+dbWriteTable(tradedata, 'control', control, row.names=FALSE)
+dbSendQuery(tradedata, "delete from control")
 
 
-# Write to the four database tables ========================================
+# Write to the five database tables ========================================
 
 yrs <- as.character(sprintf("%02d", c(09:17)))
 mths <- as.character(sprintf("%02d",c(1:12)))
@@ -113,60 +117,68 @@ mths <- as.character(sprintf("%02d",c(1:12)))
 for (i in yrs) {
   for (j in mths) {
     
-    print(paste("Processing dispatches: ", i,j))
+    print(paste("Processing dispatches: ", i, j))
     
     tryCatch({
-      dispatches <- read.table(paste(files["disp"], i, j, sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["disp"], i, j, sep = "")))-1, col.names = eutradecols, fill = TRUE, colClasses = "character")
+      dispatches <- read.table(paste(files["disp"], i, j, sep = ""), sep = "|", skip = 1, col.names = eutradecols, fill = TRUE, colClasses = "character")
       colnames(dispatches) = dbSafeNames(colnames(dispatches))
-      dispatches <- dispatches[dispatches$smk_comcode != "999999999",]
-      dispatches$smk_comcode <- substr(dispatches$smk_comcode,1,8)
+      dispatches <- dispatches[-length(dispatches$smk_comcode),]
+      dispatches$smk_comcode <- substr(dispatches$smk_comcode, 1, 8)
       dbWriteTable(tradedata,'dispatches', dispatches, row.names=FALSE, append = TRUE)
     }, error = function(e){errors <<- c(errors, paste(files["disp"], i, j, sep = ""))}
     )
     
     
-    print(paste("Processing arrivals: ", i,j))
+    print(paste("Processing arrivals: ", i, j))
     
     tryCatch({
-      arrivals <- read.table(paste(files["arr"], i, j, sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["arr"], i, j, sep = "")))-1, col.names = eutradecols, fill = TRUE, colClasses = "character")
+      arrivals <- read.table(paste(files["arr"], i, j, sep = ""), sep = "|", skip = 1, col.names = eutradecols, fill = TRUE, colClasses = "character")
       colnames(arrivals) = dbSafeNames(colnames(arrivals))
-      arrivals <- arrivals[arrivals$smk_comcode != "999999999",]
-      arrivals$smk_comcode <- substr(arrivals$smk_comcode,1,8)
+      arrivals <- arrivals[-length(arrivals$smk_comcode),]
+      arrivals$smk_comcode <- substr(arrivals$smk_comcode, 1, 8)
       dbWriteTable(tradedata,'arrivals', arrivals, row.names=FALSE, append = TRUE)
     }, error = function(e){errors <<- c(errors, paste(files["arr"], i, j, sep = ""))}
     )
     
     
-    print(paste("Processing exports: ", i,j))
+    print(paste("Processing exports: ", i, j))
     
     tryCatch({
-      exports <- read.table(paste(files["exp"], i, j, sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["exp"], i, j, sep = "")))-1, col.names = noneuexportcols, fill = TRUE, colClasses = "character")
+      exports <- read.table(paste(files["exp"], i, j, sep = ""), sep = "|", skip = 1, col.names = noneuexportcols, fill = TRUE, colClasses = "character")
       colnames(exports) = dbSafeNames(colnames(exports))
-      exports <- exports[exports$comcode != "999999999",]
-      exports$comcode <- substr(exports$comcode,1,8)
+      exports <- exports[-length(exports$comcode),]
+      exports$comcode <- substr(exports$comcode, 1, 8)
       dbWriteTable(tradedata,'exports', exports, row.names=FALSE, append = TRUE)
     }, error = function(e){errors <<- c(errors, paste(files["exp"], i, j, sep = ""))}
     )
     
     
-    print(paste("Processing imports: ", i,j))
+    print(paste("Processing imports: ", i, j))
     
     tryCatch({
-      imports <- read.table(paste(files["imp"], i, j, sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["imp"], i, j, sep = "")))-1, col.names = noneuimportcols, fill = TRUE, colClasses = "character")
+      imports <- read.table(paste(files["imp"], i, j, sep = ""), sep = "|", skip = 1, col.names = noneuimportcols, fill = TRUE, colClasses = "character")
       colnames(imports) = dbSafeNames(colnames(imports))
-      imports <- imports[imports$comcode != "999999999",]
-      imports$comcode <- substr(imports$comcode,1,8)
+      imports <- imports[-length(imports$comcode),]
+      imports$comcode <- substr(imports$comcode, 1, 8)
       dbWriteTable(tradedata,'imports', imports, row.names=FALSE, append = TRUE)
     }, error = function(e){errors <<- c(errors, paste(files["imp"], i, j, sep = ""))}
     )
     
     
-#    control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, nrows = length(readLines(paste(files["control"], i, j, sep = "")))-2, col.names = controlfilecols)
-#    colnames(control) = dbSafeNames(colnames(control))
-#    dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
-        
-  }
+    print(paste("Processing commodity codes: ", i, j))
+    
+    tryCatch({
+      control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, col.names = controlfilecols, fill = TRUE, colClasses = "character")
+      colnames(control) = dbSafeNames(colnames(control))
+      control <- control[-length(control$mk_comcode)]
+      control$mk_comcode <- substr(control$mk_comcode, 1, 8)
+      dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
+    }, error = function(e){errors <<- c(errors, paste(files["control"], i, j, sep = ""))}
+    )  
+    
+    }
 }
+
 
 end <- Sys.time()
 
