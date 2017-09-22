@@ -7,13 +7,17 @@
 
 # TODO
 # >importers/exporters files need to be entered after comcode issue sorted
+# >fix code description merge - not working atm
+# >check overwrite enabled on codes - not currently enabled
 
 # SCRIPT START ###############################################################
 
 # Library import and constants ===============================================
 
-install.packages("RPostgreSQL")
+# install.packages("RPostgreSQL")
+# install.packages("tidyr")
 library('RPostgreSQL')
+library('tidyr')
 
 setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
 suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
@@ -36,9 +40,6 @@ pg = dbDriver("PostgreSQL")
 
 files <- c("SMKA12", "SMKE19", "SMKI19", "SMKX46", "SMKM46", "SESX16", "SESM16")
 names(files) <- c("control", "exp", "imp", "disp", "arr", "dispest", "arrest")
-
-disp <- "SMKX46"
-arr <- "SMKM46"
 
 eutradecols <- c("SMK-COMCODE","SMK-RECORD-TYPE","SMK-COD-SEQ","SMK-COD-ALPHA","SMK-TRADE-IND","SMK-COO-SEQ","SMK-COO-ALPHA","SMK-NATURE-OF-TRANSACTION","SMK-MODE-OF-TRANSPORT","SMK-PERIOD-REFERENCE","SMK-SUITE INDICATOR","SMK-SITC","SMK-IP-COMCODE","SMK-NO-OF-CONSIGNMENTS","SMK-STAT-VALUE","SMK-NETT-MASS","SMK-SUPP-UNIT")
 noneuexportcols <- c("COMCODE","SITC","RECORD-TYPE","COD-SEQUENCE","COD-ALPHA","ACCOUNT-DATE","PORT-SEQUENCE","PORT-ALPHA","FLAG-SEQUENCE","FLAG-ALPHA","TRADE-INDICATOR","CONTAINER","MODE-OF-TRANSPORT","INLAND-MOT","GOLO-SEQUENCE","GOLO-ALPHA","SUITE-INDICATOR","PROCEDURE-CODE","VALUE","QUANTITY-1","QUANTITY-2","INDUSTRIAL-PLANT-COMCODE")
@@ -107,6 +108,7 @@ dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint 
 
 dbWriteTable(tradedata, 'control', control, row.names=FALSE)
 dbSendQuery(tradedata, "delete from control")
+tryCatch({dbSendQuery(tradedata, "alter table control add constraint control_pkey PRIMARY KEY (mk_comcode)")})
 
 
 # Write to the five database tables ========================================
@@ -164,17 +166,25 @@ for (i in yrs) {
     }, error = function(e){errors <<- c(errors, paste(files["imp"], i, j, sep = ""))}
     )
     
+    # Extra processing necessary for commodity codes due to extra delimiter entry before 2012.
+    # Merges two "description" columns at end of dataframe.
     
     print(paste("Processing commodity codes: ", i, j))
     
     tryCatch({
-      control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, col.names = controlfilecols, fill = TRUE, colClasses = "character")
+      control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, fill = TRUE, colClasses = "character")
+      fixedCols <- length(controlfilecols)
+      actualCols <- ncol(control)
+      if (fixedCols != actualCols) {
+        control <- unite(control, "newcol", "V27", "V28", sep = "")}
+      colnames(control) <- controlfilecols
       colnames(control) = dbSafeNames(colnames(control))
-      control <- control[-length(control$mk_comcode)]
+      control <- control[-length(control$mk_comcode), 1:fixedCols]
       control$mk_comcode <- substr(control$mk_comcode, 1, 8)
+      control$mk_commodity_alpha_1 <- trimws(control$mk_commodity_alpha_1, "r")
       dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
     }, error = function(e){errors <<- c(errors, paste(files["control"], i, j, sep = ""))}
-    )  
+    )   
     
     }
 }

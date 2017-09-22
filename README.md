@@ -5,7 +5,6 @@
 1. Introduction 
 2. Live R Scripts
 3. ToDo
-4. 
 
 
 ## Introduction
@@ -28,6 +27,7 @@ A PostgreSQL database must be defined prior to running this script. It loads the
 ## ToDo
 * Adapt _Unzip.R_ and _Make2015db.R_ to include importers(?) data.
 * Solve error for old SMKA including the sub character for some reason.
+* Implement a correct solution for codes - discuss with Tim.
 * Develop shiny app.
 
 
