@@ -168,21 +168,33 @@ for (i in yrs) {
     
     # Extra processing necessary for commodity codes due to extra delimiter entry before 2012.
     # Merges two "description" columns at end of dataframe.
+    # Also handled by single SQL line-by-line queries to maintain integrity of primary key
     
     print(paste("Processing commodity codes: ", i, j))
     
     tryCatch({
-      control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, fill = TRUE, colClasses = "character")
+      control <- read.table(paste(files["control"], i, j, sep = ""), sep = "|", skip = 1, quote = NULL, fill = TRUE, strip.white = TRUE, colClasses = "character")
       fixedCols <- length(controlfilecols)
       actualCols <- ncol(control)
       if (fixedCols != actualCols) {
         control <- unite(control, "newcol", "V27", "V28", sep = "")}
-      colnames(control) <- controlfilecols
-      colnames(control) = dbSafeNames(colnames(control))
+      safecontrolfilecols <- dbSafeNames(controlfilecols)
+      colnames(control) <- safecontrolfilecols
       control <- control[-length(control$mk_comcode), 1:fixedCols]
       control$mk_comcode <- substr(control$mk_comcode, 1, 8)
-      control$mk_commodity_alpha_1 <- trimws(control$mk_commodity_alpha_1, "r")
-      dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
+      control$mk_commodity_alpha_1 <- trimws(control$mk_commodity_alpha_1, "both")
+      control$mk_commodity_alpha_1 <- gsub("\'", "\'\'", control$mk_commodity_alpha_1)
+      for (k in 1:length(control$mk_comcode)) {
+        valstring1 <- paste(sapply(control[k,], paste, ", \'", sep = "\'"), sep = "", collapse = "")
+        valstring2 <- paste("\'", substr(valstring1, 1, nchar(valstring1)-3), sep = "")
+        sqlQuery <- paste(
+          "INSERT INTO control VALUES (",
+          valstring2,
+          ") ON CONFLICT (mk_comcode) DO UPDATE SET mk_commodity_alpha_1 = ", 
+          paste("\'", control$mk_commodity_alpha_1[k], "\'", sep = ""),
+          ";", sep = "")
+        dbGetQuery(tradedata,sqlQuery)
+      }
     }, error = function(e){errors <<- c(errors, paste(files["control"], i, j, sep = ""))}
     )   
     
