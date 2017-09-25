@@ -108,7 +108,8 @@ dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint 
 
 dbWriteTable(tradedata, 'control', control, row.names=FALSE)
 dbSendQuery(tradedata, "delete from control")
-tryCatch({dbSendQuery(tradedata, "alter table control add constraint control_pkey PRIMARY KEY (mk_comcode)")})
+dbSendQuery(tradedata, "SET client_encoding = 'LATIN1'")
+try({dbSendQuery(tradedata, "alter table control add constraint control_pkey PRIMARY KEY (mk_comcode)")})
 
 
 # Write to the five database tables ========================================
@@ -169,6 +170,7 @@ for (i in yrs) {
     # Extra processing necessary for commodity codes due to extra delimiter entry before 2012.
     # Merges two "description" columns at end of dataframe.
     # Also handled by single SQL line-by-line queries to maintain integrity of primary key
+    # Encoding errors exist for SMKA >= 1201 - encoding forced to LATIN1 in table definition above.
     
     print(paste("Processing commodity codes: ", i, j))
     
@@ -184,6 +186,7 @@ for (i in yrs) {
       control$mk_comcode <- substr(control$mk_comcode, 1, 8)
       control$mk_commodity_alpha_1 <- trimws(control$mk_commodity_alpha_1, "both")
       control$mk_commodity_alpha_1 <- gsub("\'", "\'\'", control$mk_commodity_alpha_1)
+      #      dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
       for (k in 1:length(control$mk_comcode)) {
         valstring1 <- paste(sapply(control[k,], paste, ", \'", sep = "\'"), sep = "", collapse = "")
         valstring2 <- paste("\'", substr(valstring1, 1, nchar(valstring1)-3), sep = "")
@@ -191,6 +194,7 @@ for (i in yrs) {
           "INSERT INTO control VALUES (",
           valstring2,
           ") ON CONFLICT (mk_comcode) DO UPDATE SET mk_commodity_alpha_1 = ", 
+          #        valstring2,
           paste("\'", control$mk_commodity_alpha_1[k], "\'", sep = ""),
           ";", sep = "")
         dbGetQuery(tradedata,sqlQuery)
