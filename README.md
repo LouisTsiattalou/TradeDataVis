@@ -16,15 +16,15 @@ Welcome to my TradeDataVis project. This project is an online tool developed in 
 ## Live R Scripts
 
 ### Data Cleaning and Setup
-#### Unzip.R
+#### DownloadData.R
 This is an R Script which automatically downloads and unzips trade data from the UKTradeInfo website.
 
 #### Importers.R?
-This code creates a dataframe containing correct codes and cleaned importers/exporters data. This is old and needs to be looked at and incorporated into `Make2015db.R` and `Unzip.R`.
+This code creates a dataframe containing correct codes and cleaned importers/exporters data. This is old and needs to be looked at and incorporated into `InitialiseDB.R` and `DownloadData.R`.
 
 ### Data Loading
-#### Make2015db.R
-A PostgreSQL database must be defined prior to running this script. It loads the unzipped files from the working directory used in `Unzip.R` into a PostgreSQL database defined in the script. Note that the tables need not be defined before the running of this script, the postgres database just needs to be defined and the correct details entered.
+#### InitialiseDB.R
+A PostgreSQL database must be defined prior to running this script. It loads the unzipped files from the working directory used in `DownloadData.R` into a PostgreSQL database defined in the script. Note that the tables need not be defined before the running of this script, the postgres database just needs to be defined and the correct details entered.
 
 
 ## Complexities
@@ -37,6 +37,6 @@ Commodity Codes Control Files (SMKA_) contain some serious complexities. They ar
 * Lastly, since the descriptions contain both " and ' chars, quoting is set to null for the `read.table` load. Apostrophes are all converted to double apostrophes `''` during the data cleaning routine, as SQL statements rely on the ' char for denoting strings!
 
 ## ToDo
-* Adapt `Unzip.R` and `Make2015db.R` to include importers/exporters data.
+* Adapt `DownloadData.R` and `InitialiseDB.R` to include importers/exporters data.
 * Solve error for old SMKA including the sub character for some reason.
 * Develop shiny app.
