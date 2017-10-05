@@ -40,3 +40,4 @@ Commodity Codes Control Files (SMKA_) contain some serious complexities. They ar
 * Adapt `DownloadData.R` and `InitialiseDB.R` to include importers/exporters data.
 * Solve error for old SMKA including the sub character for some reason.
 * Develop shiny app.
+* Research tools to run on could
