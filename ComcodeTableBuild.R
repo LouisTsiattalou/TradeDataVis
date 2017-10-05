@@ -11,10 +11,12 @@
 # > source from InitialiseDB.R
 # > Read mk_comcode, mk_commodity_alpha_1 from control and include in parent
 #   logic.
+# > Investigate "Unknown or uninitialised column: 'CommodityCode'." warnings.
+# > Could try to add in sorting for I-XXI numerals into original places?
 
-# SCRIPT START ###############################################################
+# SCRIPT START ################################################################
 
-# Library import and constants ===============================================
+# Library import and constants ================================================
 
 library(readr)
 library(dplyr)
@@ -34,7 +36,7 @@ pg = dbDriver("PostgreSQL")
 tradedata = dbConnect(pg, user="postgres", password="postgres",
                       host="localhost", port=5432, dbname="tradedata")
 
-# Read Data using readr and tidy as appropriate ==============================
+# Read Data using readr and tidy as appropriate ===============================
 
 CN <- read_csv("CN2017.csv")
 CN <- tibble(CommodityCode = CN$Code_1,Parent = CN$Parent_1,Description = CN[[8]])
@@ -43,14 +45,20 @@ CN$CommodityCode <- gsub(" ", "", CN$CommodityCode)
 CN$Parent <- gsub(" ", "", CN$Parent)
 CN <- CN[is.na(CN$CommodityCode) == FALSE,]
 
-control <- as_tibble(dbGetQuery(tradedata, "SELECT mk_comcode,mk_commodity_alpha_1 FROM public.control"))
-control <- arrange(control,mk_comcode)
+# store indices for Section Characters (roman numerals)
+Sections <- tibble(Section = CN$CommodityCode[grep("^.*(I|V|X).*$",CN$CommodityCode)],
+                  Code = CN$CommodityCode[grep("^.*(I|V|X).*$",CN$CommodityCode)+1],
+                  Description = CN$Description[grep("^.*(I|V|X).*$",CN$CommodityCode)])
 
-# Create a complete Codes and Parents column ===========================================
+control <- dbGetQuery(tradedata, "SELECT mk_comcode,mk_commodity_alpha_1 FROM public.control")
+control <- tibble(commoditycode = control$mk_comcode, description = control$mk_commodity_alpha_1)
+control <- arrange(control,commoditycode)
+
+# Create a complete Codes and Parents column ==================================
 
 # Extracts numeric comcodes (IE: not section level).
 codesonly <- CN$CommodityCode[grepl("^.*(I|V|X).*$",CN$CommodityCode) == FALSE]
-codesonly <- c(codesonly, unique(control$mk_comcode))
+codesonly <- unique(c(codesonly, control$commoditycode))
 
 # Commodity Nomenclature codes contain a ragged hierarchy. This means that
 # a child-parent relationship can span levels in the hierarchy. Therefore it
@@ -70,27 +78,50 @@ while (sum(sort(thisrecur) != sort(lastrecur)) != 0) {
     } else {
       return(x)
     }
-  }, character(1))
+  }, character(1), USE.NAMES = FALSE)
 }
-names(thisrecur) = NULL # for some reason lastrecur becomes names in thisrecur...
+#names(thisrecur) = NULL # for some reason lastrecur becomes names in thisrecur...
 parents <- thisrecur
 
-codeandparent <- tibble(CommodityCode = codesonly, Parent = parents)
+codeandparent <- tibble(commoditycode = codesonly, parent = parents)
+
+# Joining data ================================================================
+
+colnames(CN) <- dbSafeNames(colnames(CN))
+colnames(codeandparent) <- dbSafeNames(colnames(codeandparent))
+colnames(control) <- dbSafeNames(colnames(control))
 
 # joins new parent vector to tibble, merges cols.
-CN <- full_join(CN, codeandparent, by = "CommodityCode")
-CN$Parent.z <- ifelse(is.na(CN$Parent.x),CN$Parent.y,CN$Parent.x)
-CN <- tibble(CommodityCode = CN$CommodityCode, Parent = CN$Parent.z, Description = CN$Description)
-colnames(CN) <- dbSafeNames(colnames(CN))
+CN <- full_join(CN, codeandparent, by = "commoditycode")
+CN$parent.z <- ifelse(is.na(CN$parent.x), CN$parent.y, CN$parent.x)
+CN <- tibble(commoditycode = CN$commoditycode, parent = CN$parent.z, description = CN$description)
+
+# joins descriptions from control file to tibble, merges cols
+CN <- full_join(CN, control, by = "commoditycode")
+CN <- arrange(CN, commoditycode)
+CN$description.z <- ifelse(is.na(CN$description.x), CN$description.y, CN$description.x)
+CN <- tibble(commoditycode = CN$commoditycode, parent = CN$parent, description = CN$description.z)
+
+# remember the indices object? we can now put section numbers back in the right place
+# using the data stored in that tibble! In reverse order so add_row doesn't get confused...
+
+for (i in length(Sections$Section):1){
+  CN <- add_row(CN, commoditycode = Sections$Section[i], 
+                parent = "", 
+                description = Sections$Description[i],
+                .before = grep(paste("^", Sections$Code[i], "$", sep=""),CN$commoditycode))
+}
+
+CN <- CN[!duplicated(CN$commoditycode),]
 
 # creates new table, adds to db
 
-dbWriteTable(tradedata, 'comcode', CN5, row.names=FALSE)
+dbWriteTable(tradedata, 'comcode', CN, row.names=FALSE)
 dbSendQuery(tradedata, "delete from comcode")
 dbSendQuery(tradedata, "SET client_encoding = 'LATIN1'")
 try(dbSendQuery(tradedata, "alter table comcode add constraint control_pkey PRIMARY KEY (CommodityCode)"))
 
-dbWriteTable(tradedata,'comcode', CN5, row.names=FALSE, append = TRUE)
+dbWriteTable(tradedata,'comcode', CN, row.names=FALSE, append = TRUE)
 
 
 ## Padding to uniform 8 char IDs
