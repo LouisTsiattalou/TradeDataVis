@@ -32,13 +32,15 @@ dbSafeNames = function(names) {
   names
 }
 
+setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
 pg = dbDriver("PostgreSQL")
 tradedata = dbConnect(pg, user="postgres", password="postgres",
                       host="localhost", port=5432, dbname="tradedata")
 
 # Read Data using readr and tidy as appropriate ===============================
-
-CN <- read_csv("CN2017.csv")
+# Note that this data comes in semi-colon delimited format. Despite CSV in url...
+CNURL <- "http://ec.europa.eu/eurostat/ramon/nomenclatures/index.cfm?TargetUrl=ACT_OTH_CLS_DLD&StrNom=CN_2017&StrFormat=CSV&StrLanguageCode=EN&IntKey=&IntLevel=&bExport="
+CN <- read_csv2(CNURL)
 CN <- tibble(CommodityCode = CN$Code_1,Parent = CN$Parent_1,Description = CN[[8]])
 colnames(CN) <- c("CommodityCode", "Parent", "Description")
 CN$CommodityCode <- gsub(" ", "", CN$CommodityCode)

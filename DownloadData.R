@@ -169,26 +169,26 @@ sapply(zipfiles, unlink)
 
 # Make all uppercase
 datafiles <- list.files(getwd())
-sapply(datafiles, FUN = function(up) {
+datafiles <- sapply(datafiles, FUN = function(up) {
   file.rename(from = up, to = toupper(up))
 })
 
 
 # Remove .txt suffix
 datafiles <- list.files(getwd())
-sapply(datafiles, FUN = function(txt) {
+datafiles <- sapply(datafiles, FUN = function(txt) {
   file.rename(from = txt, to = sub(pattern = ".TXT", replacement = "", txt))
 })
 
 # Fix ~1 for Feb 2009
 datafiles <- list.files(getwd())
-sapply(datafiles, FUN = function(txt) {
+datafiles <- sapply(datafiles, FUN = function(txt) {
   file.rename(from = txt, to = sub(pattern = "~1", replacement = "0902", txt))
 })
 
 # Fix V2 in May/June 2014
 datafiles <- list.files(getwd())
-sapply(datafiles, FUN = function(txt) {
+datafiles <- sapply(datafiles, FUN = function(txt) {
   file.rename(from = txt, to = sub(pattern = "V2", replacement = "", txt))
 })
 

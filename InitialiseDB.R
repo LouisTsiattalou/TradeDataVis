@@ -186,6 +186,7 @@ for (i in yrs) {
       control$mk_comcode <- substr(control$mk_comcode, 1, 8)
       control$mk_commodity_alpha_1 <- trimws(control$mk_commodity_alpha_1, "both")
       control$mk_commodity_alpha_1 <- gsub("\'", "\'\'", control$mk_commodity_alpha_1)
+      control$mk_commodity_alpha_1 <- iconv(control$mk_commodity_alpha_1, from = "UTF-8", to = "LATIN1", sub = "/")
       #      dbWriteTable(tradedata,'control', control, row.names=FALSE, append = TRUE)
       for (k in 1:length(control$mk_comcode)) {
         valstring1 <- paste(sapply(control[k,], paste, ", \'", sep = "\'"), sep = "", collapse = "")
