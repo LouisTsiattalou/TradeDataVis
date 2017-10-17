@@ -2,4 +2,4 @@ datafiles/
 zipfiles/
 .RData
 .Rhistory
-CN2017.csv
+dbextract/
