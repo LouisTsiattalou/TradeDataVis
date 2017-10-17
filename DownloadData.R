@@ -1,7 +1,7 @@
 # 20170904
 # Updated 20170921
 # Script to download and process hmrc trade data from uktradeinfo.com.
-# Written by David Lee at DEFRA
+# Base script by David Lee at DEFRA
 # Adapted by Louis Tsiattalou for Imports Tool
 # Github: https://github.com/LouisTsiattalou/TradeDataVis
 

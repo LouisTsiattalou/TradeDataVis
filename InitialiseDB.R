@@ -1,7 +1,7 @@
 # 20170904
 # Updated 20170921
 # Script to write Trade Data to a PostgreSQL database.
-# Written by David Lee at DEFRA
+# Base Script by David Lee at DEFRA
 # Adapted by Louis Tsiattalou for Imports Tool
 # Github: https://github.com/LouisTsiattalou/TradeDataVis
 
