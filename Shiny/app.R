@@ -41,8 +41,8 @@ tradedata = dbConnect(pg, user="postgres", password="postgres",
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
-desclookup <- c(comcode$description,portcode$portname,countrycode$countryname)
-names(desclookup) <- c(comcode$commoditycode,portcode$portcode,countrycode$countrycode)
+desclookup <- c(portcode$portname,countrycode$countryname)
+names(desclookup) <- c(portcode$portcode,countrycode$countrycode)
 desclookup <- data.frame(keyName=names(desclookup), value=desclookup, row.names=NULL, stringsAsFactors = FALSE)
 desclookup <- desclookup[desclookup$value != "",]
 
@@ -58,17 +58,31 @@ comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 
 # Use a fluid Bootstrap layout
 ui <- fluidPage(    
-    
+# Head Styles  
+tags$head(tags$style(HTML("
+    .progress-striped .bar {
+                            background-color: #149bdf;
+                            background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.6)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.6)), color-stop(0.75, rgba(255, 255, 255, 0.6)), color-stop(0.75, transparent), to(transparent));
+                            background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                            background-image: -moz-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                            background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                            background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                            -webkit-background-size: 40px 40px;
+                            -moz-background-size: 40px 40px;
+                            -o-background-size: 40px 40px;
+                            background-size: 40px 40px;
+                            }
+                            "))),
   # Give the page a title
   titlePanel("UK Non-EU Exports flow diagram"),
   
   # Generate a row with a sidebar
   sidebarLayout(      
     
-    # Define the sidebar with one input
+    # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
     sidebarPanel(
       selectizeInput("comcode2", "2-digit Commodity Code:", 
-                  choices=c("All", comcode_2$commoditycode )),
+                  choices=c(comcode_2$commoditycode)),
       selectizeInput("comcode4", "4-digit Commodity Code:", 
                   choices=c("All", comcode_4$commoditycode)),
       selectizeInput("comcode6", "6-digit Commodity Code:", 
@@ -78,13 +92,15 @@ ui <- fluidPage(
                   options=list(maxItems = 12000)),
       actionButton("queryButton", "Run Query"),
       hr(),
-      helpText("Data obtained from HMRC's Trade Data - "),
-      tags$a(href="www.uktradeinfo.com", "Source")
+      helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
     ),
     
     # Create a spot for the sankey diagram
     mainPanel(
-      sankeyNetworkOutput(outputId = "sankeyTrade")  
+      tabsetPanel(
+        tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
+        tabPanel("MAP", plotOutput(outputId = "worldMap"))
+      )
     )
   )
 )
@@ -95,29 +111,20 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
+  mapData <- reactiveValues(mapWorld = NULL)
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   
   observe({
     comcode_2_selection <- input$comcode2
       
-    if (comcode_2_selection == "All"){
-      updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:", 
-                        choices=c("All", comcode_4$commoditycode ))
-      updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
-                        choices=c("All", comcode_6$commoditycode ))
-      updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8$commoditycode),
-                        options=list(maxItems = 12000))
-    } else {
-      updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:", 
-                        choices=c("All", comcode_4[comcode_4$parent == comcode_2_selection,"commoditycode"]))
-      updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
-                        choices=c("All", comcode_6[comcode_6$parent == comcode_2_selection,"commoditycode"]))
-      updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8[comcode_8$parent == comcode_2_selection,"commoditycode"]),
-                        options=list(maxItems = 12000))
-    }
+    updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:", 
+                      choices=c("All", comcode_4[comcode_4$parent == comcode_2_selection,"commoditycode"]))
+    updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
+                      choices=c("All", comcode_6[comcode_6$parent == comcode_2_selection,"commoditycode"]))
+    updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
+                      choices=c("All", comcode_8[comcode_8$parent == comcode_2_selection,"commoditycode"]),
+                      options=list(maxItems = 12000))
   })
   
   observe({
@@ -152,14 +159,20 @@ server <- function(input, output, session) {
     }
   })
   
-  output$sankeyTrade <- renderSankeyNetwork({
-    # Suppress output if nothing has been selected yet
-    if (input$queryButton == 0) return()
+  observeEvent(input$queryButton,{
     input$queryButton
     
     # Use comcodes on selectors to build plot
     isolate({
-      if (input$comcode2 == "All") {comcode2query = "__"} else {comcode2query = input$comcode2}
+      
+      # Create a Progress object
+      progress <- shiny::Progress$new()
+      # Make sure it closes when we exit this reactive, even if there's an error
+      on.exit(progress$close())
+      progress$set(message = "Generating Visualisations", value = 1)
+      
+      # Control handling for comcode selectors
+      comcode2query = input$comcode2
       if (input$comcode4 == "All") {comcode4query = "__"} else {comcode4query = input$comcode4}
       if (input$comcode6 == "All") {comcode6query = "__"} else {comcode6query = input$comcode6}
       if (input$comcode8 == "All") {comcode8query = "__"} else {comcode8query = input$comcode8}
@@ -176,46 +189,104 @@ server <- function(input, output, session) {
                            sep = "")
       
       countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
-                           "WHERE comcode SIMILAR TO '",
-                           comcodequery,
-                           "' GROUP BY comcode,port_alpha",
-                           sep = "")
+                              "WHERE comcode SIMILAR TO '",
+                              comcodequery,
+                              "' GROUP BY comcode,port_alpha",
+                              sep = "")
       
       # Create Links + Nodes DF
+      progress$set(detail = "Querying Country -> Comcode data")
       portsum = dbGetQuery(tradedata, portsumquery)
+      
+      progress$set(detail = "Querying Comcode -> Port data")
       countrysum = dbGetQuery(tradedata, countrysumquery)
+      
+      progress$set(detail = "Clean + Shape Data")
       colnames(portsum) = c("source","target","value")
       colnames(countrysum) = c("source","target","value")
       links = rbind(portsum,countrysum)
       nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
       colnames(nodes) = "name"
-
-    # Replace links source, target columns with IDs specified in nodes.
-    # Match to row number in nodes (which is uniquely indexed!)
-    # Note - must be zero indexed, hence match - 1
+      
+      # SANKEY SPECIFIC -------------------------------------------------------
+      
+      # Replace links source, target columns with IDs specified in nodes.
+      # Match to row number in nodes (which is uniquely indexed!)
+      # Note - must be zero indexed, hence match - 1
       links$source = vapply(links$source, function(x){
         x = match(x,nodes[,1])-1
       }, double(1))
-
+      
       links$target = vapply(links$target, function(x){
         x = match(x,nodes[,1])-1
       }, double(1))
-     })
     
-    # Replace node codes with descriptions
-    nodes$name = vapply(nodes$name,function(x){
-      x = desclookup[match(x,desclookup$keyName),"value"]
-      if(nchar(x) > 30){substr(x,1,30)} else {x}
-    }, character(1))
- 
-  # Fill in the sankey diagram ================================================   
+      # Replace node codes for country and port with full name
+      nodes$name = vapply(nodes$name,function(x){
+        replacement = desclookup[match(x,desclookup$keyName),"value"]
+        if (is.na(replacement) == FALSE){
+          x = replacement
+          if(nchar(x) > 30){x = substr(x,1,30)}}
+        else {x}
+        return(x)
+      }, character(1))
+      
+      # WORLDMAP SPECIFIC -----------------------------------------------------
+      
+      mapWorld <- map_data("world")
+      
+      # Get map_data World names from iso codes using iso.expand
+      portsum_countries <- iso.expand(unique(portsum$source))
+      
+      # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
+      if ("XS" %in% unique(portsum$source)) {portsum_countries = c(portsum_countries, "Serbia")}
+      portsum_countries <- tibble(portsum_countries, iso.alpha(portsum_countries))
+      colnames(portsum_countries) <- c("name","code")
+      portsum_countries[portsum_countries$name == "Serbia","code"] = "XS"
+      
+      # Aggregate by country
+      portsum_countrytotal <- portsum[,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
+      # Match plot-compatible names to iso codes
+      portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("source" = "code"))
+      # Join values to mapWorld for plotting
+      portsum_countrytotal <- tibble(portsum_countrytotal$name,portsum_countrytotal$value)
+      colnames(portsum_countrytotal) <- c("region","value")
+      mapWorld <- left_join(mapWorld,portsum_countrytotal)
+      
+      
+    # End Isolate
+    })
 
-    #sankeyData$links <- links
-    #sankeyData$nodes <- nodes
-    sankeyNetwork(links, nodes,
+  # Now modify reactive variables with output from isolate() to trigger plot renders.
+    sankeyData$links <- links
+    sankeyData$nodes <- nodes
+    mapData$mapWorld <- mapWorld
+  
+  })
+  
+  
+  # Fill in the sankey diagram ================================================   
+  output$sankeyTrade <- renderSankeyNetwork({
+  
+  # Suppress output if nothing has been selected yet
+    if (input$queryButton == 0) return()
+
+    sankeyNetwork(sankeyData$links, sankeyData$nodes,
                   "source", "target", "value", "name",
                   fontSize = 12, nodeWidth = 30)
     })
+  
+  output$worldMap <- renderPlot({
+    if (input$queryButton == 0) return()
+    
+    worldmapPlot <- ggplot()
+    worldmapPlot <- ggplot(data = mapData$mapWorld, aes(x=long,y=lat,group=group))
+    worldmapPlot <- worldmapPlot + geom_polygon(colour="grey20", fill="grey70")
+    worldmapPlot <- worldmapPlot + geom_polygon(aes(fill=value), colour = "grey20")
+    worldmapPlot <- worldmapPlot + scale_fill_gradient(trans = "log10")
+    worldmapPlot <- worldmapPlot + coord_fixed(1.3)
+    worldmapPlot
+  })
   
   }
 
@@ -229,8 +300,5 @@ shinyApp(ui = ui, server = server)
 
 # JUNKYARD ###################################################################
 
-# Annual archives ------------------------------------------------------------
-# Special Annual Cases -------------------------------------------------------
-# Unzip monthly files --------------------------------------------------------
-# Cleanup ====================================================================
-# Print info =================================================================
+# Disconnect All Database Cons
+# lapply(dbListConnections(pg), dbDisconnect)
