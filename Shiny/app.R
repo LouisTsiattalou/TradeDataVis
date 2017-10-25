@@ -54,6 +54,16 @@ comcode_4 <- comcode[nchar(comcode$commoditycode) == 4,]
 comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,]
 comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 
+# Create month list
+syrs <- as.character(sprintf("%02d",c(09:17)))
+smths <- as.character(sprintf("%02d",c(1:12)))
+dates <- character(0)
+for (i in syrs){
+  for (j in smths){
+    dates <- c(dates, paste(j,"/20",i,sep=""))
+  }
+}
+
 # UI =========================================================================
 
 # Use a fluid Bootstrap layout
@@ -81,6 +91,8 @@ tags$head(tags$style(HTML("
     
     # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
     sidebarPanel(
+      selectizeInput("dateselect", "Period:", 
+                     choices=dates),
       selectizeInput("comcode2", "2-digit Commodity Code:", 
                   choices=c(comcode_2$commoditycode)),
       selectizeInput("comcode4", "4-digit Commodity Code:", 
@@ -88,8 +100,7 @@ tags$head(tags$style(HTML("
       selectizeInput("comcode6", "6-digit Commodity Code:", 
                   choices=c("All", comcode_6$commoditycode)),
       selectizeInput("comcode8", "8-digit Commodity Code:", 
-                  choices=c("All", comcode_8$commoditycode),
-                  options=list(maxItems = 12000)),
+                  choices=c("All", comcode_8$commoditycode)),
       actionButton("queryButton", "Run Query"),
       hr(),
       helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
@@ -123,8 +134,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
                       choices=c("All", comcode_6[comcode_6$parent == comcode_2_selection,"commoditycode"]))
     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                      choices=c("All", comcode_8[comcode_8$parent == comcode_2_selection,"commoditycode"]),
-                      options=list(maxItems = 12000))
+                      choices=c("All", comcode_8[comcode_8$parent == comcode_2_selection,"commoditycode"]))
   })
   
   observe({
@@ -134,14 +144,12 @@ server <- function(input, output, session) {
       updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
                         choices=c("All", comcode_6$commoditycode ))
       updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8$commoditycode),
-                        options=list(maxItems = 12000))
+                        choices=c("All", comcode_8$commoditycode))
     } else {
       updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:", 
                         choices=c("All", comcode_6[comcode_6$parent == comcode_4_selection,"commoditycode"]))
       updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8[comcode_8$parent == comcode_4_selection,"commoditycode"]),
-                        options=list(maxItems = 12000))
+                        choices=c("All", comcode_8[comcode_8$parent == comcode_4_selection,"commoditycode"]))
     }
   })
   
@@ -150,26 +158,25 @@ server <- function(input, output, session) {
     
     if (comcode_6_selection == "All"){
       updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8$commoditycode),
-                        options=list(maxItems = 12000))
+                        choices=c("All", comcode_8$commoditycode))
     } else {
       updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:", 
-                        choices=c("All", comcode_8[comcode_8$parent == comcode_6_selection,"commoditycode"]),
-                        options=list(maxItems = 12000))
+                        choices=c("All", comcode_8[comcode_8$parent == comcode_6_selection,"commoditycode"]))
     }
   })
   
   observeEvent(input$queryButton,{
     input$queryButton
     
+    # Create a Progress object
+    progress <- shiny::Progress$new()
+    # Make sure it closes when we exit this reactive, even if there's an error
+    on.exit(progress$close())
+    progress$set(message = "Generating Visualisations", value = 1)
+    
+    
     # Use comcodes on selectors to build plot
     isolate({
-      
-      # Create a Progress object
-      progress <- shiny::Progress$new()
-      # Make sure it closes when we exit this reactive, even if there's an error
-      on.exit(progress$close())
-      progress$set(message = "Generating Visualisations", value = 1)
       
       # Control handling for comcode selectors
       comcode2query = input$comcode2
@@ -183,15 +190,19 @@ server <- function(input, output, session) {
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
       
       portsumquery = paste("SELECT country_alpha_coo_imp,comcode,sum(value) FROM imports ",
-                           "WHERE comcode SIMILAR TO '",
+                           "WHERE (comcode SIMILAR TO '",
                            comcodequery,
-                           "' GROUP BY comcode,country_alpha_coo_imp",
+                           "') AND (account_date = '",
+                           input$dateselect,
+                           "') GROUP BY comcode,country_alpha_coo_imp",
                            sep = "")
       
       countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
-                              "WHERE comcode SIMILAR TO '",
+                              "WHERE (comcode SIMILAR TO '",
                               comcodequery,
-                              "' GROUP BY comcode,port_alpha",
+                              "') AND (account_date = '",
+                              input$dateselect,
+                              "') GROUP BY comcode,port_alpha",
                               sep = "")
       
       # Create Links + Nodes DF
