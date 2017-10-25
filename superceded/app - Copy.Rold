@@ -18,17 +18,11 @@
 if(require("shiny") == FALSE) {install.packages("shiny")}
 library("shiny")
 
-if(require("dplyr") == FALSE) {install.packages("dplyr")}
-library("dplyr")
-
 if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
 library("RPostgreSQL")
 
 if(require("networkD3") == FALSE) {install.packages("networkD3")}
 library("networkD3")
-
-if(require("googleVis") == FALSE) {install.packages("googleVis")}
-library("googleVis")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -41,10 +35,6 @@ tradedata = dbConnect(pg, user="postgres", password="postgres",
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
-desclookup <- c(comcode$description,portcode$portname,countrycode$countryname)
-names(desclookup) <- c(comcode$commoditycode,portcode$portcode,countrycode$countrycode)
-desclookup <- data.frame(keyName=names(desclookup), value=desclookup, row.names=NULL, stringsAsFactors = FALSE)
-desclookup <- desclookup[desclookup$value != "",]
 
 # Note - no data loaded at this stage - we query what we need when we need it
 
@@ -84,7 +74,7 @@ ui <- fluidPage(
     
     # Create a spot for the sankey diagram
     mainPanel(
-      sankeyNetworkOutput(outputId = "sankeyTrade")  
+      plotOutput("sankeyTrade")  
     )
   )
 )
@@ -152,70 +142,59 @@ server <- function(input, output, session) {
     }
   })
   
-  output$sankeyTrade <- renderSankeyNetwork({
-    # Suppress output if nothing has been selected yet
-    if (input$queryButton == 0) return()
-    input$queryButton
+  # ACTION BUTTON PRESS -------------------------------------------------------
+  # organise Links, Nodes, Sources and Targets for Sankey Diagram
+  observeEvent(input$queryButton,{
+    if (input$comcode2 == "All") {comcode2query = "__"} else {comcode2query = input$comcode2}
+    if (input$comcode4 == "All") {comcode4query = "__"} else {comcode4query = input$comcode4}
+    if (input$comcode6 == "All") {comcode6query = "__"} else {comcode6query = input$comcode6}
+    if (input$comcode8 == "All") {comcode8query = "__"} else {comcode8query = input$comcode8}
     
-    # Use comcodes on selectors to build plot
-    isolate({
-      if (input$comcode2 == "All") {comcode2query = "__"} else {comcode2query = input$comcode2}
-      if (input$comcode4 == "All") {comcode4query = "__"} else {comcode4query = input$comcode4}
-      if (input$comcode6 == "All") {comcode6query = "__"} else {comcode6query = input$comcode6}
-      if (input$comcode8 == "All") {comcode8query = "__"} else {comcode8query = input$comcode8}
-      
-      # This is kind of a funny way of doing things, but simply pasting the strings
-      # together and taking the last 8 characters works quickly, easily and cleanly.
-      comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query, sep = "")
-      comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
-      
-      portsumquery = paste("SELECT country_alpha_coo_imp,comcode,sum(value) FROM imports ",
-                           "WHERE comcode SIMILAR TO '",
-                           comcodequery,
-                           "' GROUP BY comcode,country_alpha_coo_imp",
-                           sep = "")
-      
-      countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
-                           "WHERE comcode SIMILAR TO '",
-                           comcodequery,
-                           "' GROUP BY comcode,port_alpha",
-                           sep = "")
-      
-      # Create Links + Nodes DF
-      portsum = dbGetQuery(tradedata, portsumquery)
-      countrysum = dbGetQuery(tradedata, countrysumquery)
-      colnames(portsum) = c("source","target","value")
-      colnames(countrysum) = c("source","target","value")
-      links = rbind(portsum,countrysum)
-      nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
-      colnames(nodes) = "name"
-
+    comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query)
+    
+    portsumquery = paste("SELECT flag_alpha,comcode,sum(value) FROM imports ",
+                         "WHERE comcode SIMILAR TO '",
+                         comcodequery,
+                         "' GROUP BY comcode,flag_alpha",
+                         sep = "")
+    
+    flagsumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
+                         "WHERE comcode SIMILAR TO '",
+                         comcodequery,
+                         "' GROUP BY comcode,port_alpha",
+                         sep = "")
+    
+    # Create Links DF
+    portsum = dbGetQuery(tradedata, portsumquery)
+    flagsum = dbGetQuery(tradedata, flagsumquery)
+    colnames(portsum) = c("source","target","value")
+    colnames(flagsum) = c("source","target","value")
+    links = rbind(portsum,flagsum)
+    
+    # Create Links DF
+    nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
+    
     # Replace links source, target columns with IDs specified in nodes.
     # Match to row number in nodes (which is uniquely indexed!)
     # Note - must be zero indexed, hence match - 1
-      links$source = vapply(links$source, function(x){
-        x = match(x,nodes[,1])-1
-      }, double(1))
-
-      links$target = vapply(links$target, function(x){
-        x = match(x,nodes[,1])-1
-      }, double(1))
-     })
+    links$source = vapply(links$source, function(x){
+      x = match(x,nodes[,1])-1
+    }, double(1))
     
-    # Replace node codes with descriptions
-    nodes$name = vapply(nodes$name,function(x){
-      x = desclookup[match(x,desclookup$keyName),"value"]
-      if(nchar(x) > 30){substr(x,1,30)} else {x}
-    }, character(1))
- 
-  # Fill in the sankey diagram ================================================   
+    links$target = vapply(links$target, function(x){
+      x = match(x,nodes[,1])-1
+    }, double(1))
+    
+    sankeyData$links <- links
+    sankeyData$nodes <- nodes
+    
+  })
 
-    #sankeyData$links <- links
-    #sankeyData$nodes <- nodes
-    sankeyNetwork(links, nodes,
-                  "source", "target", "value", "name",
-                  fontSize = 12, nodeWidth = 30)
-    })
+  # Fill in the sankey diagram ================================================
+  output$sankeyTrade <- renderPlot({
+    if (is.null(sankeyData$links)) return()
+    sankeyNetwork(sankeyData$links, sankeyData$nodes, "source", "target", "value", fontSize = 12, nodeWidth = 30)
+  })
   
   }
 
