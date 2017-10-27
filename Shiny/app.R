@@ -294,8 +294,8 @@ server <- function(input, output, session) {
     
     worldmapPlot <- ggplot()
     worldmapPlot <- ggplot(data = mapData$mapWorld, aes(x=long,y=lat,group=group))
-    worldmapPlot <- worldmapPlot + geom_polygon(colour="grey20", fill="grey70")
-    worldmapPlot <- worldmapPlot + geom_polygon(aes(fill=value), colour = "grey20")
+    worldmapPlot <- worldmapPlot + geom_polygon(colour="grey60", fill="grey80")
+    worldmapPlot <- worldmapPlot + geom_polygon(aes(fill=value), colour = "grey60")
     worldmapPlot <- worldmapPlot + scale_fill_gradient(trans = "log10")
     worldmapPlot <- worldmapPlot + coord_fixed(1.3)
     worldmapPlot
