@@ -27,8 +27,9 @@ library("RPostgreSQL")
 if(require("networkD3") == FALSE) {install.packages("networkD3")}
 library("networkD3")
 
-if(require("googleVis") == FALSE) {install.packages("googleVis")}
-library("googleVis")
+library("maptools")
+library("maps")
+library("ggmap")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -103,7 +104,8 @@ tags$head(tags$style(HTML("
                   choices=c("All", comcode_8$commoditycode)),
       actionButton("queryButton", "Run Query"),
       hr(),
-      helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
+      helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
+      width = 3
     ),
     
     # Create a spot for the sankey diagram
