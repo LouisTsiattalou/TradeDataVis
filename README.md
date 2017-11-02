@@ -54,18 +54,21 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### TODO
 * Improve query speed on the tool.
 * Enable Date Range selection.
+* Use SelectizeInput instead of SelectInput for multiple commodity code selection.
 * Add tabs for Commodity Code Lookup, and EU/NonEU trade information.
 * Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010)
 * Within the data tabs, we need:
-  * A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG) and Number of Consignments. Rendered large.
+  * A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments, and Price per Kilo (£/KG). Rendered large.
   * A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
   * A time-series chart, with selectors on Commodity Code/Country/Port
   * Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
 * Additional Functionality:
   * A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
+  * Ability to export the data driving the visualisations to .csv for download.
 * Backend Functionality:
   * Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
   * Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
+
 
 ## Complexities
 
