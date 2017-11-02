@@ -45,6 +45,12 @@ This isn't a complete cure to our problem - this Commodity Nomenclature file doe
 
 ## Shiny Application
 
+### Current Status
+Working selectors for comcode and date (by individual month), working sankey diagram and map (although the map is a bit squished, doesn't have detail).
+Should be using leaflet.js for the map - not a rudimentary ggplot.
+Additionally - selectors at top in a fluidrow. Then have slider across the date range (with an ALL option).
+
+
 ### TODO
 * Improve query speed on the tool.
 * Enable Date Range selection.
