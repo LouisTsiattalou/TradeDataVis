@@ -94,16 +94,24 @@ tags$head(tags$style(HTML("
     
     # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
     sidebarPanel(
-      selectInput("dateselect", "Period:",
+      selectizeInput("dateselect", "Period:",
                      choices=dates),
-      selectInput("comcode2", "2-digit Commodity Code:",
-                  choices=c(comcode_2$commoditycode)),
-      selectInput("comcode4", "4-digit Commodity Code:",
-                  choices=c("All", comcode_4$commoditycode)),
-      selectInput("comcode6", "6-digit Commodity Code:",
-                  choices=c("All", comcode_6$commoditycode)),
-      selectInput("comcode8", "8-digit Commodity Code:",
-                  choices=c("All", comcode_8$commoditycode)),
+      selectizeInput("comcode2", "2-digit Commodity Code:",
+                  selected = "01",
+                  choices=c(comcode_2$commoditycode),
+                  options = list(maxItems = 5)),
+      selectizeInput("comcode4", "4-digit Commodity Code:",
+                  selected = "All",
+                  choices=c("All", comcode_4$commoditycode),
+                  options = list(maxItems = 5)),
+      selectizeInput("comcode6", "6-digit Commodity Code:",
+                  selected = "All",
+                  choices=c("All", comcode_6$commoditycode),
+                  options = list(maxItems = 5)),
+      selectizeInput("comcode8", "8-digit Commodity Code:",
+                  selected = "All",
+                  choices=c("All", comcode_8$commoditycode),
+                  options = list(maxItems = 5)),
       actionButton("queryButton", "Run Query"),
       hr(),
       helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
@@ -132,17 +140,20 @@ server <- function(input, output, session) {
   
   observe({
     comcode_2_selection <- input$comcode2
-#    browser()
+
     # Update Comcodes
-    updateSelectInput(session,"comcode4", "4-digit Commodity Code:",
-                      choices=c("All", comcode_4[comcode_4$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
-    updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                      choices=c("All", comcode_6[comcode_6$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
-    updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                      choices=c("All", comcode_8[comcode_8$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
+    updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+                      selected = "All",
+                      choices=c("All", comcode_4[comcode_4$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = 5))
+    updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                      selected = "All",
+                      choices=c("All", comcode_6[comcode_6$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = 5))
+    updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                      selected = "All",
+                      choices=c("All", comcode_8[comcode_8$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = 5))
   })
 
   observe({
@@ -150,30 +161,46 @@ server <- function(input, output, session) {
     print(paste("4:",comcode_4_selection))
 
     # Update Comcodes
-    if (comcode_4_selection == "All"){
-      updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                        choices=c("All", comcode_6$commoditycode ))
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                        choices=c("All", comcode_8$commoditycode))
-    } else {
-      updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                        choices=c("All", comcode_6[comcode_6$parent %in% comcode_4_selection,"commoditycode"]))
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                        choices=c("All", comcode_8[comcode_8$parent %in% comcode_4_selection,"commoditycode"]))
+    if (is.null(comcode_4_selection) == FALSE) {
+      if ("All" %in% comcode_4_selection){
+        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_6$commoditycode ),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8$commoditycode),
+                          options = list(maxItems = 5))
+      } else {
+        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_6[comcode_6$parent %in% comcode_4_selection,"commoditycode"]),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8[comcode_8$parent %in% comcode_4_selection,"commoditycode"]),
+                          options = list(maxItems = 5))
+      }
     }
   })
 
   observe({
     comcode_6_selection <- input$comcode6
     print(paste("6:",comcode_6_selection))
-
+    
     # Update Comcodes
-    if (comcode_6_selection == "All"){
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:", multiple = TRUE,
-                        choices=c("All", comcode_8$commoditycode))
-    } else {
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:", multiple = TRUE,
-                        choices=c("All", comcode_8[comcode_8$parent %in% comcode_6_selection,"commoditycode"]))
+    if (is.null(comcode_6_selection) == FALSE) {
+      if ("All" %in% comcode_6_selection){
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8$commoditycode),
+                          options = list(maxItems = 5))
+      } else {
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8[comcode_8$parent %in% comcode_6_selection,"commoditycode"]),
+                          options = list(maxItems = 5))
+      }
     }
   })
 
@@ -192,27 +219,28 @@ server <- function(input, output, session) {
       
       # Control handling for comcode selectors
       comcode2query = input$comcode2
-      if (input$comcode4 == "All") {comcode4query = "__"} else {comcode4query = input$comcode4}
-      if (input$comcode6 == "All") {comcode6query = "__"} else {comcode6query = input$comcode6}
-      if (input$comcode8 == "All") {comcode8query = "__"} else {comcode8query = input$comcode8}
+      if ("All" %in% input$comcode4) {comcode4query = "__"} else {comcode4query = input$comcode4}
+      if ("All" %in% input$comcode6) {comcode6query = "__"} else {comcode6query = input$comcode6}
+      if ("All" %in% input$comcode8) {comcode8query = "__"} else {comcode8query = input$comcode8}
       
       # This is kind of a funny way of doing things, but simply pasting the strings
       # together and taking the last 8 characters works quickly, easily and cleanly.
       comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query, sep = "")
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
+      #browser()
       
       portsumquery = paste("SELECT country_alpha_coo_imp,comcode,sum(value) FROM imports ",
-                           "WHERE (comcode SIMILAR TO '",
-                           comcodequery,
-                           "') AND (account_date = '",
+                           "WHERE (comcode SIMILAR TO '(",
+                           paste(comcodequery,collapse = "|"),
+                           ")') AND (account_date = '",
                            input$dateselect,
                            "') GROUP BY comcode,country_alpha_coo_imp",
                            sep = "")
       
       countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
-                              "WHERE (comcode SIMILAR TO '",
-                              comcodequery,
-                              "') AND (account_date = '",
+                              "WHERE (comcode SIMILAR TO '(",
+                              paste(comcodequery,collapse = "|"),
+                              ")') AND (account_date = '",
                               input$dateselect,
                               "') GROUP BY comcode,port_alpha",
                               sep = "")
@@ -229,6 +257,7 @@ server <- function(input, output, session) {
       colnames(countrysum) = c("source","target","value")
       links = rbind(portsum,countrysum)
       nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
+      nodes[is.na(nodes)] <- ""
       colnames(nodes) = "name"
       
       # SANKEY SPECIFIC -------------------------------------------------------
@@ -256,10 +285,12 @@ server <- function(input, output, session) {
       
       # WORLDMAP SPECIFIC -----------------------------------------------------
       
+      browser()
+      
       mapWorld <- map_data("world")
       
       # Get map_data World names from iso codes using iso.expand
-      portsum_countries <- iso.expand(unique(portsum$source))
+      portsum_countries <- iso.expand(unique(portsum$source[is.na(portsum$source) == FALSE]))
       
       # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
       if ("XS" %in% unique(portsum$source)) {portsum_countries = c(portsum_countries, "Serbia")}
@@ -268,7 +299,7 @@ server <- function(input, output, session) {
       portsum_countries[portsum_countries$name == "Serbia","code"] = "XS"
       
       # Aggregate by country
-      portsum_countrytotal <- portsum[,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
+      portsum_countrytotal <- portsum[is.na(portsum$source) == FALSE,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
       # Match plot-compatible names to iso codes
       portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("source" = "code"))
       # Join values to mapWorld for plotting
@@ -285,6 +316,7 @@ server <- function(input, output, session) {
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
   
+    browser()
   })
   
   
@@ -324,4 +356,4 @@ shinyApp(ui = ui, server = server)
 # JUNKYARD ###################################################################
 
 # Disconnect All Database Cons
-# lapply(dbListConnections(pg), dbDisconnect)
+# pg = dbDriver("PostgreSQL");lapply(dbListConnections(pg), dbDisconnect)

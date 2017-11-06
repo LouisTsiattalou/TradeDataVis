@@ -54,7 +54,8 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### TODO
 * Improve query speed on the tool.
 * Enable Date Range selection.
-* Use SelectizeInput instead of SelectInput for multiple commodity code selection.
+* Find a way to represent portsum$source NA values in map. May not be possible. If not posssible - need to add a note saying this in output, with values missing from table.
+* Create a test to prevent errors if no data returned by postgres!
 * Add tabs for Commodity Code Lookup, and EU/NonEU trade information.
 * Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010)
 * Within the data tabs, we need:
