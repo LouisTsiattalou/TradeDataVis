@@ -94,16 +94,20 @@ tags$head(tags$style(HTML("
     
     # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
     sidebarPanel(
-      selectInput("dateselect", "Period:",
+      selectizeInput("dateselect", "Period:",
                      choices=dates),
-      selectInput("comcode2", "2-digit Commodity Code:",
-                  choices=c(comcode_2$commoditycode)),
-      selectInput("comcode4", "4-digit Commodity Code:",
-                  choices=c("All", comcode_4$commoditycode)),
-      selectInput("comcode6", "6-digit Commodity Code:",
-                  choices=c("All", comcode_6$commoditycode)),
-      selectInput("comcode8", "8-digit Commodity Code:",
-                  choices=c("All", comcode_8$commoditycode)),
+      selectizeInput("comcode2", "2-digit Commodity Code:", 
+                  choices=c(comcode_2$commoditycode),
+                  options = list(maxItems = itemCount)),
+      selectizeInput("comcode4", "4-digit Commodity Code:",
+                  choices=c("All", comcode_4$commoditycode),
+                  options = list(maxItems = itemCount)),
+      selectizeInput("comcode6", "6-digit Commodity Code:",
+                  choices=c("All", comcode_6$commoditycode),
+                  options = list(maxItems = itemCount)),
+      selectizeInput("comcode8", "8-digit Commodity Code:",
+                  choices=c("All", comcode_8$commoditycode),
+                  options = list(maxItems = itemCount)),
       actionButton("queryButton", "Run Query"),
       hr(),
       helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
@@ -132,51 +136,54 @@ server <- function(input, output, session) {
   
   observe({
     comcode_2_selection <- input$comcode2
-#    browser()
+    browser()
     # Update Comcodes
-    updateSelectInput(session,"comcode4", "4-digit Commodity Code:",
-                      choices=c("All", comcode_4[comcode_4$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
-    updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                      choices=c("All", comcode_6[comcode_6$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
-    updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                      choices=c("All", comcode_8[comcode_8$parent %in% comcode_2_selection,"commoditycode"]))
-#    browser()
+    updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+                      choices=c("All", comcode_4[comcode_4$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = itemCount))
+    browser()
+    updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                      choices=c("All", comcode_6[comcode_6$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = itemCount))
+    browser()
+    updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                      choices=c("All", comcode_8[comcode_8$parent %in% comcode_2_selection,"commoditycode"]),
+                      options = list(maxItems = itemCount))
+    browser()
   })
-
-  observe({
-    comcode_4_selection <- input$comcode4
-    print(paste("4:",comcode_4_selection))
-
-    # Update Comcodes
-    if (comcode_4_selection == "All"){
-      updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                        choices=c("All", comcode_6$commoditycode ))
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                        choices=c("All", comcode_8$commoditycode))
-    } else {
-      updateSelectInput(session,"comcode6", "6-digit Commodity Code:",
-                        choices=c("All", comcode_6[comcode_6$parent %in% comcode_4_selection,"commoditycode"]))
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:",
-                        choices=c("All", comcode_8[comcode_8$parent %in% comcode_4_selection,"commoditycode"]))
-    }
-  })
-
-  observe({
-    comcode_6_selection <- input$comcode6
-    print(paste("6:",comcode_6_selection))
-
-    # Update Comcodes
-    if (comcode_6_selection == "All"){
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:", multiple = TRUE,
-                        choices=c("All", comcode_8$commoditycode))
-    } else {
-      updateSelectInput(session,"comcode8", "8-digit Commodity Code:", multiple = TRUE,
-                        choices=c("All", comcode_8[comcode_8$parent %in% comcode_6_selection,"commoditycode"]))
-    }
-  })
-
+  
+  # observe({
+  #   comcode_4_selection <- input$comcode4
+  #   print(paste("4:",comcode_4_selection))
+  # 
+  #   # Update Comcodes
+  #   if (comcode_4_selection == "All"){
+  #     updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+  #                       choices=c("All", comcode_6$commoditycode ))
+  #     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+  #                       choices=c("All", comcode_8$commoditycode))
+  #   } else {
+  #     updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+  #                       choices=c("All", comcode_6[comcode_6$parent %in% comcode_4_selection,"commoditycode"]))
+  #     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+  #                       choices=c("All", comcode_8[comcode_8$parent %in% comcode_4_selection,"commoditycode"]))
+  #   }
+  # })
+  # 
+  # observe({
+  #   comcode_6_selection <- input$comcode6
+  #   print(paste("6:",comcode_6_selection))
+  # 
+  #   # Update Comcodes
+  #   if (comcode_6_selection == "All"){
+  #     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+  #                       choices=c("All", comcode_8$commoditycode))
+  #   } else {
+  #     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+  #                       choices=c("All", comcode_8[comcode_8$parent %in% comcode_6_selection,"commoditycode"]))
+  #   }
+  # })
+  # 
   observeEvent(input$queryButton,{
     input$queryButton
     
