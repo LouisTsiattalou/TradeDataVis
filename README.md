@@ -53,6 +53,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 
 ### TODO
 * Improve query speed on the tool.
+* Change Map to leaflet.js.
 * Enable Date Range selection.
 * Create a test to prevent errors if no data returned by postgres!
 * Add tabs for Commodity Code Lookup, and EU/NonEU trade information.

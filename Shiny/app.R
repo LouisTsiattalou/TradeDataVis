@@ -61,7 +61,7 @@ comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,]
 comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 
 # Create month list
-syrs <- as.character(sprintf("%02d",c(09:30)))
+syrs <- as.character(sprintf("%02d",c(09:50)))
 smths <- as.character(sprintf("%02d",c(1:12)))
 dates <- character(0)
 for (i in syrs){
@@ -90,14 +90,16 @@ tags$head(tags$style(HTML("
                             }
                             "))),
   # Give the page a title
-  titlePanel("UK Non-EU Exports flow diagram"),
+  titlePanel("UK Non-EU Imports"),
   
   # Generate a row with a sidebar
   sidebarLayout(      
     
     # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
     sidebarPanel(
-      selectizeInput("dateselect", "Period:",
+      selectizeInput("datestart", "Period Start:",
+                     choices=dates),
+      selectizeInput("dateend", "Period End:",
                      choices=dates),
       selectizeInput("comcode2", "2-digit Commodity Code:",
                   selected = "01",
@@ -232,20 +234,23 @@ server <- function(input, output, session) {
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
       #browser()
       
+      # Obtain date range
+      daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
+      
       portsumquery = paste("SELECT country_alpha_coo_imp,comcode,sum(value) FROM imports ",
                            "WHERE (comcode SIMILAR TO '(",
                            paste(comcodequery,collapse = "|"),
-                           ")') AND (account_date = '",
-                           input$dateselect,
-                           "') GROUP BY comcode,country_alpha_coo_imp",
+                           ")') AND (account_date IN ('",
+                           paste(daterangequery, collapse = "', '"),
+                           "')) GROUP BY comcode,country_alpha_coo_imp",
                            sep = "")
       
       countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
                               "WHERE (comcode SIMILAR TO '(",
                               paste(comcodequery,collapse = "|"),
-                              ")') AND (account_date = '",
-                              input$dateselect,
-                              "') GROUP BY comcode,port_alpha",
+                              ")') AND (account_date IN ('",
+                              paste(daterangequery, collapse = "', '"),
+                              "')) GROUP BY comcode,port_alpha",
                               sep = "")
       
       # Query data
