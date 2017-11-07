@@ -27,9 +27,12 @@ library("RPostgreSQL")
 if(require("networkD3") == FALSE) {install.packages("networkD3")}
 library("networkD3")
 
+if(require("maptools") == FALSE) {install.packages("maptools")}
 library("maptools")
+
+if(require("maps") == FALSE) {install.packages("maps")}
 library("maps")
-library("ggmap")
+#library("ggmap")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -245,20 +248,25 @@ server <- function(input, output, session) {
                               "') GROUP BY comcode,port_alpha",
                               sep = "")
       
-      # Create Links + Nodes DF
+      # Query data
       progress$set(detail = "Querying Country -> Comcode data")
       portsum = dbGetQuery(tradedata, portsumquery)
       
       progress$set(detail = "Querying Comcode -> Port data")
       countrysum = dbGetQuery(tradedata, countrysumquery)
       
+      # Clean and Shape
       progress$set(detail = "Clean + Shape Data")
       colnames(portsum) = c("source","target","value")
       colnames(countrysum) = c("source","target","value")
+      portsum$source[is.na(portsum$source)] <- "Unknown"
+      countrysum$target[is.na(countrysum$target)] <- "Unknown"
+      
+      # Create Links & Nodes dataframe.
       links = rbind(portsum,countrysum)
       nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
-      nodes[is.na(nodes)] <- ""
       colnames(nodes) = "name"
+      
       
       # SANKEY SPECIFIC -------------------------------------------------------
       
@@ -290,7 +298,7 @@ server <- function(input, output, session) {
       mapWorld <- map_data("world")
       
       # Get map_data World names from iso codes using iso.expand
-      portsum_countries <- iso.expand(unique(portsum$source[is.na(portsum$source) == FALSE]))
+      portsum_countries <- iso.expand(unique(portsum$source[portsum$source != "Unknown"]))
       
       # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
       if ("XS" %in% unique(portsum$source)) {portsum_countries = c(portsum_countries, "Serbia")}
@@ -299,7 +307,7 @@ server <- function(input, output, session) {
       portsum_countries[portsum_countries$name == "Serbia","code"] = "XS"
       
       # Aggregate by country
-      portsum_countrytotal <- portsum[is.na(portsum$source) == FALSE,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
+      portsum_countrytotal <- portsum[,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
       # Match plot-compatible names to iso codes
       portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("source" = "code"))
       # Join values to mapWorld for plotting
