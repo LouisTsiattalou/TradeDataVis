@@ -32,6 +32,10 @@ library("maptools")
 
 if(require("maps") == FALSE) {install.packages("maps")}
 library("maps")
+
+if(require("DT") == FALSE) {install.packages("DT")}
+library("DT")
+
 #library("ggmap")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
@@ -45,6 +49,10 @@ tradedata = dbConnect(pg, user="postgres", password="postgres",
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
+
+### Factor enables multiple search terms in comcode lookup tab
+comcodelookup <- tibble(as.factor(comcode$commoditycode),comcode$description)
+
 desclookup <- c(portcode$portname,countrycode$countryname)
 names(desclookup) <- c(portcode$portcode,countrycode$countrycode)
 desclookup <- data.frame(keyName=names(desclookup), value=desclookup, row.names=NULL, stringsAsFactors = FALSE)
@@ -70,64 +78,76 @@ for (i in syrs){
   }
 }
 
-# UI =========================================================================
+# UI ==========================================================================
 
-# Use a fluid Bootstrap layout
-ui <- fluidPage(    
-# Head Styles  
-tags$head(tags$style(HTML("
-    .progress-striped .bar {
-                            background-color: #149bdf;
-                            background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.6)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.6)), color-stop(0.75, rgba(255, 255, 255, 0.6)), color-stop(0.75, transparent), to(transparent));
-                            background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
-                            background-image: -moz-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
-                            background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
-                            background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
-                            -webkit-background-size: 40px 40px;
-                            -moz-background-size: 40px 40px;
-                            -o-background-size: 40px 40px;
-                            background-size: 40px 40px;
-                            }
-                            "))),
-  # Give the page a title
-  titlePanel("UK Non-EU Imports"),
+ui <- navbarPage(
+  title = "UK Trade Data Visualisation",
   
-  # Generate a row with a sidebar
-  sidebarLayout(      
+  # COMMODITY CODE LOOKUP -----------------------------------------------------
+  
+  tabPanel("Commodity Code Lookup",
+           # Centered search bar - tabulated results below
+           # textInput("ComcodeSearch",
+           #           placeholder = "Please enter a Commodity Code or Description term:")
+           dataTableOutput("ComcodeLookup")
+           ),
+  
+  # NON-EU IMPORTS ------------------------------------------------------------
+  
+  tabPanel("Non-EU Imports",
+    # Head Styles  
+    tags$head(tags$style(HTML("
+      .progress-striped .bar {
+                              background-color: #149bdf;
+                              background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.6)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.6)), color-stop(0.75, rgba(255, 255, 255, 0.6)), color-stop(0.75, transparent), to(transparent));
+                              background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                              background-image: -moz-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                              background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                              background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.6) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 75%, transparent 75%, transparent);
+                              -webkit-background-size: 40px 40px;
+                              -moz-background-size: 40px 40px;
+                              -o-background-size: 40px 40px;
+                              background-size: 40px 40px;
+                              }
+                              "))),
     
-    # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
-    sidebarPanel(
-      selectizeInput("datestart", "Period Start:",
-                     choices=dates),
-      selectizeInput("dateend", "Period End:",
-                     choices=dates),
-      selectizeInput("comcode2", "2-digit Commodity Code:",
-                  selected = "01",
-                  choices=c(comcode_2$commoditycode),
-                  options = list(maxItems = 5)),
-      selectizeInput("comcode4", "4-digit Commodity Code:",
-                  selected = "All",
-                  choices=c("All", comcode_4$commoditycode),
-                  options = list(maxItems = 5)),
-      selectizeInput("comcode6", "6-digit Commodity Code:",
-                  selected = "All",
-                  choices=c("All", comcode_6$commoditycode),
-                  options = list(maxItems = 5)),
-      selectizeInput("comcode8", "8-digit Commodity Code:",
-                  selected = "All",
-                  choices=c("All", comcode_8$commoditycode),
-                  options = list(maxItems = 5)),
-      actionButton("queryButton", "Run Query"),
-      hr(),
-      helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
-      width = 3
-    ),
-    
-    # Create a spot for the sankey diagram
-    mainPanel(
-      tabsetPanel(
-        tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
-        tabPanel("MAP", plotOutput(outputId = "worldMap"))
+    # Generate a row with a sidebar
+    sidebarLayout(      
+      
+      # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
+      sidebarPanel(
+        selectizeInput("datestart", "Period Start:",
+                       choices=dates),
+        selectizeInput("dateend", "Period End:",
+                       choices=dates),
+        selectizeInput("comcode2", "2-digit Commodity Code:",
+                    selected = "01",
+                    choices=c(comcode_2$commoditycode),
+                    options = list(maxItems = 5)),
+        selectizeInput("comcode4", "4-digit Commodity Code:",
+                    selected = "All",
+                    choices=c("All", comcode_4$commoditycode),
+                    options = list(maxItems = 5)),
+        selectizeInput("comcode6", "6-digit Commodity Code:",
+                    selected = "All",
+                    choices=c("All", comcode_6$commoditycode),
+                    options = list(maxItems = 5)),
+        selectizeInput("comcode8", "8-digit Commodity Code:",
+                    selected = "All",
+                    choices=c("All", comcode_8$commoditycode),
+                    options = list(maxItems = 5)),
+        actionButton("queryButton", "Run Query"),
+        hr(),
+        helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
+        width = 3
+      ),
+      
+      # Create a spot for the sankey diagram
+      mainPanel(
+        tabsetPanel(
+          tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
+          tabPanel("MAP", plotOutput(outputId = "worldMap"))
+        )
       )
     )
   )
@@ -140,6 +160,18 @@ server <- function(input, output, session) {
   
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
+  
+  # SERVER SIDE COMMODITY CODE LOOKUP
+  output$ComcodeLookup = renderDataTable(comcodelookup,
+                                   filter = "top",
+                                   rownames = FALSE,
+                                   colnames = c("Commodity Code", "Description"),
+                                   options = list(
+                                     dom = "t", # disable search bar at top
+                                     pageLength = 25, # set number of elements on page
+                                     columnDefs = list(list(width = "150px", targets = 0))
+                                     )
+                                  )
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   
@@ -264,8 +296,8 @@ server <- function(input, output, session) {
       progress$set(detail = "Clean + Shape Data")
       colnames(portsum) = c("source","target","value")
       colnames(countrysum) = c("source","target","value")
-      portsum$source[is.na(portsum$source)] <- "Unknown"
-      countrysum$target[is.na(countrysum$target)] <- "Unknown"
+      portsum$source[is.na(portsum$source)] <- "Unknown Country" # blank country = <NA>
+      countrysum$target[countrysum$target == ""] <- "Unknown Port" # blank port = ""
       
       # Create Links & Nodes dataframe.
       links = rbind(portsum,countrysum)
@@ -303,7 +335,7 @@ server <- function(input, output, session) {
       mapWorld <- map_data("world")
       
       # Get map_data World names from iso codes using iso.expand
-      portsum_countries <- iso.expand(unique(portsum$source[portsum$source != "Unknown"]))
+      portsum_countries <- iso.expand(unique(portsum$source[portsum$source != "Unknown Country"]))
       
       # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
       if ("XS" %in% unique(portsum$source)) {portsum_countries = c(portsum_countries, "Serbia")}

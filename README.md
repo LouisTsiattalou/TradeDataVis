@@ -54,7 +54,6 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### TODO
 * Improve query speed on the tool.
 * Change Map to leaflet.js.
-* Enable Date Range selection.
 * Create a test to prevent errors if no data returned by postgres!
 * Add tabs for Commodity Code Lookup, and EU/NonEU trade information.
 * Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010)
@@ -65,7 +64,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   * Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
 * Additional Functionality:
   * A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
-  * Ability to export the data driving the visualisations to .csv for download.
+  * Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
 * Backend Functionality:
   * Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
   * Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
