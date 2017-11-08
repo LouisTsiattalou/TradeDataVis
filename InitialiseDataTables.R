@@ -86,6 +86,8 @@ dbSendQuery(tradedata, "alter table dispatches alter column smk_no_of_consignmen
 dbSendQuery(tradedata, "alter table dispatches alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
 dbSendQuery(tradedata, "alter table dispatches alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
 dbSendQuery(tradedata, "alter table dispatches alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
+#dbSendQuery(tradedata, "create index idx_comcode on dispatches (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+#dbSendQuery(tradedata, "create index idx_period on dispatches (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
 
 dbWriteTable(tradedata,'arrivals', arrivals, row.names=FALSE)
 dbSendQuery(tradedata, "delete from arrivals")
@@ -93,18 +95,27 @@ dbSendQuery(tradedata, "alter table arrivals alter column smk_no_of_consignments
 dbSendQuery(tradedata, "alter table arrivals alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
 dbSendQuery(tradedata, "alter table arrivals alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
 dbSendQuery(tradedata, "alter table arrivals alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
+#dbSendQuery(tradedata, "create index idx_comcode on arrivals (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+#dbSendQuery(tradedata, "create index idx_period on arrivals (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+
 
 dbWriteTable(tradedata,'exports', exports, row.names=FALSE)
 dbSendQuery(tradedata, "delete from exports")
 dbSendQuery(tradedata, "alter table exports alter column value type bigint using (value::bigint)")
 dbSendQuery(tradedata, "alter table exports alter column quantity_1 type bigint using (quantity_1::bigint)")
 dbSendQuery(tradedata, "alter table exports alter column quantity_2 type bigint using (quantity_2::bigint)")
+#dbSendQuery(tradedata, "create index idx_comcode on exports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
+#dbSendQuery(tradedata, "create index idx_period on exports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
+
 
 dbWriteTable(tradedata, 'imports', imports, row.names=FALSE)
 dbSendQuery(tradedata, "delete from imports")
 dbSendQuery(tradedata, "alter table imports alter column value type bigint using (value::bigint)")
 dbSendQuery(tradedata, "alter table imports alter column quantity_1 type bigint using (quantity_1::bigint)")
 dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint using (quantity_2::bigint)")
+dbSendQuery(tradedata, "create index idx_comcode on imports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
+dbSendQuery(tradedata, "create index idx_period on imports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
+
 
 dbWriteTable(tradedata, 'control', control, row.names=FALSE)
 dbSendQuery(tradedata, "delete from control")

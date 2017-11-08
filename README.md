@@ -28,7 +28,7 @@ This code creates a dataframe containing correct codes and cleaned importers/exp
 ### Data Loading
 
 #### InitialiseDataTables.R
-A PostgreSQL database must be defined prior to running this script. It loads the unzipped files from the working directory used in `DownloadData.R` into a PostgreSQL database defined in the script. Note that the tables need not be defined before the running of this script, the postgres database just needs to be defined and the correct details entered. Four tables are entered: `control` for SMKA Commodity Codes; `dispatches` and `arrivals` for EU exports/imports, and `imports` and `exports` for non EU trade.
+A PostgreSQL database must be defined prior to running this script. It loads the unzipped files from the working directory used in `DownloadData.R` into a PostgreSQL database defined in the script. Note that the tables need not be defined before the running of this script, the postgres database just needs to be defined and the correct details entered. Four tables are entered: `control` for SMKA Commodity Codes; `dispatches` and `arrivals` for EU exports/imports, and `imports` and `exports` for non EU trade. Note that it also includes index definitions for PostgreSQL tables - so querying in the app is faster.
 
 #### InitialiseMetadataTables.R
 This script automatically grabs the latest Port and Country codes from [UKTradeInfo](https://uktradeinfo.com), and the latest Commodity Nomenclature list from [Eurostat](http://ec.europa.eu/eurostat/). The reason this can't be sourced from UKTradeInfo is explained in the remaining paragraphs of this section. It takes these files, cleans the data and adds new fields where necessary and puts them into the `port`, `country` and `comcode` tables in PostgreSQL. These are loaded right at the very start of the Shiny App, and are used throughout the UI.
@@ -52,7 +52,8 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 
 
 ### TODO
-- [ ] Improve query speed on the tool.
+- [x] Improve query speed on the tool.
+  - [ ] Test index-only scan definitions in Initialise\_Data\_Tables.R
 - [ ] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
 - [ ] Create a test to prevent errors if no data returned by postgres!
@@ -60,7 +61,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 - [x] Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010).
   - [x] Enable multi-comcode selection using SelectizeInput.
 - [ ] Within the data tabs, we need:
-  - [ ] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments, and Price per Kilo (£/KG). Rendered large.
+  - [ ] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
   - [ ] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
   - [ ] A time-series chart, with selectors on Commodity Code/Country/Port
   - [ ] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
@@ -69,6 +70,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   - [ ] Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
 - [ ] Backend Functionality:
   - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
+	- [ ] Include VACUUM PostgreSQL statement to improve performance
   - [ ] Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
 
 

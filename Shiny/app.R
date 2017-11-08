@@ -36,7 +36,7 @@ library("maps")
 if(require("DT") == FALSE) {install.packages("DT")}
 library("DT")
 
-#library("ggmap")
+library("ggmap")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -269,12 +269,12 @@ server <- function(input, output, session) {
       # Obtain date range
       daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
       
-      portsumquery = paste("SELECT country_alpha_coo_imp,comcode,sum(value) FROM imports ",
+      portsumquery = paste("SELECT cod_alpha,comcode,sum(value) FROM imports ",
                            "WHERE (comcode SIMILAR TO '(",
                            paste(comcodequery,collapse = "|"),
                            ")') AND (account_date IN ('",
                            paste(daterangequery, collapse = "', '"),
-                           "')) GROUP BY comcode,country_alpha_coo_imp",
+                           "')) GROUP BY comcode,cod_alpha",
                            sep = "")
       
       countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
