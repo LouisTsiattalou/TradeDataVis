@@ -52,22 +52,24 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 
 
 ### TODO
-* Improve query speed on the tool.
-* Change Map to leaflet.js.
-* Create a test to prevent errors if no data returned by postgres!
-* Add tabs for Commodity Code Lookup, and EU/NonEU trade information.
-* Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010)
-* Within the data tabs, we need:
-  * A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments, and Price per Kilo (£/KG). Rendered large.
-  * A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
-  * A time-series chart, with selectors on Commodity Code/Country/Port
-  * Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
-* Additional Functionality:
-  * A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
-  * Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
-* Backend Functionality:
-  * Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
-  * Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
+- [ ] Improve query speed on the tool.
+- [ ] Change Map to leaflet.js.
+- [x] Enable multi-comcode selection on data tab.
+- [ ] Create a test to prevent errors if no data returned by postgres!
+- [ ] Add all tabs for EU/NonEU trade information.
+- [x] Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010).
+  - [x] Enable multi-comcode selection using SelectizeInput.
+- [ ] Within the data tabs, we need:
+  - [ ] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments, and Price per Kilo (£/KG). Rendered large.
+  - [ ] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
+  - [ ] A time-series chart, with selectors on Commodity Code/Country/Port
+  - [ ] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
+- [ ] Additional Functionality:
+  - [ ] A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
+  - [ ] Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
+- [ ] Backend Functionality:
+  - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
+  - [ ] Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
 
 
 ## Complexities
@@ -81,7 +83,7 @@ Commodity Codes Control Files (SMKA_) contain some serious complexities. They ar
 
 
 ## ToDo
-* Adapt `DownloadData.R` and `InitialiseDataTables.R` to include importers/exporters data if necessary.
-* Fully update the readme with POC documentation for shiny app.
-* Develop shiny app from POC to alpha tool based on tasklist from imports team requirements meeting.
-* Research tools to run on cloud.
+- [ ] Adapt `DownloadData.R` and `InitialiseDataTables.R` to include importers/exporters data if necessary.
+- [ ] Fully update the readme with POC documentation for shiny app.
+- [ ] Develop shiny app from POC to alpha tool based on tasklist from imports team requirements meeting.
+- [ ] Research tools to run on cloud.
