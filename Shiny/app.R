@@ -86,9 +86,8 @@ ui <- navbarPage(
   # COMMODITY CODE LOOKUP -----------------------------------------------------
   
   tabPanel("Commodity Code Lookup",
-           # Centered search bar - tabulated results below
-           # textInput("ComcodeSearch",
-           #           placeholder = "Please enter a Commodity Code or Description term:")
+           tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
+           hr(),
            dataTableOutput("ComcodeLookup")
            ),
   
@@ -167,7 +166,7 @@ server <- function(input, output, session) {
                                    rownames = FALSE,
                                    colnames = c("Commodity Code", "Description"),
                                    options = list(
-                                     dom = "t", # disable search bar at top
+                                   #  dom = "t", # disable search bar at top
                                      pageLength = 25, # set number of elements on page
                                      columnDefs = list(list(width = "150px", targets = 0))
                                      )
@@ -330,8 +329,6 @@ server <- function(input, output, session) {
       
       # WORLDMAP SPECIFIC -----------------------------------------------------
       
-      browser()
-      
       mapWorld <- map_data("world")
       
       # Get map_data World names from iso codes using iso.expand
@@ -360,8 +357,7 @@ server <- function(input, output, session) {
     sankeyData$links <- links
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
-  
-    browser()
+
   })
   
   

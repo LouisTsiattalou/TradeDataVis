@@ -54,6 +54,10 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### TODO
 - [x] Improve query speed on the tool.
   - [ ] Test index-only scan definitions in Initialise\_Data\_Tables.R
+	- [ ] Imports
+	- [ ] Exports
+	- [ ] Arrivals
+	- [ ] Dispatches
 - [ ] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
 - [ ] Create a test to prevent errors if no data returned by postgres!
