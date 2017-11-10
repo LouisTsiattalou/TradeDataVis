@@ -69,6 +69,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   - [ ] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
   - [ ] A time-series chart, with selectors on Commodity Code/Country/Port
   - [ ] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
+  - [ ] A CSS theme from bootswatch.com.
 - [ ] Additional Functionality:
   - [ ] A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
   - [ ] Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).

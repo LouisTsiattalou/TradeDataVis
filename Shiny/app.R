@@ -51,7 +51,7 @@ comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
 
 ### Factor enables multiple search terms in comcode lookup tab
-comcodelookup <- tibble(as.factor(comcode$commoditycode),comcode$description)
+comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
 
 desclookup <- c(portcode$portname,countrycode$countryname)
 names(desclookup) <- c(portcode$portcode,countrycode$countrycode)
@@ -111,14 +111,16 @@ ui <- navbarPage(
                               "))),
     
     # Generate a row with a sidebar
-    sidebarLayout(      
-      
-      # Define the sidebar with four cascading inputs - don't allow "All" on 2-digit comcode
-      sidebarPanel(
+    fluidRow(      
+    
+    # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
+      column(3,
         selectizeInput("datestart", "Period Start:",
-                       choices=dates),
+                     choices=dates),
         selectizeInput("dateend", "Period End:",
-                       choices=dates),
+                       choices=dates)
+        ),
+      column(3,
         selectizeInput("comcode2", "2-digit Commodity Code:",
                     selected = "01",
                     choices=c(comcode_2$commoditycode),
@@ -126,7 +128,9 @@ ui <- navbarPage(
         selectizeInput("comcode4", "4-digit Commodity Code:",
                     selected = "All",
                     choices=c("All", comcode_4$commoditycode),
-                    options = list(maxItems = 5)),
+                    options = list(maxItems = 5))
+      ),
+      column(3,
         selectizeInput("comcode6", "6-digit Commodity Code:",
                     selected = "All",
                     choices=c("All", comcode_6$commoditycode),
@@ -134,15 +138,25 @@ ui <- navbarPage(
         selectizeInput("comcode8", "8-digit Commodity Code:",
                     selected = "All",
                     choices=c("All", comcode_8$commoditycode),
-                    options = list(maxItems = 5)),
+                    options = list(maxItems = 5))
+      ),
+      column(3,
         actionButton("queryButton", "Run Query"),
         hr(),
-        helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source")),
-        width = 3
-      ),
-      
-      # Create a spot for the sankey diagram
-      mainPanel(
+        helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
+      )
+    ),
+    
+    # Create comcode legend
+    fluidRow(
+      column(12,
+        dataTableOutput("ComcodeLegend")
+      )
+    ),
+    
+    # Create a spot for the plots
+    fluidRow(
+      column(12,
         tabsetPanel(
           tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
           tabPanel("MAP", plotOutput(outputId = "worldMap"))
@@ -157,6 +171,7 @@ ui <- navbarPage(
 
 server <- function(input, output, session) {
   
+  comcodeLegendData <- reactiveValues(comcodelegend = NULL)
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
   
@@ -304,6 +319,13 @@ server <- function(input, output, session) {
       colnames(nodes) = "name"
       
       
+      # COMCODE LEGEND SPECIFIC -----------------------------------------------
+      
+      # Create df - list of commodity codes displayed. Match description to second col
+      comcodelegend <- tibble(commoditycode = unique(portsum$target))
+      comcodelegend <- left_join(comcodelegend,comcodelookup,by = "commoditycode")
+      
+      
       # SANKEY SPECIFIC -------------------------------------------------------
       
       # Replace links source, target columns with IDs specified in nodes.
@@ -354,14 +376,29 @@ server <- function(input, output, session) {
     })
 
   # Now modify reactive variables with output from isolate() to trigger plot renders.
+    comcodeLegendData$comcodelegend <- comcodelegend
     sankeyData$links <- links
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
 
   })
   
+  # Fill in the comcode legend ================================================
   
-  # Fill in the sankey diagram ================================================   
+  output$ComcodeLegend = renderDataTable({
+    if (input$queryButton == 0) return()
+    
+    datatable(comcodeLegendData$comcodelegend,
+              rownames = FALSE,
+              colnames = c("Commodity Code", "Description"),
+              options = list(
+                dom = "t", # disable search bar at top
+                pageLength = 5, # set number of elements on page
+                columnDefs = list(list(width = "150px", targets = 0)))
+    )}
+  )
+  
+  # Fill in the plots =========================================================   
   output$sankeyTrade <- renderSankeyNetwork({
   
   # Suppress output if nothing has been selected yet
