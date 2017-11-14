@@ -4,13 +4,6 @@
 # Written by Louis Tsiattalou for TradeDataVis project.
 # Github: https://github.com/LouisTsiattalou/TradeDataVis
 
-# TODO
-# Add selectors for dates
-# Add selectors for port/country of origin?
-# Add WHERE into portsumquery and countrysumquery for port/country of origin
-# LEFT JOINs into portsumquery/countrysumquery for port/country abbreviations?
-# Test SQL speed vs R speed
-
 # SCRIPT START ###############################################################
 
 # Load Packages --------------------------------------------------------------
@@ -146,9 +139,9 @@ ui <- navbarPage(
                     options = list(maxItems = 5))
       ),
       column(3,
-        actionButton("queryButton", "Run Query"),
-        hr(),
-        helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
+        radioButtons("impexpSelect", label = NULL,
+                     choices = c("Imports","Exports")),
+        actionButton("queryButton", "Run Query")
       ),
       hr()
     ),
@@ -285,12 +278,22 @@ server <- function(input, output, session) {
       # together and taking the last 8 characters works quickly, easily and cleanly.
       comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query, sep = "")
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
-      #browser()
       
       # Obtain date range
       daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
       
-      portsumquery = paste("SELECT cod_alpha,comcode,sum(value) FROM imports ",
+      # First line of query dependent on Import or Export - parametrize to select*sumquery vars.
+      
+      if (input$impexpSelect == "Imports"){
+        selectportsumquery <- "SELECT cod_alpha,comcode,sum(value) FROM imports "
+        selectcountrysumquery <- "SELECT comcode,port_alpha,sum(value) FROM imports "
+      }
+      else if (input$impexpSelect == "Exports"){
+        selectportsumquery <- "SELECT comcode,cod_alpha,sum(value) FROM exports "
+        selectcountrysumquery <- "SELECT port_alpha,comcode,sum(value) FROM exports "
+      }
+      
+      portsumquery = paste(selectportsumquery,
                            "WHERE (comcode SIMILAR TO '(",
                            paste(comcodequery,collapse = "|"),
                            ")') AND (account_date IN ('",
@@ -298,7 +301,7 @@ server <- function(input, output, session) {
                            "')) GROUP BY comcode,cod_alpha",
                            sep = "")
       
-      countrysumquery = paste("SELECT comcode,port_alpha,sum(value) FROM imports ",
+      countrysumquery = paste(selectcountrysumquery,
                               "WHERE (comcode SIMILAR TO '(",
                               paste(comcodequery,collapse = "|"),
                               ")') AND (account_date IN ('",
@@ -313,24 +316,37 @@ server <- function(input, output, session) {
       progress$set(detail = "Querying Comcode -> Port data")
       countrysum = dbGetQuery(tradedata, countrysumquery)
       
-      # Clean and Shape
+      # Clean and Shape Data
       progress$set(detail = "Clean + Shape Data")
-      colnames(portsum) = c("source","target","value")
-      colnames(countrysum) = c("source","target","value")
-      portsum$source[is.na(portsum$source)] <- "Unknown Country" # blank country = <NA>
-      countrysum$target[countrysum$target == ""] <- "Unknown Port" # blank port = ""
       
-      # Create Links & Nodes dataframe.
-      links = rbind(portsum,countrysum)
-      nodes = data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
+      if (input$impexpSelect == "Imports") {
+        colnames(portsum) = c("country","comcode","value")
+        colnames(countrysum) = c("comcode","port","value")
+      } else if (input$impexpSelect == "Exports") {
+        colnames(portsum) = c("comcode","country","value")
+        colnames(countrysum) = c("port","comcode","value")
+      }
+      
+      portsum$country[is.na(portsum$country)] <- "Unknown Country" # blank country = <NA>
+      countrysum$port[countrysum$port == ""] <- "Unknown Port" # blank port = ""
+      
+      # Create Links & Nodes dataframe. ---------------------------------------
+      
+      link_portsum <- portsum
+      colnames(link_portsum) <- c("source","target","value")
+      link_countrysum <- countrysum
+      colnames(link_countrysum) <- c("source","target","value")
+      
+      links <- bind_rows(link_portsum,link_countrysum)
+      nodes <- data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
       colnames(nodes) = "name"
       
       
       # COMCODE LEGEND SPECIFIC -----------------------------------------------
       
       # Create df - list of commodity codes displayed. Match description to second col
-      comcodelegend <- tibble(commoditycode = unique(portsum$target))
-      comcodelegend <- left_join(comcodelegend,comcodelookup,by = "commoditycode")
+      comcodelegend <- tibble(commoditycode = unique(portsum$comcode))
+      comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode")
       
       
       # SANKEY SPECIFIC -------------------------------------------------------
@@ -360,25 +376,27 @@ server <- function(input, output, session) {
       
       mapWorld <- map_data("world")
       
+      #browser()
+      
       # Get map_data World names from iso codes using iso.expand
-      portsum_countries <- iso.expand(unique(portsum$source[portsum$source != "Unknown Country"]))
+      portsum_countries <- iso.expand(unique(portsum$country[portsum$country != "Unknown Country"]))
       
       # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
-      if ("XS" %in% unique(portsum$source)) {portsum_countries = c(portsum_countries, "Serbia")}
+      if ("XS" %in% unique(portsum$country)) {portsum_countries = c(portsum_countries, "Serbia")}
       portsum_countries <- tibble(portsum_countries, iso.alpha(portsum_countries))
       colnames(portsum_countries) <- c("name","code")
       portsum_countries[portsum_countries$name == "Serbia","code"] = "XS"
       
       # Aggregate by country
-      portsum_countrytotal <- portsum[,c("source","value")] %>% group_by(source) %>% summarise(value = sum(value))
+      portsum_countrytotal <- portsum[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
       # Match plot-compatible names to iso codes
-      portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("source" = "code"))
+      portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("country" = "code"))
       # Join values to mapWorld for plotting
-      portsum_countrytotal <- tibble(portsum_countrytotal$name,portsum_countrytotal$value)
-      colnames(portsum_countrytotal) <- c("region","value")
-      mapWorld <- left_join(mapWorld,portsum_countrytotal)
+      portsum_countrytotal <- tibble(country = portsum_countrytotal$name,value = portsum_countrytotal$value)
+      mapWorld <- left_join(mapWorld,portsum_countrytotal, by = c("region" = "country"))
       
-      # If using GGPlot, mapWorld is sufficient. If using Leaflet, need SpatialPolygons object.
+      
+      # If using GGPlot, mapWorld DF is sufficient. If using Leaflet, need SpatialPolygons object.
       
       mapWorld_relevant <- mapWorld[!is.na(mapWorld$value),]
       rownames(mapWorld_relevant) <- NULL
@@ -407,6 +425,8 @@ server <- function(input, output, session) {
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
     mapData$dataPolygons <- dataPolygons
+    
+    browser()
     
   })
   

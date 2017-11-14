@@ -104,8 +104,8 @@ dbSendQuery(tradedata, "delete from exports")
 dbSendQuery(tradedata, "alter table exports alter column value type bigint using (value::bigint)")
 dbSendQuery(tradedata, "alter table exports alter column quantity_1 type bigint using (quantity_1::bigint)")
 dbSendQuery(tradedata, "alter table exports alter column quantity_2 type bigint using (quantity_2::bigint)")
-#dbSendQuery(tradedata, "create index idx_comcode on exports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
-#dbSendQuery(tradedata, "create index idx_period on exports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
+dbSendQuery(tradedata, "create index idx_comcode_export on exports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
+dbSendQuery(tradedata, "create index idx_period_export on exports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
 
 
 dbWriteTable(tradedata, 'imports', imports, row.names=FALSE)
