@@ -54,7 +54,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### TODO
 - [x] Improve query speed on the tool.
   - [ ] Test index-only scan definitions in Initialise\_Data\_Tables.R
-	- [ ] Imports
+	- [x] Imports
 	- [ ] Exports
 	- [ ] Arrivals
 	- [ ] Dispatches
@@ -66,7 +66,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   - [x] Enable multi-comcode selection using SelectizeInput.
 - [ ] Within the data tabs, we need:
   - [ ] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
-  - [ ] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
+  - [x] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
   - [ ] A time-series chart, with selectors on Commodity Code/Country/Port
   - [ ] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
   - [ ] A CSS theme from bootswatch.com.

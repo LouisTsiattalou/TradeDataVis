@@ -13,7 +13,7 @@
 
 # SCRIPT START ###############################################################
 
-# Load Packages
+# Load Packages --------------------------------------------------------------
 
 if(require("shiny") == FALSE) {install.packages("shiny")}
 library("shiny")
@@ -36,7 +36,12 @@ library("maps")
 if(require("DT") == FALSE) {install.packages("DT")}
 library("DT")
 
+if(require("ggmap") == FALSE) {install.packages("ggmap")}
 library("ggmap")
+
+if(require("leaflet") == FALSE) {install.packages("leaflet")}
+library("leaflet")
+
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -144,14 +149,16 @@ ui <- navbarPage(
         actionButton("queryButton", "Run Query"),
         hr(),
         helpText("Data obtained from HMRC's Trade Data - ", tags$a(href="www.uktradeinfo.com", "Source"))
-      )
+      ),
+      hr()
     ),
     
     # Create comcode legend
     fluidRow(
       column(12,
         dataTableOutput("ComcodeLegend")
-      )
+      ),
+      hr()
     ),
     
     # Create a spot for the plots
@@ -159,7 +166,7 @@ ui <- navbarPage(
       column(12,
         tabsetPanel(
           tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
-          tabPanel("MAP", plotOutput(outputId = "worldMap"))
+          tabPanel("MAP", leafletOutput(outputId = "worldMap"))
         )
       )
     )
@@ -371,7 +378,26 @@ server <- function(input, output, session) {
       colnames(portsum_countrytotal) <- c("region","value")
       mapWorld <- left_join(mapWorld,portsum_countrytotal)
       
+      # If using GGPlot, mapWorld is sufficient. If using Leaflet, need SpatialPolygons object.
       
+      mapWorld_relevant <- mapWorld[!is.na(mapWorld$value),]
+      rownames(mapWorld_relevant) <- NULL
+      
+      # turn into SpatialPolygons
+      sp_mapWorld = lapply(unique(mapWorld_relevant$group), function(x) {
+        latlonmatrix = as.matrix(mapWorld_relevant[mapWorld_relevant$group == x, c("long", "lat")])
+        countryPolygons = Polygons(list(Polygon(latlonmatrix)), ID = x)
+        return(countryPolygons)
+        return(latlonmatrix)
+      })
+      
+      dataPolygons = SpatialPolygonsDataFrame(SpatialPolygons(sp_mapWorld),
+                                              distinct(bind_cols(
+                                                region = mapWorld_relevant$region,
+                                                group = mapWorld_relevant$group,
+                                                value = mapWorld_relevant$value)),
+                                              match.ID = FALSE)
+
     # End Isolate
     })
 
@@ -380,7 +406,8 @@ server <- function(input, output, session) {
     sankeyData$links <- links
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
-
+    mapData$dataPolygons <- dataPolygons
+    
   })
   
   # Fill in the comcode legend ================================================
@@ -392,7 +419,7 @@ server <- function(input, output, session) {
               rownames = FALSE,
               colnames = c("Commodity Code", "Description"),
               options = list(
-                dom = "t", # disable search bar at top
+                dom = "tp", # disable search bar at top
                 pageLength = 5, # set number of elements on page
                 columnDefs = list(list(width = "150px", targets = 0)))
     )}
@@ -407,21 +434,45 @@ server <- function(input, output, session) {
     sankeyNetwork(sankeyData$links, sankeyData$nodes,
                   "source", "target", "value", "name",
                   fontSize = 12, nodeWidth = 30)
-    })
-  
-  output$worldMap <- renderPlot({
-    if (input$queryButton == 0) return()
-    
-    worldmapPlot <- ggplot()
-    worldmapPlot <- ggplot(data = mapData$mapWorld, aes(x=long,y=lat,group=group))
-    worldmapPlot <- worldmapPlot + geom_polygon(colour="grey60", fill="grey80")
-    worldmapPlot <- worldmapPlot + geom_polygon(aes(fill=value), colour = "grey60")
-    worldmapPlot <- worldmapPlot + scale_fill_gradient(trans = "log10")
-    worldmapPlot <- worldmapPlot + coord_fixed(1.3)
-    worldmapPlot
   })
   
-  }
+  output$worldMap <- renderLeaflet({
+    if (input$queryButton == 0) return()
+    
+    # worldmapPlot <- ggplot()
+    # worldmapPlot <- ggplot(data = mapData$mapWorld, aes(x=long,y=lat,group=group))
+    # worldmapPlot <- worldmapPlot + geom_polygon(colour="grey60", fill="grey80")
+    # worldmapPlot <- worldmapPlot + geom_polygon(aes(fill=value), colour = "grey60")
+    # worldmapPlot <- worldmapPlot + scale_fill_gradient(trans = "log10")
+    # worldmapPlot <- worldmapPlot + coord_fixed(1.3)
+    # worldmapPlot
+    
+    pal <- colorNumeric(palette = "inferno",
+                        domain = 0:max(mapData$dataPolygons$value),
+                        reverse = TRUE)
+    
+    value_popup <- paste0("<strong>Country: </strong>", 
+                          mapData$dataPolygons$region, 
+                          "<br><strong>Value: </strong>", 
+                          mapData$dataPolygons$value)
+    
+    leaflet(data = mapData$dataPolygons) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(fillColor = ~pal(mapData$dataPolygons$value),
+                  smoothFactor = 0.5,
+                  weight = 1,
+                  color = "#000000",
+                  fillOpacity = 0.7,
+                  popup = value_popup) %>% 
+      addLegend(pal = pal,
+                values = 0:max(mapData$dataPolygons$value), 
+                opacity = 0.7, 
+                title = "Colour Scale",
+                position = "bottomright")
+    
+  })
+  
+} # Close Server Function
 
 
 
