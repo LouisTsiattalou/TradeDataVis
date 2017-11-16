@@ -37,10 +37,11 @@ dbSafeNames = function(names) {
   names
 }
 
-setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
-pg = dbDriver("PostgreSQL")
-tradedata = dbConnect(pg, user="postgres", password="postgres",
-                      host="localhost", port=5432, dbname="tradedata")
+setwd("~/R/ImportTool/")
+pg <- dbDriver("PostgreSQL")
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
+                       host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 
 
 # COMCODE TABLE BUILD =========================================================

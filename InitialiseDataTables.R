@@ -19,6 +19,13 @@
 library('RPostgreSQL')
 library('tidyr')
 
+# Database Driver
+setwd("~/R/ImportTool/")
+pg <- dbDriver("PostgreSQL")
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
+                       host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
+
 setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
 suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
 setwd("datafiles")
@@ -34,9 +41,6 @@ dbSafeNames = function(names) {
   names = gsub('.','_',names, fixed=TRUE)
   names
 }
-
-# database driver
-pg = dbDriver("PostgreSQL")
 
 files <- c("SMKA12", "SMKE19", "SMKI19", "SMKX46", "SMKM46", "SESX16", "SESM16")
 names(files) <- c("control", "exp", "imp", "disp", "arr", "dispest", "arrest")
@@ -75,10 +79,7 @@ control <- control[-length(control$mk_comcode),]
 control$mk_comcode <- substr(control$mk_comcode, 1, 8)
 
 
-# Connect to Database, Create tables =========================================
-
-tradedata = dbConnect(pg, user="postgres", password="postgres",
-                host="localhost", port=5432, dbname="tradedata")
+# Create tables ===============================================================
 
 dbWriteTable(tradedata,'dispatches', dispatches, row.names=FALSE)
 dbSendQuery(tradedata, "delete from dispatches")

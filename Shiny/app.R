@@ -8,8 +8,14 @@
 
 # Load Packages --------------------------------------------------------------
 
+if(require("readr") == FALSE) {install.packages("readr")}
+library("readr")
+
 if(require("shiny") == FALSE) {install.packages("shiny")}
 library("shiny")
+
+if(require("shinyjs") == FALSE) {install.packages("shinyjs")}
+library("shinyjs")
 
 if(require("dplyr") == FALSE) {install.packages("dplyr")}
 library("dplyr")
@@ -39,9 +45,10 @@ library("leaflet")
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
 setwd("~/R/ImportTool/")
-pg = dbDriver("PostgreSQL")
-tradedata = dbConnect(pg, user="postgres", password="postgres",
-                      host="localhost", port=5432, dbname="tradedata")
+pg <- dbDriver("PostgreSQL")
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
+                      host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 
 # Load Metadata
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
@@ -79,6 +86,8 @@ for (i in syrs){
 # UI ==========================================================================
 
 ui <- navbarPage(
+  
+  # Navbar Title
   title = "UK Trade Data Visualisation",
   
   # COMMODITY CODE LOOKUP -----------------------------------------------------
@@ -154,6 +163,17 @@ ui <- navbarPage(
       hr()
     ),
     
+    # Create slider/unit bar
+    fluidRow(
+      column(6,
+        selectizeInput("dateSlider", label = "Select Month",
+                    choices = c("All", dates))
+             ),
+      column(6,
+        radioButtons("unitSelect", label = "Choose Units", inline = TRUE,
+                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo GBP/KG")))
+    ),
+    
     # Create a spot for the plots
     fluidRow(
       column(12,
@@ -163,19 +183,22 @@ ui <- navbarPage(
         )
       )
     )
-  )
+  ),
+  # Enable ShinyJS support for cleaner on-click and disable features.
+  shinyjs::useShinyjs()
 )
 
 
-# SERVER =====================================================================
+# SERVER ======================================================================
 
 server <- function(input, output, session) {
   
+  queryData <- reactiveValues(portsumraw = NULL, countrysumraw = NULL)
   comcodeLegendData <- reactiveValues(comcodelegend = NULL)
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
   
-  # SERVER SIDE COMMODITY CODE LOOKUP
+  # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
   output$ComcodeLookup = renderDataTable(comcodelookup,
                                    filter = "top",
                                    rownames = FALSE,
@@ -186,6 +209,14 @@ server <- function(input, output, session) {
                                      columnDefs = list(list(width = "150px", targets = 0))
                                      )
                                   )
+  
+  # SHINYJS ONCLICK STATEMENTS -----------------------------------------------
+  
+  shinyjs::onclick("comcode2", {updateSelectizeInput(session, "comcode2", selected = "")})
+  shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = "")})
+  shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = "")})
+  shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = "")})
+  shinyjs::onclick("dateSlider", {updateSelectizeInput(session, "dateSlider", selected = "")})
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   
@@ -265,7 +296,7 @@ server <- function(input, output, session) {
     progress$set(message = "Generating Visualisations", value = 1)
     
     
-    # Use comcodes on selectors to build plot
+    # Use selectors information to build plot
     isolate({
       
       # Control handling for comcode selectors
@@ -282,15 +313,20 @@ server <- function(input, output, session) {
       # Obtain date range
       daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
       
+      # Update dateSlider with daterangequery
+      updateSelectizeInput(session,"dateSlider",
+                           selected = "All",
+                           choices=c("All", daterangequery))
+      
       # First line of query dependent on Import or Export - parametrize to select*sumquery vars.
       
       if (input$impexpSelect == "Imports"){
-        selectportsumquery <- "SELECT cod_alpha,comcode,sum(value) FROM imports "
-        selectcountrysumquery <- "SELECT comcode,port_alpha,sum(value) FROM imports "
+        selectportsumquery <- "SELECT coo_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM imports "
+        selectcountrysumquery <- "SELECT comcode,port_alpha,account_date,sum(value),sum(quantity_1) FROM imports "
       }
       else if (input$impexpSelect == "Exports"){
-        selectportsumquery <- "SELECT comcode,cod_alpha,sum(value) FROM exports "
-        selectcountrysumquery <- "SELECT port_alpha,comcode,sum(value) FROM exports "
+        selectportsumquery <- "SELECT comcode,coo_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
+        selectcountrysumquery <- "SELECT port_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM exports "
       }
       
       portsumquery = paste(selectportsumquery,
@@ -298,7 +334,7 @@ server <- function(input, output, session) {
                            paste(comcodequery,collapse = "|"),
                            ")') AND (account_date IN ('",
                            paste(daterangequery, collapse = "', '"),
-                           "')) GROUP BY comcode,cod_alpha",
+                           "')) GROUP BY comcode,coo_alpha,account_date",
                            sep = "")
       
       countrysumquery = paste(selectcountrysumquery,
@@ -306,29 +342,100 @@ server <- function(input, output, session) {
                               paste(comcodequery,collapse = "|"),
                               ")') AND (account_date IN ('",
                               paste(daterangequery, collapse = "', '"),
-                              "')) GROUP BY comcode,port_alpha",
+                              "')) GROUP BY comcode,port_alpha,account_date",
                               sep = "")
       
       # Query data
       progress$set(detail = "Querying Country -> Comcode data")
-      portsum = dbGetQuery(tradedata, portsumquery)
+      portsumraw <- dbGetQuery(tradedata, portsumquery)
       
       progress$set(detail = "Querying Comcode -> Port data")
-      countrysum = dbGetQuery(tradedata, countrysumquery)
-      
-      # Clean and Shape Data
-      progress$set(detail = "Clean + Shape Data")
+      countrysumraw <- dbGetQuery(tradedata, countrysumquery)
       
       if (input$impexpSelect == "Imports") {
-        colnames(portsum) = c("country","comcode","value")
-        colnames(countrysum) = c("comcode","port","value")
+        colnames(portsumraw) = c("country","comcode","month","price", "weight")
+        colnames(countrysumraw) = c("comcode","port","month","price", "weight")
       } else if (input$impexpSelect == "Exports") {
-        colnames(portsum) = c("comcode","country","value")
-        colnames(countrysum) = c("port","comcode","value")
+        colnames(portsumraw) = c("comcode","country","month","price", "weight")
+        colnames(countrysumraw) = c("port","comcode","month","price", "weight")
       }
       
-      portsum$country[is.na(portsum$country)] <- "Unknown Country" # blank country = <NA>
-      countrysum$port[countrysum$port == ""] <- "Unknown Port" # blank port = ""
+      portsumraw$country[is.na(portsumraw$country)] <- "Unknown Country" # blank country = <NA>
+      countrysumraw$port[countrysumraw$port == ""] <- "Unknown Port" # blank port = ""
+      
+      
+      # End Isolate
+      })
+    
+    queryData$portsumraw <- portsumraw
+    queryData$countrysumraw <- countrysumraw
+    
+  })
+  
+  # ||||||||||||
+  # CHAINS WITH
+  # ||||||||||||
+  
+  observe({
+    # Only run after query button is pressed.
+    if (input$queryButton == 0) return()
+    
+    # Dependencies - changes to Date Slider and Unit Selector
+    input$dateSlider
+    input$unitSelect
+    
+    # Prepare portsum and countrysum into appropriate format for rest of app
+    # Based on date and unit, selected from fluidrow beneath comcode legend
+    
+    # Select correct month
+    if (input$dateSlider == "All") {
+      portsum <- queryData$portsumraw %>% select(-month)
+      countrysum <- queryData$countrysumraw %>% select(-month)
+      portsum <- portsum %>% group_by(country,comcode) %>% summarise(price = sum(price), weight = sum(weight))
+      countrysum <- countrysum %>% group_by(comcode,port) %>% summarise(price = sum(price), weight = sum(weight))
+    } else {
+      portsum <- queryData$portsumraw %>% filter(month == input$dateSlider) %>% select(-month)
+      countrysum <- queryData$countrysumraw %>% filter(month == input$dateSlider) %>% select(-month)
+    }
+
+    
+    # Select correct unit
+    if (input$unitSelect == "Value (GBP)"){
+      portsum <- portsum %>% select(-weight)
+      countrysum <- countrysum %>% select(-weight)
+      
+    } else if (input$unitSelect == "Weight (KG)"){
+      portsum <- portsum %>% select(-price)
+      countrysum <- countrysum %>% select(-price)
+      
+    } else if (input$unitSelect == "Price Per Kilo GBP/KG"){
+      portsum$value <- portsum$price / portsum$weight
+      portsum <- portsum %>% select(-c(price,weight))
+      countrysum$value <- countrysum$price / countrysum$weight
+      countrysum <- countrysum %>% select(-c(price,weight))
+    }
+    
+    # At this point there should be two string and one numeric vector in both portsum
+    # and countrysum dataframes. Now rename that numeric vector, which is the unit used,
+    # to value.
+    
+    colnames(portsum)[colnames(portsum) %in% c("price","weight")] <- "value"
+    colnames(countrysum)[colnames(countrysum) %in% c("price","weight")] <- "value"
+    
+    # Ungroup the data frames.
+    portsum <- ungroup(portsum)
+    countrysum <- ungroup(countrysum)
+    
+    # Clean and Shape Data --------------------------------------------------
+    
+    isolate({
+      # Create a Progress object
+      progress <- shiny::Progress$new()
+      # Make sure it closes when we exit this reactive, even if there's an error
+      on.exit(progress$close())
+      progress$set(message = "Generating Visualisations", value = 1)
+      progress$set(detail = "Clean + Shape Data")
+      
       
       # Create Links & Nodes dataframe. ---------------------------------------
       
@@ -361,7 +468,7 @@ server <- function(input, output, session) {
       links$target = vapply(links$target, function(x){
         x = match(x,nodes[,1])-1
       }, double(1))
-    
+      
       # Replace node codes for country and port with full name
       nodes$name = vapply(nodes$name,function(x){
         replacement = desclookup[match(x,desclookup$keyName),"value"]
@@ -415,19 +522,16 @@ server <- function(input, output, session) {
                                                 group = mapWorld_relevant$group,
                                                 value = mapWorld_relevant$value)),
                                               match.ID = FALSE)
-
     # End Isolate
     })
-
-  # Now modify reactive variables with output from isolate() to trigger plot renders.
+    
+    
+    # Now modify reactive variables with output from isolate() to trigger plot renders.
     comcodeLegendData$comcodelegend <- comcodelegend
     sankeyData$links <- links
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
     mapData$dataPolygons <- dataPolygons
-    
-    browser()
-    
   })
   
   # Fill in the comcode legend ================================================
