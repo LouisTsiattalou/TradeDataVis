@@ -3,3 +3,4 @@ zipfiles/
 .RData
 .Rhistory
 dbextract/
+.env

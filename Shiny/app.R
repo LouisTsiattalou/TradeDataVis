@@ -323,10 +323,12 @@ server <- function(input, output, session) {
       if (input$impexpSelect == "Imports"){
         selectportsumquery <- "SELECT coo_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM imports "
         selectcountrysumquery <- "SELECT comcode,port_alpha,account_date,sum(value),sum(quantity_1) FROM imports "
+        groupbyportsumquery <- "')) GROUP BY comcode,coo_alpha,account_date"
       }
       else if (input$impexpSelect == "Exports"){
-        selectportsumquery <- "SELECT comcode,coo_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
+        selectportsumquery <- "SELECT comcode,cod_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
         selectcountrysumquery <- "SELECT port_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM exports "
+        groupbyportsumquery <- "')) GROUP BY comcode,cod_alpha,account_date"
       }
       
       portsumquery = paste(selectportsumquery,
@@ -334,7 +336,7 @@ server <- function(input, output, session) {
                            paste(comcodequery,collapse = "|"),
                            ")') AND (account_date IN ('",
                            paste(daterangequery, collapse = "', '"),
-                           "')) GROUP BY comcode,coo_alpha,account_date",
+                           groupbyportsumquery, # import = coo_alpha, export = cod_alpha!
                            sep = "")
       
       countrysumquery = paste(selectcountrysumquery,
@@ -377,8 +379,10 @@ server <- function(input, output, session) {
   # ||||||||||||
   
   observe({
-    # Only run after query button is pressed.
+    # Only run after query button is pressed and date slider isn't null.
     if (input$queryButton == 0) return()
+    #if (is.null(input$dateSlider)) return()
+    req(input$dateSlider)
     
     # Dependencies - changes to Date Slider and Unit Selector
     input$dateSlider
@@ -391,8 +395,13 @@ server <- function(input, output, session) {
     if (input$dateSlider == "All") {
       portsum <- queryData$portsumraw %>% select(-month)
       countrysum <- queryData$countrysumraw %>% select(-month)
-      portsum <- portsum %>% group_by(country,comcode) %>% summarise(price = sum(price), weight = sum(weight))
-      countrysum <- countrysum %>% group_by(comcode,port) %>% summarise(price = sum(price), weight = sum(weight))
+      if (input$impexpSelect == "Imports") {
+        portsum <- portsum %>% group_by(country,comcode) %>% summarise(price = sum(price), weight = sum(weight))
+        countrysum <- countrysum %>% group_by(comcode,port) %>% summarise(price = sum(price), weight = sum(weight))
+      } else if (input$impexpSelect == "Exports") {
+        portsum <- portsum %>% group_by(comcode,country) %>% summarise(price = sum(price), weight = sum(weight))
+        countrysum <- countrysum %>% group_by(port,comcode) %>% summarise(price = sum(price), weight = sum(weight))
+      }
     } else {
       portsum <- queryData$portsumraw %>% filter(month == input$dateSlider) %>% select(-month)
       countrysum <- queryData$countrysumraw %>% filter(month == input$dateSlider) %>% select(-month)
@@ -532,6 +541,7 @@ server <- function(input, output, session) {
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
     mapData$dataPolygons <- dataPolygons
+    
   })
   
   # Fill in the comcode legend ================================================

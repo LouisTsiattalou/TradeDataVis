@@ -29,6 +29,7 @@ This code creates a dataframe containing correct codes and cleaned importers/exp
 
 #### InitialiseDataTables.R
 A PostgreSQL database must be defined prior to running this script. It loads the unzipped files from the working directory used in `DownloadData.R` into a PostgreSQL database defined in the script. Note that the tables need not be defined before the running of this script, the postgres database just needs to be defined and the correct details entered. Four tables are entered: `control` for SMKA Commodity Codes; `dispatches` and `arrivals` for EU exports/imports, and `imports` and `exports` for non EU trade. Note that it also includes index definitions for PostgreSQL tables - so querying in the app is faster.
+> **Note: You must create a PostgreSQL database, or connect to one you have admin credentials to, to run this script. Otherwise all the database queries in the script will fail. Enter your database information into the .env file in the root of the repository. You will need your USN/PW/Host/Port/DBName.**
 
 #### InitialiseMetadataTables.R
 This script automatically grabs the latest Port and Country codes from [UKTradeInfo](https://uktradeinfo.com), and the latest Commodity Nomenclature list from [Eurostat](http://ec.europa.eu/eurostat/). The reason this can't be sourced from UKTradeInfo is explained in the remaining paragraphs of this section. It takes these files, cleans the data and adds new fields where necessary and puts them into the `port`, `country` and `comcode` tables in PostgreSQL. These are loaded right at the very start of the Shiny App, and are used throughout the UI.
@@ -50,6 +51,8 @@ Working selectors for comcode and date (by individual month), working sankey dia
 Should be using leaflet.js for the map - not a rudimentary ggplot.
 Additionally - selectors at top in a fluidrow. Then have slider across the date range (with an ALL option).
 
+### Complexities
+* Price per KG - It should be noted here that it's impossible to have the same number matching up on either side of the commodity code node on the Sankey Diagram and still have detail from both sides. Price per KG is a relative quantity, not an absolute one. Sankey diagrams are meant to show the flow of an absolute quantity, not a collection of ratios. The map is still valuable in this case. For H1-2009, we can see that Brazil's GBP/KG value is higher than the UAE, despite the magnitude of UAE's total exports to us dwarfing that of Brazil.
 
 ### TODO
 - [x] Improve query speed on the tool.
@@ -58,6 +61,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 	- [x] Exports
 	- [ ] Arrivals
 	- [ ] Dispatches
+- [ ] Get SelectizeInputs in numeric order!
 - [x] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
 - [ ] Create a test to prevent errors if no data returned by postgres!
@@ -66,10 +70,11 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 - [x] Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010).
   - [x] Enable multi-comcode selection using SelectizeInput.
 - [ ] Within the data tabs, we need:
-  - [ ] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
+  - [x] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
   - [x] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
   - [ ] A time-series chart, with selectors on Commodity Code/Country/Port
-  - [ ] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
+  - [x] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
+    - [ ] This is currently implemented as a SelectInput - needs to be modified to be a slider (with great difficulty and lots of JS!)
   - [ ] A CSS theme from bootswatch.com, or shiny theme using the shinythemes R package..
 - [ ] Additional Functionality:
   - [ ] A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
@@ -93,5 +98,5 @@ Commodity Codes Control Files (SMKA_) contain some serious complexities. They ar
 ## ToDo
 - [ ] Adapt `DownloadData.R` and `InitialiseDataTables.R` to include importers/exporters data if necessary.
 - [ ] Fully update the readme with POC documentation for shiny app.
-- [ ] Develop shiny app from POC to alpha tool based on tasklist from imports team requirements meeting.
-- [ ] Research tools to run on cloud.
+- [x] Develop shiny app from POC to alpha tool based on tasklist from imports team requirements meeting.
+- [x] Research tools to run on cloud.
