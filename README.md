@@ -64,7 +64,8 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 - [ ] Get SelectizeInputs in numeric order!
 - [x] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
-- [ ] Create a test to prevent errors if no data returned by postgres!
+- [x] Create a test to prevent errors if no data returned by postgres!
+  - [ ] Get modal dialogs to show on error-data-error use case.
 - [x] Add export support for Non-EU Trade.
 - [ ] Add EU Trade tab.
 - [x] Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes beginning with 010).

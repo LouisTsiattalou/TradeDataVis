@@ -98,9 +98,9 @@ ui <- navbarPage(
            dataTableOutput("ComcodeLookup")
            ),
   
-  # NON-EU IMPORTS ------------------------------------------------------------
+  # NON-EU TRADE --------------------------------------------------------------
   
-  tabPanel("Non-EU Imports",
+  tabPanel("Non-EU Trade",
     # Head Styles  
     tags$head(tags$style(HTML("
       .progress-striped .bar {
@@ -197,6 +197,7 @@ server <- function(input, output, session) {
   comcodeLegendData <- reactiveValues(comcodelegend = NULL)
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
+  nullDataframe <- reactiveValues(nullDataframe = NULL, comcodequery = NULL)
   
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
   output$ComcodeLookup = renderDataTable(comcodelookup,
@@ -299,6 +300,9 @@ server <- function(input, output, session) {
     # Use selectors information to build plot
     isolate({
       
+      # Set nullDataframe flag to FALSE
+      nullDataframe$nullDataframe <- FALSE
+      
       # Control handling for comcode selectors
       comcode2query = input$comcode2
       if ("All" %in% input$comcode4) {comcode4query = "__"} else {comcode4query = input$comcode4}
@@ -354,7 +358,13 @@ server <- function(input, output, session) {
       progress$set(detail = "Querying Comcode -> Port data")
       countrysumraw <- dbGetQuery(tradedata, countrysumquery)
       
-      browser()
+      # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
+      if (sum(dim(portsumraw)) == 0) {
+        # Set nullDataframe flag to TRUE to stop downstream reactivity
+        nullDataframe$nullDataframe <- TRUE
+        nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
+        req(FALSE)
+      }
       
       if (input$impexpSelect == "Imports") {
         colnames(portsumraw) = c("country","comcode","month","price", "weight")
@@ -380,10 +390,30 @@ server <- function(input, output, session) {
   # ||||||||||||
   
   observe({
-    # Only run after query button is pressed and date slider isn't null.
+    # Conditions for observe statement to run
     if (input$queryButton == 0) return()
-    #if (is.null(input$dateSlider)) return()
     req(input$dateSlider)
+    if (nullDataframe$nullDataframe == TRUE) {
+      isolate({
+        showModal(modalDialog(title = "Alert!",
+                              paste0("No ",
+                                     input$impexpSelect,
+                                     " for Date Range ",
+                                     input$datestart, " - ", input$dateend,
+                                     " and Commodity Code(s) ",
+                                     nullDataframe$comcodequery,
+                                     ".")), session)
+        print(paste0("No ",
+                     input$impexpSelect,
+                     " for Date Range ",
+                     input$datestart, " - ", input$dateend,
+                     " and Commodity Code(s) ",
+                     nullDataframe$comcodequery,
+                     "."))
+      })
+      # Break out of reactive chain
+      req(FALSE)
+    }
     
     # Dependencies - changes to Date Slider and Unit Selector
     input$dateSlider
@@ -549,6 +579,7 @@ server <- function(input, output, session) {
   
   output$ComcodeLegend = renderDataTable({
     if (input$queryButton == 0) return()
+    req(!nullDataframe$nullDataframe)
     
     datatable(comcodeLegendData$comcodelegend,
               rownames = FALSE,
@@ -565,7 +596,8 @@ server <- function(input, output, session) {
   
   # Suppress output if nothing has been selected yet
     if (input$queryButton == 0) return()
-
+    req(!nullDataframe$nullDataframe)
+    
     sankeyNetwork(sankeyData$links, sankeyData$nodes,
                   "source", "target", "value", "name",
                   fontSize = 12, nodeWidth = 30)
@@ -573,7 +605,7 @@ server <- function(input, output, session) {
   
   output$worldMap <- renderLeaflet({
     if (input$queryButton == 0) return()
-    
+    req(!nullDataframe$nullDataframe)
     # worldmapPlot <- ggplot()
     # worldmapPlot <- ggplot(data = mapData$mapWorld, aes(x=long,y=lat,group=group))
     # worldmapPlot <- worldmapPlot + geom_polygon(colour="grey60", fill="grey80")
