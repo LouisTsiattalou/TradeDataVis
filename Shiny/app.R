@@ -354,6 +354,8 @@ server <- function(input, output, session) {
       progress$set(detail = "Querying Comcode -> Port data")
       countrysumraw <- dbGetQuery(tradedata, countrysumquery)
       
+      browser()
+      
       if (input$impexpSelect == "Imports") {
         colnames(portsumraw) = c("country","comcode","month","price", "weight")
         colnames(countrysumraw) = c("comcode","port","month","price", "weight")
@@ -364,14 +366,13 @@ server <- function(input, output, session) {
       
       portsumraw$country[is.na(portsumraw$country)] <- "Unknown Country" # blank country = <NA>
       countrysumraw$port[countrysumraw$port == ""] <- "Unknown Port" # blank port = ""
-      
-      
+
       # End Isolate
       })
     
     queryData$portsumraw <- portsumraw
     queryData$countrysumraw <- countrysumraw
-    
+
   })
   
   # ||||||||||||
