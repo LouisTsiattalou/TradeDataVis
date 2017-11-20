@@ -41,6 +41,9 @@ library("ggmap")
 if(require("leaflet") == FALSE) {install.packages("leaflet")}
 library("leaflet")
 
+if(require("scales") == FALSE) {install.packages("scales")}
+library("scales")
+
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
@@ -171,7 +174,7 @@ ui <- navbarPage(
              ),
       column(6,
         radioButtons("unitSelect", label = "Choose Units", inline = TRUE,
-                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo GBP/KG")))
+                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)")))
     ),
     
     # Create a spot for the plots
@@ -179,7 +182,14 @@ ui <- navbarPage(
       column(12,
         tabsetPanel(
           tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
-          tabPanel("MAP", leafletOutput(outputId = "worldMap"))
+          tabPanel("MAP", leafletOutput(outputId = "worldMap")),
+          tabPanel("Time Series",
+            tabsetPanel(
+              tabPanel("By Commodity Code", plotOutput(outputId = "tsByComcode")),
+              tabPanel("By Country", plotOutput(outputId = "tsByCountry")),
+              tabPanel("By Port", plotOutput(outputId = "tsByPort"))
+            )
+          )
         )
       )
     )
@@ -198,6 +208,7 @@ server <- function(input, output, session) {
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
   nullDataframe <- reactiveValues(nullDataframe = NULL, comcodequery = NULL)
+  timeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL, byPort = NULL)
   
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
   output$ComcodeLookup = renderDataTable(comcodelookup,
@@ -448,7 +459,7 @@ server <- function(input, output, session) {
       portsum <- portsum %>% select(-price)
       countrysum <- countrysum %>% select(-price)
       
-    } else if (input$unitSelect == "Price Per Kilo GBP/KG"){
+    } else if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
       portsum$value <- portsum$price / portsum$weight
       portsum <- portsum %>% select(-c(price,weight))
       countrysum$value <- countrysum$price / countrysum$weight
@@ -477,7 +488,16 @@ server <- function(input, output, session) {
       progress$set(detail = "Clean + Shape Data")
       
       
-      # Create Links & Nodes dataframe. ---------------------------------------
+      # COMCODE LEGEND SPECIFIC -----------------------------------------------
+      
+      # Create df - list of commodity codes displayed. Match description to second col
+      comcodelegend <- tibble(commoditycode = unique(portsum$comcode))
+      comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode")
+      
+      
+      # SANKEY SPECIFIC -------------------------------------------------------
+      
+      # Create Links & Nodes dataframe.
       
       link_portsum <- portsum
       colnames(link_portsum) <- c("source","target","value")
@@ -487,16 +507,6 @@ server <- function(input, output, session) {
       links <- bind_rows(link_portsum,link_countrysum)
       nodes <- data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
       colnames(nodes) = "name"
-      
-      
-      # COMCODE LEGEND SPECIFIC -----------------------------------------------
-      
-      # Create df - list of commodity codes displayed. Match description to second col
-      comcodelegend <- tibble(commoditycode = unique(portsum$comcode))
-      comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode")
-      
-      
-      # SANKEY SPECIFIC -------------------------------------------------------
       
       # Replace links source, target columns with IDs specified in nodes.
       # Match to row number in nodes (which is uniquely indexed!)
@@ -522,8 +532,6 @@ server <- function(input, output, session) {
       # WORLDMAP SPECIFIC -----------------------------------------------------
       
       mapWorld <- map_data("world")
-      
-      #browser()
       
       # Get map_data World names from iso codes using iso.expand
       portsum_countries <- iso.expand(unique(portsum$country[portsum$country != "Unknown Country"]))
@@ -562,6 +570,72 @@ server <- function(input, output, session) {
                                                 group = mapWorld_relevant$group,
                                                 value = mapWorld_relevant$value)),
                                               match.ID = FALSE)
+      
+      # TIME SERIES SPECIFIC --------------------------------------------------
+      
+      # > We have to have month information, which means portsum/countrysum aren't sufficient.
+      # > We must use the queryData reactive portsumraw/countrysumraw and use dplyr on that.
+      # > Unit selections are slightly different too - price per kilo must be summed by
+      #   comcode, by port, and by country then divided for each month.
+      
+      # Select correct unit
+      if (input$unitSelect == "Value (GBP)"){
+        byComcode <- queryData$portsumraw %>% select(month,comcode,price)
+        byCountry <- queryData$portsumraw %>% select(month,country,price)
+        byPort <- queryData$countrysumraw %>% select(month,port,price)
+        
+      } else if (input$unitSelect == "Weight (KG)"){
+        byComcode <- queryData$portsumraw %>% select(month,comcode,weight)
+        byCountry <- queryData$portsumraw %>% select(month,country,weight)
+        byPort <- queryData$countrysumraw %>% select(month,port,weight)
+        
+      }
+      
+      # Special case for Price Per Kilo
+      if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
+        byComcode <- queryData$portsumraw %>%
+                       select(month,comcode,price,weight) %>%
+                       mutate(value = price/weight) %>%
+                       select(-c(price,weight)) %>%
+                       group_by(month,comcode) %>% summarise(value = sum(value))
+        byCountry <- queryData$portsumraw %>%
+                       select(month,country,price,weight) %>%
+                       mutate(value = price/weight) %>%
+                       select(-c(price,weight)) %>%
+                       group_by(month,country) %>% summarise(value = sum(value))
+        byPort <- queryData$countrysumraw %>%
+                    select(month,port,price,weight) %>%
+                    mutate(value = price/weight) %>%
+                    select(-c(price,weight)) %>%
+                    group_by(month,port) %>% summarise(value = sum(value))
+      } else { 
+        # else statement required for non-PricePerKilo options
+        colnames(byComcode)[colnames(byComcode) %in% c("price","weight")] <- "value"
+        colnames(byCountry)[colnames(byCountry) %in% c("price","weight")] <- "value"
+        colnames(byPort)[colnames(byPort) %in% c("price","weight")] <- "value"
+        
+        # Obtain long format dataframe for time series plot
+        byComcode <- byComcode %>% group_by(month,comcode) %>% summarise(value = sum(value))
+        byCountry <- byCountry %>% group_by(month,country) %>% summarise(value = sum(value))
+        byPort <- byPort %>% group_by(month,port) %>% summarise(value = sum(value))
+      }
+      
+      # Ungroup the data frames.
+      byComcode <- ungroup(byComcode)
+      byCountry <- ungroup(byCountry)
+      byPort <- ungroup(byPort)
+      
+      # Replace country/port codes with full names.
+      byCountry <- byCountry %>%
+                     left_join(desclookup, by = c("country" = "keyName")) %>%
+                     select(-country) %>%
+                     rename(value = value.x, country = value.y)
+      
+      byPort <- byPort %>%
+        left_join(desclookup, by = c("port" = "keyName")) %>%
+        select(-port) %>%
+        rename(value = value.x, port = value.y)
+      
     # End Isolate
     })
     
@@ -572,6 +646,10 @@ server <- function(input, output, session) {
     sankeyData$nodes <- nodes
     mapData$mapWorld <- mapWorld
     mapData$dataPolygons <- dataPolygons
+    timeseriesData$byComcode <- byComcode
+    timeseriesData$byCountry <- byCountry
+    timeseriesData$byPort <- byPort
+    
     
   })
   
@@ -592,6 +670,9 @@ server <- function(input, output, session) {
   )
   
   # Fill in the plots =========================================================   
+  
+  # SANKEY --------------------------------------------------------------------
+  
   output$sankeyTrade <- renderSankeyNetwork({
   
   # Suppress output if nothing has been selected yet
@@ -602,6 +683,9 @@ server <- function(input, output, session) {
                   "source", "target", "value", "name",
                   fontSize = 12, nodeWidth = 30)
   })
+  
+  
+  # MAP -----------------------------------------------------------------------
   
   output$worldMap <- renderLeaflet({
     if (input$queryButton == 0) return()
@@ -637,6 +721,43 @@ server <- function(input, output, session) {
                 title = "Colour Scale",
                 position = "bottomright")
     
+  })
+  
+  
+  # TIME SERIES ---------------------------------------------------------------
+  
+  output$tsByComcode <- renderPlot({
+    ggplot(data = timeseriesData$byComcode) + 
+      geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+           y = input$unitSelect,
+           fill = "Commodity Codes") + 
+      scale_y_continuous(labels = comma)
+  })
+  
+  output$tsByCountry <- renderPlot({
+    ggplot(data = timeseriesData$byCountry) + 
+      geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+           y = input$unitSelect,
+           fill = "Countries") + 
+      scale_y_continuous(labels = comma)
+  })
+  
+  output$tsByPort <- renderPlot({
+    ggplot(data = timeseriesData$byPort) + 
+      geom_col(aes(month,value,fill=port), show.legend = TRUE) +
+      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+           y = input$unitSelect,
+           fill = "Ports") + 
+      scale_y_continuous(labels = comma)
+  })
+  
+  
+  
+  # Close DB Connection
+  session$onSessionEnded(function() {
+    dbDisconnect(tradedata)
   })
   
 } # Close Server Function
