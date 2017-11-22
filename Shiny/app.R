@@ -41,6 +41,9 @@ library("ggmap")
 if(require("leaflet") == FALSE) {install.packages("leaflet")}
 library("leaflet")
 
+if(require("plotly") == FALSE) {install.packages("plotly")}
+library("plotly")
+
 if(require("scales") == FALSE) {install.packages("scales")}
 library("scales")
 
@@ -70,11 +73,11 @@ itemCount <- 5
 
 # Note - no data loaded at this stage - we query what we need when we need it
 
-# Create list of 2, 4, 6, 8 digit commodity codes
-comcode_2 <- comcode[nchar(comcode$commoditycode) == 2,]
-comcode_4 <- comcode[nchar(comcode$commoditycode) == 4,]
-comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,]
-comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
+# Create list of 2, 4, 6, 8 digit commodity codes. Sort by string ascending.
+comcode_2 <- comcode[nchar(comcode$commoditycode) == 2,] %>% arrange(commoditycode)
+comcode_4 <- comcode[nchar(comcode$commoditycode) == 4,] %>% arrange(commoditycode)
+comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,] %>% arrange(commoditycode)
+comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,] %>% arrange(commoditycode)
 
 # Create month list
 syrs <- as.character(sprintf("%02d",c(09:50)))
@@ -183,7 +186,7 @@ ui <- navbarPage(
         tabsetPanel(
           tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
           tabPanel("MAP", leafletOutput(outputId = "worldMap")),
-          tabPanel("Time Series",
+          tabPanel("TIME SERIES",
             tabsetPanel(
               tabPanel("By Commodity Code", plotOutput(outputId = "tsByComcode")),
               tabPanel("By Country", plotOutput(outputId = "tsByCountry")),
@@ -252,7 +255,6 @@ server <- function(input, output, session) {
 
   observe({
     comcode_4_selection <- input$comcode4
-    print(paste("4:",comcode_4_selection))
 
     # Update Comcodes
     if (is.null(comcode_4_selection) == FALSE) {
@@ -280,7 +282,6 @@ server <- function(input, output, session) {
 
   observe({
     comcode_6_selection <- input$comcode6
-    print(paste("6:",comcode_6_selection))
     
     # Update Comcodes
     if (is.null(comcode_6_selection) == FALSE) {
@@ -613,6 +614,12 @@ server <- function(input, output, session) {
         colnames(byComcode)[colnames(byComcode) %in% c("price","weight")] <- "value"
         colnames(byCountry)[colnames(byCountry) %in% c("price","weight")] <- "value"
         colnames(byPort)[colnames(byPort) %in% c("price","weight")] <- "value"
+        
+        if (input$dateSlider != "All"){
+          byComcode <- byComcode %>% filter(month == input$dateSlider)
+          byCountry <- byCountry %>% filter(month == input$dateSlider)
+          byPort <- byPort %>% filter(month == input$dateSlider)
+        }
         
         # Obtain long format dataframe for time series plot
         byComcode <- byComcode %>% group_by(month,comcode) %>% summarise(value = sum(value))

@@ -61,7 +61,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 	- [x] Exports
 	- [ ] Arrivals
 	- [ ] Dispatches
-- [ ] Get SelectizeInputs in numeric order!
+- [x] Get SelectizeInputs in numeric order!
 - [x] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
 - [x] Create a test to prevent errors if no data returned by postgres!
@@ -73,7 +73,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 - [ ] Within the data tabs, we need:
   - [x] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
   - [x] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
-  - [ ] A time-series chart, which modifies based on reactive selectors and month-slider selections.
+  - [x] A time-series chart, which modifies based on reactive selectors and month-slider selections.
   - [x] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
     - [ ] This is currently implemented as a SelectInput - needs to be modified to be a slider (with great difficulty and lots of JS!)
   - [ ] A CSS theme from bootswatch.com, or shiny theme using the shinythemes R package..
@@ -84,7 +84,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
 	- [ ] Include VACUUM PostgreSQL statement to improve performance
   - [ ] Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
-
+  - [ ] QA Spec
 
 ## Complexities
 
