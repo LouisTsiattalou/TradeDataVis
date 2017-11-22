@@ -47,8 +47,11 @@ library("plotly")
 if(require("scales") == FALSE) {install.packages("scales")}
 library("scales")
 
+if(require("shinythemes") == FALSE) {install.packages("shinythemes")}
+library("shinythemes")
 
-# Load Prerequisite Static data - Ports, Comcodes, etc. ======================
+
+# Load Prerequisite jStatic data - Ports, Comcodes, etc. ======================
 
 setwd("~/R/ImportTool/")
 pg <- dbDriver("PostgreSQL")
@@ -60,6 +63,9 @@ tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
+
+# Comcode needs to be ordered by commodity code, ascending.
+comcode <- comcode %>% arrange(commoditycode)
 
 ### Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
@@ -74,10 +80,10 @@ itemCount <- 5
 # Note - no data loaded at this stage - we query what we need when we need it
 
 # Create list of 2, 4, 6, 8 digit commodity codes. Sort by string ascending.
-comcode_2 <- comcode[nchar(comcode$commoditycode) == 2,] %>% arrange(commoditycode)
-comcode_4 <- comcode[nchar(comcode$commoditycode) == 4,] %>% arrange(commoditycode)
-comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,] %>% arrange(commoditycode)
-comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,] %>% arrange(commoditycode)
+comcode_2 <- comcode[nchar(comcode$commoditycode) == 2,]
+comcode_4 <- comcode[nchar(comcode$commoditycode) == 4,]
+comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,]
+comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 
 # Create month list
 syrs <- as.character(sprintf("%02d",c(09:50)))
@@ -91,7 +97,7 @@ for (i in syrs){
 
 # UI ==========================================================================
 
-ui <- navbarPage(
+ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   
   # Navbar Title
   title = "UK Trade Data Visualisation",
@@ -107,7 +113,7 @@ ui <- navbarPage(
   # NON-EU TRADE --------------------------------------------------------------
   
   tabPanel("Non-EU Trade",
-    # Head Styles  
+    # Head Styles
     tags$head(tags$style(HTML("
       .progress-striped .bar {
                               background-color: #149bdf;
