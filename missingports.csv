@@ -1,0 +1,120 @@
+portname.x,portcode,type,lat,long
+Aberdeen Airport,ABZ,Airport,NA,NA
+All Other Airports,AOA,Airport,NA,NA
+Belfast International Airport,BFS,Airport,NA,NA
+Blackpool International Airport,BLK,Airport,NA,NA
+Bristol Airport,BRS,Airport,NA,NA
+Brize Norton,BZN,Airport,NA,NA
+East Midlands Airport,EMA,Airport,NA,NA
+Gloucester (Staverton) Airport,GLO,Airport,NA,NA
+Lakenheath,LKH,Airport,NA,NA
+Liverpool John Lennon Airport,LPL,Airport,NA,NA
+London Gatwick Airport,LGW,Airport,NA,NA
+London Luton Airport,LTN,Airport,NA,NA
+Lyneham,LYH,Airport,NA,NA
+Manchester Airport,MAN,Airport,NA,NA
+Moleshill,MLS,Airport,NA,NA
+Newquay Airport,NQY,Airport,NA,NA
+Norwich Airport,NWI,Airport,NA,NA
+Oxford Airport (Kidlington),OAK,Airport,NA,NA
+Plymouth Airport,PLH,Airport,NA,NA
+RAF Bases,RAF,Airport,NA,NA
+Southampton (Eastleigh) Airport,SOU,Airport,NA,NA
+Southend Airport,SEN,Airport,NA,NA
+Warton Aerodrome,WAR,Airport,NA,NA
+Yeovil Aerodrome,YVL,Airport,NA,NA
+Amble,BLY,Seaport,NA,NA
+Appledore,WAT,Seaport,NA,NA
+"Baltic Wharf, Rochford",LON,Seaport,NA,NA
+Berwick,BLY,Seaport,NA,NA
+Bideford,WAT,Seaport,NA,NA
+BLYTH,BLY,Seaport,NA,NA
+BOSTON,BOS,Seaport,NA,NA
+Bridgwater,WAT,Seaport,NA,NA
+Bridport,WEY,Seaport,NA,NA
+Brightlingsea,COL,Seaport,NA,NA
+Burghead,INV,Seaport,NA,NA
+Burnham-on-Crouch,COL,Seaport,NA,NA
+Castletown,DGS,Seaport,NA,NA
+CHANNEL FIXED LINK,CFL,Seaport,NA,NA
+Charlestown,FOY,Seaport,NA,NA
+Chepstow,NPT,Seaport,NA,NA
+COLCHESTER,COL,Seaport,NA,NA
+COLERAINE,CLR,Seaport,NA,NA
+Continental Shelf (UK Part),WWW,Seaport,NA,NA
+"Corpach, incl. Annat Pier",INV,Seaport,NA,NA
+COWES,COW,Seaport,NA,NA
+DOUGLAS,DGS,Seaport,NA,NA
+DOVER,DOV,Seaport,NA,NA
+ELLESMERE PORT,ELL,Seaport,NA,NA
+FALMOUTH,FAL,Seaport,NA,NA
+Faversham,WTS,Seaport,NA,NA
+FELIXSTOWE,FXT,Seaport,NA,NA
+Fingringhoe,COL,Seaport,NA,NA
+FOWEY,FOY,Seaport,NA,NA
+Glasson Dock,HEY,Seaport,NA,NA
+Gloucester,SSS,Seaport,NA,NA
+GREAT YARMOUTH,GTY,Seaport,NA,NA
+HEYSHAM,HEY,Seaport,NA,NA
+Holehaven,LON,Seaport,NA,NA
+Inland Clearance,ZLC,Seaport,NA,NA
+INVERGORDON,IVG,Seaport,NA,NA
+INVERNESS,INV,Seaport,NA,NA
+IPSWICH,IPS,Seaport,NA,NA
+KIRKCALDY,KKD,Seaport,NA,NA
+KIRKWALL,KWL,Seaport,NA,NA
+Lancaster,HEY,Seaport,NA,NA
+Leigh-on-Sea,LON,Seaport,NA,NA
+LERWICK,LER,Seaport,NA,NA
+Lochaline,INV,Seaport,NA,NA
+LONDON,LON,Seaport,NA,NA
+LONDONDERRY,LDY,Seaport,NA,NA
+Lossiemouth,INV,Seaport,NA,NA
+Low Value Trade,ZYY,Seaport,NA,NA
+LOWESTOFT,LOW,Seaport,NA,NA
+Lymington,STN,Seaport,NA,NA
+Maldon,COL,Seaport,NA,NA
+MILFORD,MIL,Seaport,NA,NA
+NEWHAVEN,NHV,Seaport,NA,NA
+Newlyn,PEN,Seaport,NA,NA
+"NEWPORT, Gwent",NPT,Seaport,NA,NA
+NORTHWICH,NTH,Seaport,NA,NA
+Peel,DGS,Seaport,NA,NA
+Pembroke (Oils) SO,MIL,Seaport,NA,NA
+Pembroke EPU,MIL,Seaport,NA,NA
+Pembroke Ferry,MIL,Seaport,NA,NA
+Penryn,FAL,Seaport,NA,NA
+PENZANCE,PEN,Seaport,NA,NA
+POOLE,POO,Seaport,NA,NA
+Portland,WEY,Seaport,NA,NA
+Portrush,CLR,Seaport,NA,NA
+PORTSMOUTH,PTM,Seaport,NA,NA
+Postal Packages,PPP,Seaport,NA,NA
+Ramsey,DGS,Seaport,NA,NA
+RAMSGATE,RMG,Seaport,NA,NA
+Rochford,LON,Seaport,NA,NA
+ROSYTH,ROS,Seaport,NA,NA
+Rowhedge,COL,Seaport,NA,NA
+Scalloway,LER,Seaport,NA,NA
+SCARBOROUGH,SCA,Seaport,NA,NA
+Scrabster,INV,Seaport,NA,NA
+SHARPNESS,SSS,Seaport,NA,NA
+SILLOTH,SIL,Seaport,NA,NA
+SOUTHAMPTON,STN,Seaport,NA,NA
+Southend (Corporation Jetty),LON,Seaport,NA,NA
+St Helier,JSY,Seaport,NA,NA
+Stromness,KWL,Seaport,NA,NA
+THAMES EUROPORT,TEP,Seaport,NA,NA
+THAMESPORT,THP,Seaport,NA,NA
+Tilbury,LON,Seaport,NA,NA
+Truro,FAL,Seaport,NA,NA
+Ullapool,INV,Seaport,NA,NA
+Unknown Place of Clearance,XXX,Seaport,NA,NA
+WARRENPOINT,WPT,Seaport,NA,NA
+WATCHET,WAT,Seaport,NA,NA
+WEYMOUTH,WEY,Seaport,NA,NA
+WHITEHAVEN,WHV,Seaport,NA,NA
+WHITSTABLE,WTS,Seaport,NA,NA
+WISBECH,WIS,Seaport,NA,NA
+Wivenhoe,COL,Seaport,NA,NA
+WORKINGTON,WOR,Seaport,NA,NA

@@ -80,11 +80,8 @@ codesonly <- unique(c(codesonly, control$commoditycode))
 # Once all the parents can be found within the commodity code vector, create tibble.
 parents <- substr(codesonly,1, nchar(codesonly)-2)
 thisrecur <- parents
-lastrecur <- rep("",times=length(parents))
 
-while (sum(sort(thisrecur) != sort(lastrecur)) != 0) {
-  lastrecur <- thisrecur
-  thisrecur <- vapply(thisrecur,function(x){
+thisrecur <- vapply(thisrecur,function(x){
     if (x %in% codesonly == FALSE){
       x <- substr(x,1,nchar(x)-2)
     } else {

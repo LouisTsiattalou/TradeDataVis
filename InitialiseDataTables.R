@@ -124,7 +124,7 @@ try({dbGetQuery(tradedata, "alter table control add constraint control_pkey PRIM
 
 # Write to the five database tables ========================================
 
-yrs <- as.character(sprintf("%02d", c(16:17)))
+yrs <- as.character(sprintf("%02d", c(09:17)))
 mths <- as.character(sprintf("%02d",c(1:12)))
 
 for (i in yrs) {
