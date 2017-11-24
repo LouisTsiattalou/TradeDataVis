@@ -65,12 +65,19 @@ for (i in years ) {
 # 2011 SIAI missing the 11 in SIAI11_yyyyarchive
 #download.file("https://www.uktradeinfo.com/Statistics/Documents/SIAI_2011archive.zip", "SIAI11_2011archive.zip")
 
-# 2016 all files have been split into half years for some reason. Need JulDec files too!
+# 2016/17 all files have been split into half years for some reason. Need JulDec files too!
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_2016archive_JulDec.zip", "SMKE19_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_2016archive_JulDec.zip", "SMKI19_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_2016archive_JulDec.zip", "SMKX46_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_2016archive_JulDec.zip", "SMKM46_2016archive_JulDec.zip")
 download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_2016archive_JulDec.zip", "SMKA12_2016archive_JulDec.zip")
+
+download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_2017archive_JulDec.zip", "SMKE19_2017archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_2017archive_JulDec.zip", "SMKI19_2017archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_2017archive_JulDec.zip", "SMKX46_2017archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_2017archive_JulDec.zip", "SMKM46_2017archive_JulDec.zip")
+download.file("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_2017archive_JulDec.zip", "SMKA12_2017archive_JulDec.zip")
+
 #download.file("https://www.uktradeinfo.com/Statistics/Documents/importers_2016archive_JulDec.zip", "importers_2016archive_JulDec.zip")
 #download.file("https://www.uktradeinfo.com/Statistics/Documents/exporters_2016archive_JulDec.zip", "exporters_2016archive_JulDec.zip")
 
@@ -99,6 +106,11 @@ for (i in years) {
   unzip("SMKX46_2016archive_JulDec.zip", exdir = getwd())
   unzip("SMKM46_2016archive_JulDec.zip", exdir = getwd())
   unzip("SMKA12_2016archive_JulDec.zip", exdir = getwd())
+  unzip("SMKE19_2017archive_JulDec.zip", exdir = getwd())
+  unzip("SMKI19_2017archive_JulDec.zip", exdir = getwd())
+  unzip("SMKX46_2017archive_JulDec.zip", exdir = getwd())
+  unzip("SMKM46_2017archive_JulDec.zip", exdir = getwd())
+  unzip("SMKA12_2017archive_JulDec.zip", exdir = getwd())
   # unzip("importers_2016archive_JulDec.zip", exdir = getwd())
   # unzip("exporters_2016archive_JulDec.zip", exdir = getwd())
 

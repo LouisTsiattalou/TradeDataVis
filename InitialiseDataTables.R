@@ -18,6 +18,7 @@
 # install.packages("tidyr")
 library('RPostgreSQL')
 library('tidyr')
+library('readr')
 
 # Database Driver
 setwd("~/R/ImportTool/")
@@ -26,7 +27,7 @@ dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
                        host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 
-setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
+setwd("~/R/ImportTool/")
 suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
 setwd("datafiles")
 
@@ -82,51 +83,48 @@ control$mk_comcode <- substr(control$mk_comcode, 1, 8)
 # Create tables ===============================================================
 
 dbWriteTable(tradedata,'dispatches', dispatches, row.names=FALSE)
-dbSendQuery(tradedata, "delete from dispatches")
-dbSendQuery(tradedata, "alter table dispatches alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
-dbSendQuery(tradedata, "alter table dispatches alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
-dbSendQuery(tradedata, "alter table dispatches alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
-dbSendQuery(tradedata, "alter table dispatches alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
-#dbSendQuery(tradedata, "create index idx_comcode on dispatches (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
-#dbSendQuery(tradedata, "create index idx_period on dispatches (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+dbGetQuery(tradedata, "delete from dispatches")
+dbGetQuery(tradedata, "drop index if exists idx_comcode_disp")
+dbGetQuery(tradedata, "drop index if exists idx_period_disp")
+dbGetQuery(tradedata, "alter table dispatches alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
+dbGetQuery(tradedata, "alter table dispatches alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
+dbGetQuery(tradedata, "alter table dispatches alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
+dbGetQuery(tradedata, "alter table dispatches alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
 
 dbWriteTable(tradedata,'arrivals', arrivals, row.names=FALSE)
-dbSendQuery(tradedata, "delete from arrivals")
-dbSendQuery(tradedata, "alter table arrivals alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
-dbSendQuery(tradedata, "alter table arrivals alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
-dbSendQuery(tradedata, "alter table arrivals alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
-dbSendQuery(tradedata, "alter table arrivals alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
-#dbSendQuery(tradedata, "create index idx_comcode on arrivals (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
-#dbSendQuery(tradedata, "create index idx_period on arrivals (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
-
+dbGetQuery(tradedata, "delete from arrivals")
+dbGetQuery(tradedata, "drop index if exists idx_comcode_arr")
+dbGetQuery(tradedata, "drop index if exists idx_period_arr")
+dbGetQuery(tradedata, "alter table arrivals alter column smk_no_of_consignments type bigint using (smk_no_of_consignments::bigint)")
+dbGetQuery(tradedata, "alter table arrivals alter column smk_nett_mass type bigint using (smk_nett_mass::bigint)")
+dbGetQuery(tradedata, "alter table arrivals alter column smk_stat_value type bigint using (smk_stat_value::bigint)")
+dbGetQuery(tradedata, "alter table arrivals alter column smk_supp_unit type bigint using (smk_supp_unit::bigint)")
 
 dbWriteTable(tradedata,'exports', exports, row.names=FALSE)
-dbSendQuery(tradedata, "delete from exports")
-dbSendQuery(tradedata, "alter table exports alter column value type bigint using (value::bigint)")
-dbSendQuery(tradedata, "alter table exports alter column quantity_1 type bigint using (quantity_1::bigint)")
-dbSendQuery(tradedata, "alter table exports alter column quantity_2 type bigint using (quantity_2::bigint)")
-dbSendQuery(tradedata, "create index idx_comcode_export on exports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
-dbSendQuery(tradedata, "create index idx_period_export on exports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
-
+dbGetQuery(tradedata, "delete from exports")
+dbGetQuery(tradedata, "drop index if exists idx_comcode_exp")
+dbGetQuery(tradedata, "drop index if exists idx_period_exp")
+dbGetQuery(tradedata, "alter table exports alter column value type bigint using (value::bigint)")
+dbGetQuery(tradedata, "alter table exports alter column quantity_1 type bigint using (quantity_1::bigint)")
+dbGetQuery(tradedata, "alter table exports alter column quantity_2 type bigint using (quantity_2::bigint)")
 
 dbWriteTable(tradedata, 'imports', imports, row.names=FALSE)
-dbSendQuery(tradedata, "delete from imports")
-dbSendQuery(tradedata, "alter table imports alter column value type bigint using (value::bigint)")
-dbSendQuery(tradedata, "alter table imports alter column quantity_1 type bigint using (quantity_1::bigint)")
-dbSendQuery(tradedata, "alter table imports alter column quantity_2 type bigint using (quantity_2::bigint)")
-dbSendQuery(tradedata, "create index idx_comcode on imports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
-dbSendQuery(tradedata, "create index idx_period on imports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
-
+dbGetQuery(tradedata, "delete from imports")
+dbGetQuery(tradedata, "drop index if exists idx_comcode_imp")
+dbGetQuery(tradedata, "drop index if exists idx_period_imp")
+dbGetQuery(tradedata, "alter table imports alter column value type bigint using (value::bigint)")
+dbGetQuery(tradedata, "alter table imports alter column quantity_1 type bigint using (quantity_1::bigint)")
+dbGetQuery(tradedata, "alter table imports alter column quantity_2 type bigint using (quantity_2::bigint)")
 
 dbWriteTable(tradedata, 'control', control, row.names=FALSE)
-dbSendQuery(tradedata, "delete from control")
-dbSendQuery(tradedata, "SET client_encoding = 'LATIN1'")
-try({dbSendQuery(tradedata, "alter table control add constraint control_pkey PRIMARY KEY (mk_comcode)")})
+dbGetQuery(tradedata, "delete from control")
+dbGetQuery(tradedata, "SET client_encoding = 'LATIN1'")
+try({dbGetQuery(tradedata, "alter table control add constraint control_pkey PRIMARY KEY (mk_comcode)")})
 
 
 # Write to the five database tables ========================================
 
-yrs <- as.character(sprintf("%02d", c(09:17)))
+yrs <- as.character(sprintf("%02d", c(16:17)))
 mths <- as.character(sprintf("%02d",c(1:12)))
 
 for (i in yrs) {
@@ -215,8 +213,22 @@ for (i in yrs) {
     }, error = function(e){errors <<- c(errors, paste(files["control"], i, j, sep = ""))}
     )   
     
-    }
+  }
 }
+
+# Recreate Indices
+print("Creating indices: Dispatches")
+dbGetQuery(tradedata, "create index idx_comcode_disp on dispatches (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+dbGetQuery(tradedata, "create index idx_period_disp on dispatches (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+print("Creating indices: Arrivals")
+dbGetQuery(tradedata, "create index idx_comcode_arr on arrivals (smk_comcode, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+dbGetQuery(tradedata, "create index idx_period_arr on arrivals (smk_period_reference, smk_cod_alpha, smk_no_of_consignments, smk_stat_value, smk_nett_mass)")
+print("Creating indices: Exports")
+dbGetQuery(tradedata, "create index idx_comcode_exp on exports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
+dbGetQuery(tradedata, "create index idx_period_exp on exports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
+print("Creating indices: Imports")
+dbGetQuery(tradedata, "create index idx_comcode_imp on imports (comcode, cod_alpha, port_alpha, quantity_1, quantity_2)")
+dbGetQuery(tradedata, "create index idx_period_imp on imports (account_date, cod_alpha, port_alpha, quantity_1, quantity_2)")
 
 
 end <- Sys.time()
