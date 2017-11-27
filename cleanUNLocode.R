@@ -41,6 +41,13 @@ portlatlon$long <- ifelse(grep("E", portlatlon$latlon), portlatlon$lat*1, portla
 # Remove latlon column.
 portlatlon <- select(portlatlon, -latlon)
 
+# At this point, I realised that UN Locode had lots of ports missing that we actually needed.
+# Big ones too - Felixstowe for example!
+# I manually entered these into missingports.csv, which we append here and left-join into the dataframe
+missingports <- read_csv("missingports.csv")
+portlatlon <- 
+
+
 # Delete unzipped files
 unlink(portlatlonlist)
 

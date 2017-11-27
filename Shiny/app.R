@@ -51,7 +51,7 @@ if(require("shinythemes") == FALSE) {install.packages("shinythemes")}
 library("shinythemes")
 
 
-# Load Prerequisite jStatic data - Ports, Comcodes, etc. ======================
+# Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
 setwd("~/R/ImportTool/")
 pg <- dbDriver("PostgreSQL")

@@ -153,7 +153,71 @@ Seaportcode$type <- "Seaport"
 
 portcode <- rbind(Airportcode, Seaportcode)
 portcode <- portcode[is.na(portcode$portname) == FALSE,]
+portcode$portname <- toupper(portcode$portname)
 colnames(portcode) <- dbSafeNames(colnames(portcode))
+
+# OBTAIN LAT/LONG COORDINATES -------------------------------------------------
+
+# Set URL and FileName
+portlatlonURL <- "http://www.unece.org/fileadmin/DAM/cefact/locode/loc171csv.zip"
+portlatlonFN <- "datafiles/LatLonPorts.zip"
+
+# Download ZIP to datafiles, obtain list of items
+download.file(portlatlonURL,portlatlonFN)
+portlatlonlist <- unzip(portlatlonFN, list=TRUE)
+
+# Unzip to datafiles, paste csvs together
+unzip(portlatlonFN)
+unlink(portlatlonFN)
+
+# Read data and reshape
+portlatlon <- portlatlonlist$Name[grepl("CodeList",portlatlonlist$Name)] %>% # Take Data only
+  lapply(read_csv, col_names = FALSE) %>% # read them into R
+  bind_rows %>% # Paste them together
+  filter(X2 == "GB") %>% # Take only United Kingdom ports (GB)
+  select(choices = c(X3,X5,X11)) # Select code, name, and lat/lon location
+
+# Now have GB ports, by portcode,portname,lat/lon.
+colnames(portlatlon) <- c("portcode","portname","latlon")
+
+portlatlon <- portlatlon %>%
+  mutate(lat = substr(latlon,1,4)) %>% # Obtain Latitude
+  mutate(long = substr(latlon,nchar(latlon)-6,nchar(latlon)-1)) %>% # Obtain Longitude
+  filter(!is.na(latlon))
+
+# Convert to Numeric Vectors and Divide by 100 to get decimal form
+portlatlon$lat <- as.numeric(portlatlon$lat) / 100
+portlatlon$long <- as.numeric(portlatlon$long) / 100
+
+# Multiply - North = +1, South = -1, West = -1, East = +1
+portlatlon$lat <- ifelse(grepl("N", portlatlon$latlon), portlatlon$lat*1, portlatlon$lat*-1)
+portlatlon$long <- ifelse(grepl("E", portlatlon$latlon), portlatlon$long*1, portlatlon$long*-1)
+
+# Remove latlon column.
+portlatlon <- select(portlatlon, -latlon)
+
+# At this point, I realised that UN Locode had lots of ports missing that we actually needed.
+# Big ones too - Felixstowe for example!
+# I manually entered these into missingports.csv, which we append here and left-join into the dataframe
+missingports <- read_csv("missingports.csv") %>% select(portname.x,portcode,lat,long)
+portlatlon <- full_join(portlatlon, missingports, by = c("portname" = "portname.x"))
+
+# Now merge into lat/long/portcode columns and reorder
+portlatlon$lat <- ifelse(is.na(portlatlon$lat.x), portlatlon$lat.y, portlatlon$lat.x)
+portlatlon$long <- ifelse(is.na(portlatlon$long.x), portlatlon$long.y, portlatlon$long.x)
+portlatlon$portcode <- ifelse(is.na(portlatlon$portcode.x), portlatlon$portcode.y, portlatlon$portcode.x)
+portlatlon <- portlatlon %>% select(portname, portcode, lat, long)
+
+# Set portname to uppercase for joining
+portlatlon$portname <- toupper(portlatlon$portname)
+
+# Delete unzipped files
+unlink(portlatlonlist$Name)
+
+# JOIN LAT/LONG TO PORTCODE ---------------------------------------------------
+
+portcode2 <- left_join(portcode,portlatlon, by = "portcode")
+portcode2 <- portcode2 %>% select(portname = portname.x, portcode, type, lat, long)
 
 dbWriteTable(tradedata, 'port', portcode, row.names=FALSE)
 dbSendQuery(tradedata, "delete from port")
