@@ -26,6 +26,9 @@ library("RPostgreSQL")
 if(require("networkD3") == FALSE) {install.packages("networkD3")}
 library("networkD3")
 
+if(require("rgeos") == FALSE) {install.packages("rgeos")}
+library("rgeos")
+
 if(require("maptools") == FALSE) {install.packages("maptools")}
 library("maptools")
 
@@ -53,7 +56,7 @@ library("shinythemes")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
-setwd("~/R/ImportTool/")
+#setwd("~/R/ImportTool/Shiny/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
@@ -499,7 +502,7 @@ server <- function(input, output, session) {
       
       # Create df - list of commodity codes displayed. Match description to second col
       comcodelegend <- tibble(commoditycode = unique(portsum$comcode))
-      comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode")
+      comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode") %>% arrange(commoditycode)
       
       
       # SANKEY SPECIFIC -------------------------------------------------------
@@ -741,29 +744,32 @@ server <- function(input, output, session) {
   
   output$tsByComcode <- renderPlot({
     ggplot(data = timeseriesData$byComcode) + 
-      geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+      geom_col(aes(month,value,fill=comcode), colour = "black", show.legend = TRUE) +
       labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
            y = input$unitSelect,
            fill = "Commodity Codes") + 
-      scale_y_continuous(labels = comma)
+      scale_y_continuous(labels = comma) + 
+      scale_fill_hue(l=40)
   })
   
   output$tsByCountry <- renderPlot({
     ggplot(data = timeseriesData$byCountry) + 
-      geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+      geom_col(aes(month,value,fill=country), colour = "black", show.legend = TRUE) +
       labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
            y = input$unitSelect,
            fill = "Countries") + 
-      scale_y_continuous(labels = comma)
+      scale_y_continuous(labels = comma) + 
+      scale_fill_hue(l=40)
   })
   
   output$tsByPort <- renderPlot({
     ggplot(data = timeseriesData$byPort) + 
-      geom_col(aes(month,value,fill=port), show.legend = TRUE) +
+      geom_col(aes(month,value,fill=port), colour = "black", show.legend = TRUE) +
       labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
            y = input$unitSelect,
            fill = "Ports") + 
-      scale_y_continuous(labels = comma)
+      scale_y_continuous(labels = comma) + 
+      scale_fill_hue(l=40)
   })
   
   

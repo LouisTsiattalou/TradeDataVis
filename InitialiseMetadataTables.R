@@ -153,7 +153,7 @@ Seaportcode$type <- "Seaport"
 
 portcode <- rbind(Airportcode, Seaportcode)
 portcode <- portcode[is.na(portcode$portname) == FALSE,]
-portcode$portname <- toupper(portcode$portname)
+#portcode$portname <- toupper(portcode$portname)
 colnames(portcode) <- dbSafeNames(colnames(portcode))
 
 # OBTAIN LAT/LONG COORDINATES -------------------------------------------------

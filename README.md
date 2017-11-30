@@ -56,11 +56,11 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 
 ### TODO
 - [x] Improve query speed on the tool.
-  - [ ] Test index-only scan definitions in Initialise\_Data\_Tables.R
+  - [x] Test index-only scan definitions in Initialise\_Data\_Tables.R
 	- [x] Imports
 	- [x] Exports
-	- [ ] Arrivals
-	- [ ] Dispatches
+	- [x] Arrivals
+	- [x] Dispatches
 - [x] Get SelectizeInputs in numeric order!
 - [x] Change Map to leaflet.js.
 - [x] Enable multi-comcode selection on data tab.
@@ -81,7 +81,7 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
   - [ ] A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
   - [ ] Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
 - [ ] Backend Functionality:
-  - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from.
+  - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from. Set to run regularly on linux server
 	- [ ] Include VACUUM PostgreSQL statement to improve performance
   - [ ] Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
 - [ ] QA Spec

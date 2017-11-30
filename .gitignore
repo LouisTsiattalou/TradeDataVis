@@ -4,5 +4,6 @@ zipfiles/
 .Rhistory
 dbextract/
 .env
+Shiny/.env
 *~
 *#
