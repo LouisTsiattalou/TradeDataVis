@@ -1,0 +1,58 @@
+#+TITLE: Trade Data Visualisation QA Spec
+#+DATE: <2017-11-30 Thu>
+#+AUTHOR: Louis Tsiattalou
+#+EMAIL: louis.tsiattalou@food.gov.uk
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t c:nil creator:comment d:(not "LOGBOOK") date:t
+#+OPTIONS: e:t email:nil f:t inline:t num:t p:nil pri:nil stat:t
+#+OPTIONS: tags:t tasks:t tex:t timestamp:t toc:nil todo:t |:t
+#+LATEX_HEADER: \usepackage[margin=0.5in]{geometry}
+#+CREATOR: Emacs 25.1.1 (Org mode 8.2.10)
+#+DESCRIPTION:
+#+EXCLUDE_TAGS: noexport
+#+KEYWORDS:
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+
+This document is intended to be a checklist for the purposes of quality assuring the Trade Data Visualisation web application.
+
+* Data Integrity
+- [ ] Do the results of the query match up with raw HMRC Trade Data?
+  - [ ] Imports
+  - [ ] Exports
+  - [ ] Dispatches (EU Exports)
+  - [ ] Arrivals (EU Imports)
+- [ ] Do the contents of the comcode table match up with raw HMRC Trade Data and EUROSTAT data?
+- [ ] Are the Ports and Country alpha codes still correct?
+
+* Technical
+- [ ] Does the app crash when no data is returned from a query?
+- [ ] Do the Visualisations render correctly?
+  - [ ] Sankey Diagrams
+  - [ ] World Map Visualisation
+  - [ ] Time Series Plots
+    - [ ] Comcode
+    - [ ] Country
+    - [ ] Port
+
+* UI
+- [ ] Is the performance of the app acceptable?
+- [ ] Do the Commodity Code Selectors cascade correctly?
+
+  /This means, are all the commodity codes displayed in the selectors descendants of those selected in lower-digit fields?/
+
+- [ ] Is the Date Range displaying all valid values?
+- [ ] Is everything reasonably sized on the page?
+- [ ] When running new queries, do the existing Visualisations grey-out?
+- [ ] Do the search functions on the Comcode Lookup tab work correctly?
+  - [ ] Fuzzy Search bar at top
+  - [ ] Comcode Search
+  - [ ] Description Search
+- [ ] Are the Comcode Legend entries (above the visualisations) showing /only/ the comcodes in play?
+- [ ] Is the interface of the app intuitive?
+  - Please enter any comments on how to improve the interface of the app:
+
+\vspace*{6cm}
+
+- Please enter any additional comments and improvements below:
+

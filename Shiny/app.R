@@ -56,7 +56,7 @@ library("shinythemes")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 
-#setwd("~/R/ImportTool/Shiny/")
+setwd("~/R/ImportTool/Shiny/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
@@ -67,8 +67,10 @@ portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
 
-# Comcode needs to be ordered by commodity code, ascending.
+# Ordering by Ascending Codes
+portcode <- portcode %>% arrange(portname)
 comcode <- comcode %>% arrange(commoditycode)
+countrycode <- countrycode %>% arrange(countryname)
 
 ### Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
@@ -136,11 +138,17 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     fluidRow(      
     
     # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
-      column(3,
+      column(2,
         selectizeInput("datestart", "Period Start:",
                      choices=dates),
         selectizeInput("dateend", "Period End:",
                        choices=dates)
+        ),
+      column(2,
+        selectizeInput("countryselect", "Country:",
+                       choices=c("All",countrycode$countryname)),
+        selectizeInput("portselect", "Port:",
+                       choices=c("All",portcode$portname))
         ),
       column(3,
         selectizeInput("comcode2", "2-digit Commodity Code:",
@@ -162,7 +170,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                     choices=c("All", comcode_8$commoditycode),
                     options = list(maxItems = 5))
       ),
-      column(3,
+      column(2,
         radioButtons("impexpSelect", label = NULL,
                      choices = c("Imports","Exports")),
         actionButton("queryButton", "Run Query")
@@ -335,6 +343,19 @@ server <- function(input, output, session) {
       comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query, sep = "")
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
       
+      # Country and Port Queries
+      if ("All" %in% input$portselect) {
+        portquery <- portcode$portcode
+      } else {
+        portquery <- portcode %>% filter(portname %in% input$portselect) %>% pull(portcode)
+      }
+      
+      if ("All" %in% input$countryselect){
+        countryquery <- countrycode$countrycode
+      } else {
+        countryquery <- countrycode %>% filter(countryname %in% input$countryselect) %>% pull(countrycode)
+      }
+      
       # Obtain date range
       daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
       
@@ -348,29 +369,38 @@ server <- function(input, output, session) {
       if (input$impexpSelect == "Imports"){
         selectportsumquery <- "SELECT coo_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM imports "
         selectcountrysumquery <- "SELECT comcode,port_alpha,account_date,sum(value),sum(quantity_1) FROM imports "
-        groupbyportsumquery <- "')) GROUP BY comcode,coo_alpha,account_date"
+        wherecountrycondition <- ")') AND (coo_alpha SIMILAR TO '("
+        groupbyportsumquery <- "GROUP BY comcode,coo_alpha,account_date"
       }
       else if (input$impexpSelect == "Exports"){
         selectportsumquery <- "SELECT comcode,cod_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
         selectcountrysumquery <- "SELECT port_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM exports "
-        groupbyportsumquery <- "')) GROUP BY comcode,cod_alpha,account_date"
+        wherecountrycondition <- ")') AND (cod_alpha SIMILAR TO '("
+        groupbyportsumquery <- "GROUP BY comcode,cod_alpha,account_date"
       }
       
-      portsumquery = paste(selectportsumquery,
-                           "WHERE (comcode SIMILAR TO '(",
-                           paste(comcodequery,collapse = "|"),
-                           ")') AND (account_date IN ('",
-                           paste(daterangequery, collapse = "', '"),
-                           groupbyportsumquery, # import = coo_alpha, export = cod_alpha!
-                           sep = "")
+      portsumquery = paste0(selectportsumquery,
+                            "WHERE (comcode SIMILAR TO '(",
+                            paste(comcodequery,collapse = "|"),
+                            ")') AND (port_alpha SIMILAR TO '(",
+                            paste(portquery,collapse = "|"), 
+                            wherecountrycondition, # This depends on cod/coo_alpha!
+                            paste(countryquery,collapse = "|"), 
+                            ")') AND (account_date IN ('",
+                            paste(daterangequery, collapse = "', '"),
+                            "'))",
+                            groupbyportsumquery) # import = coo_alpha, export = cod_alpha!
       
-      countrysumquery = paste(selectcountrysumquery,
-                              "WHERE (comcode SIMILAR TO '(",
-                              paste(comcodequery,collapse = "|"),
-                              ")') AND (account_date IN ('",
-                              paste(daterangequery, collapse = "', '"),
-                              "')) GROUP BY comcode,port_alpha,account_date",
-                              sep = "")
+      countrysumquery = paste0(selectcountrysumquery,                           # SELECT 
+                               "WHERE (comcode SIMILAR TO '(",                  # WHERE on COMCODE
+                               paste(comcodequery,collapse = "|"),              # WHERE on COMCODE
+                               ")') AND (port_alpha SIMILAR TO '(",             # WHERE on PORT
+                               paste(portquery,collapse = "|"),                 # WHERE on PORT
+                               wherecountrycondition,                           # WHERE on COUNTRY
+                               paste(countryquery,collapse = "|"),              # WHERE on COUNTRY
+                               ")') AND (account_date IN ('",                   # WHERE on DATE
+                               paste(daterangequery, collapse = "', '"),        # WHERE on DATE
+                               "')) GROUP BY comcode,port_alpha,account_date")  # GROUP BY
       
       # Query data
       progress$set(detail = "Querying Country -> Comcode data")
