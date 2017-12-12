@@ -1,38 +1,31 @@
 # 20170904
-# Updated 20170921
+# Updated 20171212
 # Script to write Trade Data to a PostgreSQL database.
 # Base Script by David Lee at DEFRA
 # Adapted by Louis Tsiattalou for Imports Tool
 # Github: https://github.com/LouisTsiattalou/TradeDataVis
 
-# TODO
-# >importers/exporters files need to be entered after comcode issue sorted
-# >fix code description merge - not working atm
-# >check overwrite enabled on codes - not currently enabled
-
 # SCRIPT START ###############################################################
 
 # Library import and constants ===============================================
 
-# install.packages("RPostgreSQL")
-# install.packages("tidyr")
 library('RPostgreSQL')
 library('tidyr')
 library('readr')
 
+start <- Sys.time()
+errors <- character()
+
 # Database Driver
-setwd("~/R/ImportTool/")
+setwd("~/Documents/R/ImportTool/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
                        host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 
-setwd("~/R/ImportTool/")
+#Create Datafiles
 suppressWarnings(dir.create(paste(getwd(), "/datafiles", sep = "")))
 setwd("datafiles")
-
-start <- Sys.time()
-errors <- character()
 
 # make names db safe: no '.' or other illegal characters,
 # all lower case and unique
@@ -43,6 +36,7 @@ dbSafeNames = function(names) {
   names
 }
 
+# Data File columns and file abbreviations
 files <- c("SMKA12", "SMKE19", "SMKI19", "SMKX46", "SMKM46", "SESX16", "SESM16")
 names(files) <- c("control", "exp", "imp", "disp", "arr", "dispest", "arrest")
 

@@ -1,13 +1,11 @@
 # 20171004
-# Updated 20171005
+# Updated 20171212
 # Script to create a tidier, more relevant, more complete Comcode table from
 # EUROSTAT Commodity Nomenclature file, and existing control table build from
 # HMRC Data..
 
 # Written by Louis Tsiattalou for TradeDataVis application
 # Github: https://github.com/LouisTsiattalou/TradeDataVis
-
-# TODO
 
 # SCRIPT START ################################################################
 
@@ -37,7 +35,7 @@ dbSafeNames = function(names) {
   names
 }
 
-setwd("~/R/ImportTool/")
+setwd("~/Documents/R/ImportTool/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
@@ -215,7 +213,8 @@ portlatlon$portname <- toupper(portlatlon$portname)
 unlink(portlatlonlist$Name)
 
 # JOIN LAT/LONG TO PORTCODE ---------------------------------------------------
-
+# <<This section is incomplete>> 
+# TODO Find a way to match UN/LOCODE to HMRC Ports. Maybe manually.
 portcode2 <- left_join(portcode,portlatlon, by = "portcode")
 portcode2 <- portcode2 %>% select(portname = portname.x, portcode, type, lat, long)
 
