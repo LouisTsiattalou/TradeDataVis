@@ -53,14 +53,27 @@ library("scales")
 if(require("shinythemes") == FALSE) {install.packages("shinythemes")}
 library("shinythemes")
 
+if(require("pool") == FALSE) {install.packages("pool")}
+library("pool")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
-
-setwd("~/R/ImportTool/Shiny/")
+# Use pool instead of dbConnect
+#setwd("~/R/ImportTool/Shiny/")
 pg <- dbDriver("PostgreSQL")
-dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
-tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
-                      host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+#tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
+tradedata <- dbPool(
+    drv = pg,
+    user = dbenv[1,2],
+    password = dbenv[2,2],
+    host = dbenv[3,2],
+    port = dbenv[4,2],
+    dbname = dbenv[5,2]
+)
+
+onStop(function() {
+    poolClose(tradedata)
+})
 
 # Load Metadata
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
@@ -805,9 +818,9 @@ server <- function(input, output, session) {
   
   
   # Close DB Connection
-  session$onSessionEnded(function() {
-    dbDisconnect(tradedata)
-  })
+  # session$onSessionEnded(function() {
+  #   dbDisconnect(tradedata)
+  # })
   
 } # Close Server Function
 
