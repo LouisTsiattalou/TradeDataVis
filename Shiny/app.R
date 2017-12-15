@@ -17,6 +17,9 @@ library("shiny")
 if(require("shinyjs") == FALSE) {install.packages("shinyjs")}
 library("shinyjs")
 
+if(require("shinyWidgets") == FALSE) {install.packages("shinyWidgets")}
+library("shinyWidgets")
+
 if(require("dplyr") == FALSE) {install.packages("dplyr")}
 library("dplyr")
 
@@ -202,11 +205,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     # Create slider/unit bar
     fluidRow(
       column(6,
-        selectizeInput("dateSlider", label = "Select Month",
+        tags$label("Select Month:"),     
+        sliderTextInput("dateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
                     choices = c("All", dates))
              ),
       column(6,
-        radioButtons("unitSelect", label = "Choose Units", inline = TRUE,
+        tags$label("Select Units:"),
+        radioButtons("unitSelect", label = NULL, inline = TRUE,
                      choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)")))
     ),
     
@@ -300,11 +305,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     # Create slider/unit bar
     fluidRow(
       column(6,
-        selectizeInput("eudateSlider", label = "Select Month",
+        tags$label("Select Month:"),     
+        sliderTextInput("eudateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
                     choices = c("All", dates))
              ),
       column(6,
-        radioButtons("euunitSelect", label = "Choose Units", inline = TRUE,
+        tags$label("Select Units:"),
+        radioButtons("euunitSelect", label = NULL, inline = TRUE,
                      choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)", "Number of Consignments")))
     ),
     
@@ -364,13 +371,11 @@ server <- function(input, output, session) {
   shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = "")})
   shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = "")})
   shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = "")})
-  shinyjs::onclick("dateSlider", {updateSelectizeInput(session, "dateSlider", selected = "")})
 
   shinyjs::onclick("eucomcode2", {updateSelectizeInput(session, "eucomcode2", selected = "")})
   shinyjs::onclick("eucomcode4", {updateSelectizeInput(session, "eucomcode4", selected = "")})
   shinyjs::onclick("eucomcode6", {updateSelectizeInput(session, "eucomcode6", selected = "")})
   shinyjs::onclick("eucomcode8", {updateSelectizeInput(session, "eucomcode8", selected = "")})
-  shinyjs::onclick("eudateSlider", {updateSelectizeInput(session,"eudateSlider", selected = "")})
    
   # SERVER (NON-EU) ==========================================================
   
@@ -483,7 +488,7 @@ server <- function(input, output, session) {
       daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
       
       # Update dateSlider with daterangequery
-      updateSelectizeInput(session,"dateSlider",
+      updateSliderTextInput(session,"dateSlider",
                            selected = "All",
                            choices=c("All", daterangequery))
       
@@ -1021,15 +1026,16 @@ server <- function(input, output, session) {
       
       # Obtain date range
       eudaterangequery <- dates[match(input$eudatestart,dates):match(input$eudateend,dates)]
+      
+      # Update dateSlider with daterangequery
+      updateSliderTextInput(session,"eudateSlider",
+                           selected = "All",
+                           choices=c("All", eudaterangequery))
+      
       # Transform to EU Query Format
       eudaterangequery <- paste0("0",
                                  substr(eudaterangequery,4,8),
                                  substr(eudaterangequery,1,2))
-      
-      # Update dateSlider with daterangequery
-      updateSelectizeInput(session,"eudateSlider",
-                           selected = "All",
-                           choices=c("All", eudaterangequery))
       
       # First line of query dependent on Import or Export
       if (input$euimpexpSelect == "Imports") {
@@ -1067,7 +1073,12 @@ server <- function(input, output, session) {
       } else if (input$euimpexpSelect == "Exports") {
         colnames(euDataRaw) = c("comcode","country","month", "consignments", "price", "weight")
       }
-      
+     
+      # Transform month back to readable format 
+      euDataRaw$month <- paste0(substr(euDataRaw$month,6,7),
+                                "/",
+                                substr(euDataRaw$month,2,5))
+      # Handle NAs
       euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
 
       # End Isolate
