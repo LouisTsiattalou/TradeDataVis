@@ -74,9 +74,9 @@ tradedata <- dbPool(
     dbname = dbenv[5,2]
 )
 
-onStop(function() {
-    poolClose(tradedata)
-})
+# onStop(function() {
+#     poolClose(tradedata)
+# })
 
 # Load Metadata
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
@@ -204,10 +204,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create slider/unit bar
     fluidRow(
-      column(6,
+      column(2,
         tags$label("Select Month:"),     
-        sliderTextInput("dateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
-                    choices = c("All", dates))
+        checkboxInput("dateSliderAll", label = "All", value = TRUE)
+             ),
+      column(4,
+        shinyjs::disabled(sliderTextInput("dateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
+                                   choices = c(dates)))
              ),
       column(6,
         tags$label("Select Units:"),
@@ -304,15 +307,19 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create slider/unit bar
     fluidRow(
-      column(6,
+      column(2,
         tags$label("Select Month:"),     
-        sliderTextInput("eudateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
-                    choices = c("All", dates))
+        checkboxInput("eudateSliderAll", label = "All", value = TRUE)
+             ),
+      column(4,
+        shinyjs::disabled(sliderTextInput("eudateSlider", label = NULL, grid = TRUE, force_edges = TRUE,
+                                   choices = c(dates)))
              ),
       column(6,
         tags$label("Select Units:"),
         radioButtons("euunitSelect", label = NULL, inline = TRUE,
-                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)", "Number of Consignments")))
+#                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)", "Number of Consignments")))
+                     choices = c("Value (GBP)","Number of Consignments")))
     ),
     
     # Create a spot for the plots
@@ -376,7 +383,23 @@ server <- function(input, output, session) {
   shinyjs::onclick("eucomcode4", {updateSelectizeInput(session, "eucomcode4", selected = "")})
   shinyjs::onclick("eucomcode6", {updateSelectizeInput(session, "eucomcode6", selected = "")})
   shinyjs::onclick("eucomcode8", {updateSelectizeInput(session, "eucomcode8", selected = "")})
-   
+  
+  observeEvent(input$dateSliderAll, {
+      if (input$dateSliderAll == FALSE) {
+          shinyjs::enable("dateSlider")
+      } else {
+          shinyjs::disable("dateSlider")
+      }
+  })
+  
+  observeEvent(input$eudateSliderAll, {
+      if (input$eudateSliderAll == FALSE) {
+          shinyjs::enable("eudateSlider")
+      } else {
+          shinyjs::disable("eudateSlider")
+      }
+  })
+  
   # SERVER (NON-EU) ==========================================================
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
@@ -489,8 +512,7 @@ server <- function(input, output, session) {
       
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"dateSlider",
-                           selected = "All",
-                           choices=c("All", daterangequery))
+                           choices=c(daterangequery))
       
       # First line of query dependent on Import or Export - parametrize to select*sumquery vars.
       
@@ -602,7 +624,7 @@ server <- function(input, output, session) {
     # Based on date and unit, selected from fluidrow beneath comcode legend
     
     # Select correct month
-    if (input$dateSlider == "All") {
+    if (input$dateSliderAll == TRUE) {
       portsum <- queryData$portsumraw %>% select(-month)
       countrysum <- queryData$countrysumraw %>% select(-month)
       if (input$impexpSelect == "Imports") {
@@ -645,6 +667,22 @@ server <- function(input, output, session) {
     portsum <- ungroup(portsum)
     countrysum <- ungroup(countrysum)
     
+    # Check again if, after sorting, we're dealing with a blank df.
+    if (sum(dim(portsum)) == 0) {
+      nullDataframe$nullDataframe <- TRUE
+      isolate({
+        showModal(modalDialog(title = "Alert!",
+                              paste0("No ",
+                                     input$impexpSelect,
+                                     " for ",
+                                     input$dateSlider,
+                                     ".")), session)
+      })
+      # Break out of reactive chain
+      req(FALSE)
+    }
+    
+     
     # Clean and Shape Data --------------------------------------------------
     
     isolate({
@@ -782,7 +820,7 @@ server <- function(input, output, session) {
         colnames(byCountry)[colnames(byCountry) %in% c("price","weight")] <- "value"
         colnames(byPort)[colnames(byPort) %in% c("price","weight")] <- "value"
         
-        if (input$dateSlider != "All"){
+        if (input$dateSliderAll != TRUE){
           byComcode <- byComcode %>% filter(month == input$dateSlider)
           byCountry <- byCountry %>% filter(month == input$dateSlider)
           byPort <- byPort %>% filter(month == input$dateSlider)
@@ -1029,8 +1067,7 @@ server <- function(input, output, session) {
       
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"eudateSlider",
-                           selected = "All",
-                           choices=c("All", eudaterangequery))
+                           choices=c(eudaterangequery))
       
       # Transform to EU Query Format
       eudaterangequery <- paste0("0",
@@ -1106,13 +1143,6 @@ server <- function(input, output, session) {
                                      " and Commodity Code(s) ",
                                      nullDataframe$comcodequery,
                                      ".")), session)
-        print(paste0("No ",
-                     input$euimpexpSelect,
-                     " for Date Range ",
-                     input$eudatestart, " - ", input$eudateend,
-                     " and Commodity Code(s) ",
-                     nullDataframe$comcodequery,
-                     "."))
       })
       # Break out of reactive chain
       req(FALSE)
@@ -1126,7 +1156,7 @@ server <- function(input, output, session) {
     # Based on date and unit, selected from fluidrow beneath comcode legend
     
     # Select correct month
-    if (input$eudateSlider == "All") {
+    if (input$eudateSliderAll == TRUE) {
       euData <- euQueryData$euDataRaw %>% select(-month)
       if (input$euimpexpSelect == "Imports") {
         euData <- euData %>% group_by(country,comcode) %>% summarise(consignments = sum(consignments), price = sum(price), weight = sum(weight))
@@ -1161,6 +1191,21 @@ server <- function(input, output, session) {
     # Ungroup the data frame.
     euData <- ungroup(euData)
     
+    # Check again if, after sorting, we're dealing with a blank df.
+    if (sum(dim(euData)) == 0) {
+      nullDataframe$nullDataframe <- TRUE
+      isolate({
+        showModal(modalDialog(title = "Alert!",
+                              paste0("No ",
+                                     input$euimpexpSelect,
+                                     " for ",
+                                     input$eudateSlider,
+                                     ".")), session)
+      })
+      # Break out of reactive chain
+      req(FALSE)
+    }
+     
     # Clean and Shape Data --------------------------------------------------
     
     isolate({
@@ -1289,7 +1334,7 @@ server <- function(input, output, session) {
         colnames(byComcode)[colnames(byComcode) %in% c("price","weight","consignments")] <- "value"
         colnames(byCountry)[colnames(byCountry) %in% c("price","weight","consignments")] <- "value"
         
-        if (input$eudateSlider != "All"){
+        if (input$eudateSliderAll != TRUE) {
           byComcode <- byComcode %>% filter(month == input$eudateSlider)
           byCountry <- byCountry %>% filter(month == input$eudateSlider)
         }
@@ -1373,7 +1418,7 @@ server <- function(input, output, session) {
                           euMapData$dataPolygons$value)
     
     leaflet(data = euMapData$dataPolygons) %>%
-      setView(lng = 21.22574, lat = 48.2361, zoom = 3) %>%
+      setView(lng = 21.22574, lat = 48.2361, zoom = 4) %>%
       addProviderTiles("CartoDB.Positron") %>%
       addPolygons(fillColor = ~pal(euMapData$dataPolygons$value),
                   smoothFactor = 0.5,
