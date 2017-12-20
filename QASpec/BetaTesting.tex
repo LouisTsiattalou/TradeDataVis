@@ -1,0 +1,88 @@
+% Created 2017-12-19 Tue 10:52
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\tolerance=1000
+\usepackage[margin=0.5in]{geometry}
+\author{Louis Tsiattalou}
+\date{19th December 2017}
+\title{Trade Data Visualisation Beta Testing Checklist}
+\hypersetup{
+  pdfkeywords={},
+  pdfsubject={},
+  pdfcreator={Emacs 25.1.1 (Org mode 8.2.10)}}
+\begin{document}
+
+\maketitle
+This document is intended to be a checklist for the purposes of quality assuring the Trade Data Visualisation web application. If you have a copy of this sheet, it means that you have been asked to help identify bugs and errors in the application during the beta testing phase of the project.
+
+\section{Technical}
+\label{sec-1}
+\begin{itemize}
+\item $\square$ Does the app crash when no data is returned from a query?
+\item $\square$ Do the Visualisations render correctly?
+\begin{itemize}
+\item $\square$ Sankey Diagrams
+\item $\square$ World Map Visualisation
+\item $\square$ Time Series Plots
+\begin{itemize}
+\item $\square$ Comcode
+\item $\square$ Country
+\item $\square$ Port
+\end{itemize}
+\end{itemize}
+\item $\square$ Do the Visualisations make intuitive sense?
+\item $\square$ Is there anything missing from the application that you'd like to see?
+\end{itemize}
+
+\vspace*{6cm}
+
+\section{UI}
+\label{sec-2}
+\begin{itemize}
+\item $\square$ Is the performance of the app acceptable?
+\item $\square$ Do the Commodity Code Selectors cascade correctly?
+
+\emph{This means, are all the commodity codes displayed in the selectors descendants of those selected in lower-digit fields?}
+
+\item $\square$ Is the Date Range displaying all valid values?
+\item $\square$ Is everything reasonably sized on the page?
+\item $\square$ When running new queries, is it clear that the app is working, or does it just look frozen?
+\end{itemize}
+
+\vspace*{2cm}
+
+\begin{itemize}
+\item $\square$ Do the search functions on the Comcode Lookup tab work correctly?
+\begin{itemize}
+\item $\square$ Fuzzy Search bar at top
+\item $\square$ Comcode Search
+\item $\square$ Description Search
+\end{itemize}
+\item $\square$ Are the Comcode Legend entries (above the visualisations) showing \emph{only} the comcodes in play?
+\item $\square$ Is the interface of the app intuitive?
+\begin{itemize}
+\item Please enter any comments on how to improve the interface of the app:
+\end{itemize}
+\end{itemize}
+
+\vspace*{6cm}
+
+\begin{itemize}
+\item Please enter any additional comments and improvements below:
+\end{itemize}
+% Emacs 25.1.1 (Org mode 8.2.10)
+\end{document}

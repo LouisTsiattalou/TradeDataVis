@@ -61,9 +61,10 @@ library("pool")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
-setwd("~/R/ImportTool/Shiny/")
+#setwd("~/R/ImportTool/Shiny/")
 pg <- dbDriver("PostgreSQL")
-dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+
 #tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 tradedata <- dbPool(
     drv = pg,
@@ -78,10 +79,15 @@ tradedata <- dbPool(
 #     poolClose(tradedata)
 # })
 
+
 # Load Metadata
-portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
-comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
-countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
+conn <- poolCheckout(tradedata)
+
+portcode <- dbGetQuery(conn, "SELECT * FROM port")
+comcode <- dbGetQuery(conn, "SELECT * FROM comcode")
+countrycode <- dbGetQuery(conn, "SELECT * FROM country")
+
+poolReturn(conn)
 
 # Ordering by Ascending Codes
 portcode <- portcode %>% arrange(portname)
@@ -554,10 +560,14 @@ server <- function(input, output, session) {
       
       # Query data
       progress$set(detail = "Querying Country -> Comcode data")
-      portsumraw <- dbGetQuery(tradedata, portsumquery)
+      
+      conn <- poolCheckout(tradedata)
+      portsumraw <- dbGetQuery(conn, portsumquery)
       
       progress$set(detail = "Querying Comcode -> Port data")
-      countrysumraw <- dbGetQuery(tradedata, countrysumquery)
+      countrysumraw <- dbGetQuery(conn, countrysumquery)
+      
+      poolReturn(conn)
       
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
       if (sum(dim(portsumraw)) == 0) {
@@ -1095,7 +1105,10 @@ server <- function(input, output, session) {
      
       # Query data
       progress$set(detail = "Querying Data from Database")
-      euDataRaw <- dbGetQuery(tradedata, eudataquery)
+      
+      conn <- poolCheckout(tradedata)
+      euDataRaw <- dbGetQuery(conn, eudataquery)
+      poolReturn(conn)
       
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
       if (sum(dim(euDataRaw)) == 0) {
