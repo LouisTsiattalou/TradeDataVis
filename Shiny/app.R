@@ -61,7 +61,7 @@ library("pool")
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
-#setwd("~/R/ImportTool/Shiny/")
+# setwd("~/R/ImportTool/Shiny/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
@@ -113,14 +113,26 @@ comcode_6 <- comcode[nchar(comcode$commoditycode) == 6,]
 comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 
 # Create month list
-syrs <- as.character(sprintf("%02d",c(09:50)))
-smths <- as.character(sprintf("%02d",c(1:12)))
+# Two and a half month gap between current date and data contained in App.
+curyr <- as.numeric(substr(as.character(Sys.Date()),3,4))
+curmth <- as.numeric(substr(as.character(Sys.Date()),6,7))
+curday <- as.numeric(substr(as.character(Sys.Date()),9,10))
+
+syrs <- as.character(sprintf("%02d",c(curyr:09)))
+smths <- as.character(sprintf("%02d",c(12:1)))
 dates <- character(0)
 for (i in syrs){
   for (j in smths){
-    dates <- c(dates, paste(j,"/20",i,sep=""))
+    dates <- c(dates, paste("20", i, "-", j, sep=""))
   }
 }
+# 2 and a bit months time lag: pop off first two/three elements depending on day.
+dates <- if (curday > 15) {
+              dates[3:length(dates)]
+          } else {
+              dates[4:length(dates)]    
+          }
+
 
 # UI ==========================================================================
 
@@ -491,9 +503,9 @@ server <- function(input, output, session) {
       
       # Control handling for comcode selectors
       comcode2query = input$comcode2
-      if ("All" %in% input$comcode4) {comcode4query = "__"} else {comcode4query = input$comcode4}
-      if ("All" %in% input$comcode6) {comcode6query = "__"} else {comcode6query = input$comcode6}
-      if ("All" %in% input$comcode8) {comcode8query = "__"} else {comcode8query = input$comcode8}
+      if ("All" %in% input$comcode4 | is.null(input$comcode4)) {comcode4query = "__"} else {comcode4query = input$comcode4}
+      if ("All" %in% input$comcode6 | is.null(input$comcode6)) {comcode6query = "__"} else {comcode6query = input$comcode6}
+      if ("All" %in% input$comcode8 | is.null(input$comcode8)) {comcode8query = "__"} else {comcode8query = input$comcode8}
       
       # This is kind of a funny way of doing things, but simply pasting the strings
       # together and taking the last 8 characters works quickly, easily and cleanly.
@@ -512,14 +524,17 @@ server <- function(input, output, session) {
       } else {
         countryquery <- countrycode %>% filter(countryname %in% input$countryselect) %>% pull(countrycode)
       }
-      
+          
       # Obtain date range
-      daterangequery <- dates[match(input$datestart,dates):match(input$dateend,dates)]
-      
+      daterangequery <- rev(dates[match(input$datestart,dates):match(input$dateend,dates)])
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"dateSlider",
-                           choices=c(daterangequery))
-      
+                           choices=daterangequery)
+      # Convert to Query Format
+      daterangequery <- paste0(substr(daterangequery,6,7),
+                               "/",
+                               substr(daterangequery,1,4))
+ 
       # First line of query dependent on Import or Export - parametrize to select*sumquery vars.
       
       if (input$impexpSelect == "Imports"){
@@ -584,7 +599,15 @@ server <- function(input, output, session) {
         colnames(portsumraw) = c("comcode","country","month","price", "weight")
         colnames(countrysumraw) = c("port","comcode","month","price", "weight")
       }
-      
+           
+      # Transform month back to readable format 
+      portsumraw$month <- paste0(substr(portsumraw$month,4,7),
+                                "-",
+                                substr(portsumraw$month,1,2))
+      countrysumraw$month <- paste0(substr(countrysumraw$month,4,7),
+                                "-",
+                                substr(countrysumraw$month,1,2))
+                                
       portsumraw$country[is.na(portsumraw$country)] <- "Unknown Country" # blank country = <NA>
       countrysumraw$port[countrysumraw$port == ""] <- "Unknown Port" # blank port = ""
 
@@ -923,6 +946,8 @@ server <- function(input, output, session) {
                           mapData$dataPolygons$value)
     
     leaflet(data = mapData$dataPolygons) %>%
+      setView(lng = 0, lat = 20, zoom = 2) %>%
+      # addTiles() %>%
       addProviderTiles("CartoDB.Positron") %>%
       addPolygons(fillColor = ~pal(mapData$dataPolygons$value),
                   smoothFactor = 0.5,
@@ -934,7 +959,7 @@ server <- function(input, output, session) {
                 values = 0:max(mapData$dataPolygons$value), 
                 opacity = 0.7, 
                 title = "Colour Scale",
-                position = "bottomright")
+                position = "topright")
     
   })
   
@@ -1057,9 +1082,9 @@ server <- function(input, output, session) {
       
       # Control handling for comcode selectors
       eucomcode2query = input$eucomcode2
-      if ("All" %in% input$eucomcode4) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
-      if ("All" %in% input$eucomcode6) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
-      if ("All" %in% input$eucomcode8) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
+      if ("All" %in% input$eucomcode4 | is.null(input$comcode4)) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
+      if ("All" %in% input$eucomcode6 | is.null(input$comcode6)) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
+      if ("All" %in% input$eucomcode8 | is.null(input$comcode8)) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
       
       # This is kind of a funny way of doing things, but simply pasting the strings
       # together and taking the last 8 characters works quickly, easily and cleanly.
@@ -1073,16 +1098,14 @@ server <- function(input, output, session) {
       }
       
       # Obtain date range
-      eudaterangequery <- dates[match(input$eudatestart,dates):match(input$eudateend,dates)]
-      
+      eudaterangequery <- rev(dates[match(input$eudatestart,dates):match(input$eudateend,dates)])
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"eudateSlider",
-                           choices=c(eudaterangequery))
-      
+                           choices=eudaterangequery)
       # Transform to EU Query Format
       eudaterangequery <- paste0("0",
-                                 substr(eudaterangequery,4,8),
-                                 substr(eudaterangequery,1,2))
+                                 substr(eudaterangequery,1,4),
+                                 substr(eudaterangequery,6,7))
       
       # First line of query dependent on Import or Export
       if (input$euimpexpSelect == "Imports") {
@@ -1125,9 +1148,9 @@ server <- function(input, output, session) {
       }
      
       # Transform month back to readable format 
-      euDataRaw$month <- paste0(substr(euDataRaw$month,6,7),
-                                "/",
-                                substr(euDataRaw$month,2,5))
+      euDataRaw$month <- paste0(substr(euDataRaw$month,2,5),
+                                "-",
+                                substr(euDataRaw$month,6,7))
       # Handle NAs
       euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
 
@@ -1432,8 +1455,9 @@ server <- function(input, output, session) {
     
     leaflet(data = euMapData$dataPolygons) %>%
       setView(lng = 21.22574, lat = 48.2361, zoom = 4) %>%
+      # addTiles() %>%
       addProviderTiles("CartoDB.Positron") %>%
-      addPolygons(fillColor = ~pal(euMapData$dataPolygons$value),
+      addPolygons(fillColor = ~pal(abs(euMapData$dataPolygons$value)),
                   smoothFactor = 0.5,
                   weight = 1,
                   color = "#000000",
@@ -1443,7 +1467,7 @@ server <- function(input, output, session) {
                 values = 0:max(euMapData$dataPolygons$value), 
                 opacity = 0.7, 
                 title = "Colour Scale",
-                position = "bottomright")
+                position = "topright")
     
   })
   
