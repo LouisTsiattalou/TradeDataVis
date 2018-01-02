@@ -117,13 +117,19 @@ comcode_8 <- comcode[nchar(comcode$commoditycode) == 8,]
 curyr <- as.numeric(substr(as.character(Sys.Date()),3,4))
 curmth <- as.numeric(substr(as.character(Sys.Date()),6,7))
 curday <- as.numeric(substr(as.character(Sys.Date()),9,10))
-
-syrs <- as.character(sprintf("%02d",c(curyr:09)))
-smths <- as.character(sprintf("%02d",c(12:1)))
 dates <- character(0)
+
+# Current Year
+for (j in curmth:1) {
+  dates <- c(dates, paste0(as.character(curyr), "-", as.character(sprintf("%02d", j)) ))
+}
+
+# All Other Years
+syrs <- as.character(sprintf("%02d",c(curyr-1:09)))
+smths <- as.character(sprintf("%02d",c(12:1)))
 for (i in syrs){
   for (j in smths){
-    dates <- c(dates, paste("20", i, "-", j, sep=""))
+    dates <- c(dates, paste0("20", i, "-", j))
   }
 }
 # 2 and a bit months time lag: pop off first two/three elements depending on day.
@@ -526,7 +532,7 @@ server <- function(input, output, session) {
       }
           
       # Obtain date range
-      daterangequery <- rev(dates[match(input$datestart,dates):match(input$dateend,dates)])
+      daterangequery <- rev(dates[match(input$dateend,dates):match(input$datestart,dates)])
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"dateSlider",
                            choices=daterangequery)
@@ -585,10 +591,27 @@ server <- function(input, output, session) {
       poolReturn(conn)
       
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
-      if (sum(dim(portsumraw)) == 0) {
+      if (dim(portsumraw)[1] == 0) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$nullDataframe <- TRUE
         nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
+        isolate({
+            showModal(modalDialog(title = "Alert!",
+                                  paste0("No ",
+                                         input$impexpSelect,
+                                         " for Date Range ",
+                                         input$datestart, " - ", input$dateend,
+                                         " and Commodity Code(s) ",
+                                         nullDataframe$comcodequery,
+                                         ".")), session)
+            print(paste0("No ",
+                         input$impexpSelect,
+                         " for Date Range ",
+                         input$datestart, " - ", input$dateend,
+                         " and Commodity Code(s) ",
+                         nullDataframe$comcodequery,
+                         "."))
+        })
         req(FALSE)
       }
       
@@ -628,23 +651,6 @@ server <- function(input, output, session) {
     if (input$queryButton == 0) return()
     req(input$dateSlider)
     if (nullDataframe$nullDataframe == TRUE) {
-      isolate({
-        showModal(modalDialog(title = "Alert!",
-                              paste0("No ",
-                                     input$impexpSelect,
-                                     " for Date Range ",
-                                     input$datestart, " - ", input$dateend,
-                                     " and Commodity Code(s) ",
-                                     nullDataframe$comcodequery,
-                                     ".")), session)
-        print(paste0("No ",
-                     input$impexpSelect,
-                     " for Date Range ",
-                     input$datestart, " - ", input$dateend,
-                     " and Commodity Code(s) ",
-                     nullDataframe$comcodequery,
-                     "."))
-      })
       # Break out of reactive chain
       req(FALSE)
     }
@@ -671,7 +677,6 @@ server <- function(input, output, session) {
       portsum <- queryData$portsumraw %>% filter(month == input$dateSlider) %>% select(-month)
       countrysum <- queryData$countrysumraw %>% filter(month == input$dateSlider) %>% select(-month)
     }
-
     
     # Select correct unit
     if (input$unitSelect == "Value (GBP)"){
@@ -701,7 +706,7 @@ server <- function(input, output, session) {
     countrysum <- ungroup(countrysum)
     
     # Check again if, after sorting, we're dealing with a blank df.
-    if (sum(dim(portsum)) == 0) {
+    if (dim(portsum)[1] == 0) {
       nullDataframe$nullDataframe <- TRUE
       isolate({
         showModal(modalDialog(title = "Alert!",
@@ -709,7 +714,9 @@ server <- function(input, output, session) {
                                      input$impexpSelect,
                                      " for ",
                                      input$dateSlider,
-                                     ".")), session)
+                                     "."),
+                              easyClose = TRUE,
+                              footer = NULL), session)
       })
       # Break out of reactive chain
       req(FALSE)
@@ -769,11 +776,15 @@ server <- function(input, output, session) {
       }, character(1))
       
       # WORLDMAP SPECIFIC -----------------------------------------------------
-      
       mapWorld <- map_data("world")
       
       # Get map_data World names from iso codes using iso.expand
       portsum_countries <- iso.expand(unique(portsum$country[portsum$country != "Unknown Country"]))
+      
+      # Special Case - replace China's iso.expand entry as it is not recognised by iso.alpha
+      if ("(^China(?!:Hong Kong|:Macao))|(^Paracel Islands)" %in% portsum_countries) {
+         portsum_countries[match("(^China(?!:Hong Kong|:Macao))|(^Paracel Islands)", portsum_countries)] <- "China" 
+      }
       
       # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
       if ("XS" %in% unique(portsum$country)) {portsum_countries = c(portsum_countries, "Serbia")}
@@ -1082,9 +1093,9 @@ server <- function(input, output, session) {
       
       # Control handling for comcode selectors
       eucomcode2query = input$eucomcode2
-      if ("All" %in% input$eucomcode4 | is.null(input$comcode4)) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
-      if ("All" %in% input$eucomcode6 | is.null(input$comcode6)) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
-      if ("All" %in% input$eucomcode8 | is.null(input$comcode8)) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
+      if ("All" %in% input$eucomcode4 | is.null(input$eucomcode4)) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
+      if ("All" %in% input$eucomcode6 | is.null(input$eucomcode6)) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
+      if ("All" %in% input$eucomcode8 | is.null(input$eucomcode8)) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
       
       # This is kind of a funny way of doing things, but simply pasting the strings
       # together and taking the last 8 characters works quickly, easily and cleanly.
@@ -1098,7 +1109,7 @@ server <- function(input, output, session) {
       }
       
       # Obtain date range
-      eudaterangequery <- rev(dates[match(input$eudatestart,dates):match(input$eudateend,dates)])
+      eudaterangequery <- rev(dates[match(input$eudateend,dates):match(input$eudatestart,dates)])
       # Update dateSlider with daterangequery
       updateSliderTextInput(session,"eudateSlider",
                            choices=eudaterangequery)
@@ -1109,10 +1120,10 @@ server <- function(input, output, session) {
       
       # First line of query dependent on Import or Export
       if (input$euimpexpSelect == "Imports") {
-        euselectquery <- "SELECT smk_cod_alpha, smk_comcode, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM dispatches "
+        euselectquery <- "SELECT smk_cod_alpha, smk_comcode, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM arrivals "
         eugroupbyquery <- "GROUP BY smk_cod_alpha,smk_comcode,smk_period_reference"
       } else if (input$euimpexpSelect == "Exports") {
-        euselectquery <- "SELECT smk_comcode, smk_cod_alpha, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM arrivals "
+        euselectquery <- "SELECT smk_comcode, smk_cod_alpha, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM dispatches "
         eugroupbyquery <- "GROUP BY smk_comcode,smk_cod_alpha,smk_period_reference"
       } 
       
@@ -1134,10 +1145,20 @@ server <- function(input, output, session) {
       poolReturn(conn)
       
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
-      if (sum(dim(euDataRaw)) == 0) {
+      if (dim(euDataRaw)[1] == 0) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$nullDataframe <- TRUE
         nullDataframe$comcodequery <- paste(gsub("_","",eucomcodequery),collapse = ",")
+        isolate({
+            showModal(modalDialog(title = "Alert!",
+                                  paste0("No ",
+                                         input$euimpexpSelect,
+                                         " for Date Range ",
+                                         input$eudatestart, " - ", input$eudateend,
+                                         " and Commodity Code(s) ",
+                                         nullDataframe$comcodequery,
+                                         ".")), session)
+        })
         req(FALSE)
       }
       
@@ -1170,20 +1191,10 @@ server <- function(input, output, session) {
     if (input$euqueryButton == 0) return()
     req(input$eudateSlider)
     if (nullDataframe$nullDataframe == TRUE) {
-      isolate({
-        showModal(modalDialog(title = "Alert!",
-                              paste0("No ",
-                                     input$euimpexpSelect,
-                                     " for Date Range ",
-                                     input$eudatestart, " - ", input$eudateend,
-                                     " and Commodity Code(s) ",
-                                     nullDataframe$comcodequery,
-                                     ".")), session)
-      })
       # Break out of reactive chain
       req(FALSE)
     }
-    
+       
     # Dependencies - changes to Date Slider and Unit Selector
     input$eudateSlider
     input$euunitSelect
@@ -1202,7 +1213,6 @@ server <- function(input, output, session) {
     } else {
       euData <- euQueryData$euDataRaw %>% filter(month == input$eudateSlider) %>% select(-month)
     }
-
     
     # Select correct unit
     if (input$euunitSelect == "Value (GBP)"){
@@ -1228,7 +1238,7 @@ server <- function(input, output, session) {
     euData <- ungroup(euData)
     
     # Check again if, after sorting, we're dealing with a blank df.
-    if (sum(dim(euData)) == 0) {
+    if (dim(euData)[1] == 0) {
       nullDataframe$nullDataframe <- TRUE
       isolate({
         showModal(modalDialog(title = "Alert!",
@@ -1236,7 +1246,9 @@ server <- function(input, output, session) {
                                      input$euimpexpSelect,
                                      " for ",
                                      input$eudateSlider,
-                                     ".")), session)
+                                     "."),
+                              easyClose = TRUE,
+                              footer = NULL), session)
       })
       # Break out of reactive chain
       req(FALSE)
@@ -1263,7 +1275,6 @@ server <- function(input, output, session) {
       # SANKEY SPECIFIC -------------------------------------------------------
       
       # Create Links & Nodes dataframe.
-      
       links <- euData
       colnames(links) <- c("source","target","value")
       nodes <- data.frame(unique(c(links$source,links$target)),stringsAsFactors = FALSE)
