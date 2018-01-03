@@ -266,6 +266,12 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
           )
         )
       )
+    ),
+    
+    # Create a spot for the download button
+    fluidRow(
+      column(11),
+      column(1, downloadButton("dataDownload", "Download"))
     )
   ),
   
@@ -369,6 +375,12 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
           )
         )
       )
+    ),
+    
+    # Create a spot for the download button
+    fluidRow(
+      column(11),
+      column(1, downloadButton("euDataDownload", "Download"))
     )
   ),
   # Enable ShinyJS support for cleaner on-click and disable features.
@@ -380,7 +392,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
 
 server <- function(input, output, session) {
   
-  queryData <- reactiveValues(portsumraw = NULL, countrysumraw = NULL)
+  queryData <- reactiveValues(dataraw = NULL, portsumraw = NULL, countrysumraw = NULL)
   comcodeLegendData <- reactiveValues(comcodelegend = NULL)
   sankeyData <- reactiveValues(links = NULL, nodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
@@ -553,54 +565,36 @@ server <- function(input, output, session) {
       # First line of query dependent on Import or Export - parametrize to select*sumquery vars.
       
       if (input$impexpSelect == "Imports"){
-        selectportsumquery <- "SELECT coo_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM imports "
-        selectcountrysumquery <- "SELECT comcode,port_alpha,account_date,sum(value),sum(quantity_1) FROM imports "
+        selectquery <- "SELECT coo_alpha,comcode,port_alpha,account_date,sum(value),sum(quantity_1) FROM imports "
         wherecountrycondition <- ")') AND (coo_alpha SIMILAR TO '("
-        groupbyportsumquery <- "GROUP BY comcode,coo_alpha,account_date"
+        groupbyquery <- "GROUP BY coo_alpha,comcode,port_alpha,account_date"
       }
       else if (input$impexpSelect == "Exports"){
-        selectportsumquery <- "SELECT comcode,cod_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
-        selectcountrysumquery <- "SELECT port_alpha,comcode,account_date,sum(value),sum(quantity_1) FROM exports "
+        selectquery <- "SELECT port_alpha,comcode,cod_alpha,account_date,sum(value),sum(quantity_1) FROM exports "
         wherecountrycondition <- ")') AND (cod_alpha SIMILAR TO '("
-        groupbyportsumquery <- "GROUP BY comcode,cod_alpha,account_date"
+        groupbyquery <- "GROUP BY cod_alpha,comcode,port_alpha,account_date"
       }
-      
-      portsumquery = paste0(selectportsumquery,
-                            "WHERE (comcode SIMILAR TO '(",
-                            paste(comcodequery,collapse = "|"),
-                            ")') AND (port_alpha SIMILAR TO '(",
-                            paste(portquery,collapse = "|"), 
-                            wherecountrycondition, # This depends on cod/coo_alpha!
-                            paste(countryquery,collapse = "|"), 
-                            ")') AND (account_date IN ('",
-                            paste(daterangequery, collapse = "', '"),
-                            "'))",
-                            groupbyportsumquery) # import = coo_alpha, export = cod_alpha!
-      
-      countrysumquery = paste0(selectcountrysumquery,                           # SELECT 
-                               "WHERE (comcode SIMILAR TO '(",                  # WHERE on COMCODE
-                               paste(comcodequery,collapse = "|"),              # WHERE on COMCODE
-                               ")') AND (port_alpha SIMILAR TO '(",             # WHERE on PORT
-                               paste(portquery,collapse = "|"),                 # WHERE on PORT
-                               wherecountrycondition,                           # WHERE on COUNTRY
-                               paste(countryquery,collapse = "|"),              # WHERE on COUNTRY
-                               ")') AND (account_date IN ('",                   # WHERE on DATE
-                               paste(daterangequery, collapse = "', '"),        # WHERE on DATE
-                               "')) GROUP BY comcode,port_alpha,account_date")  # GROUP BY
-      
-      # Query data
-      progress$set(detail = "Querying Country -> Comcode data")
-      
+
+      dataquery = paste0(selectquery,
+                         "WHERE (comcode SIMILAR TO '(",
+                         paste(comcodequery,collapse = "|"),
+                         ")') AND (port_alpha SIMILAR TO '(",
+                         paste(portquery,collapse = "|"), 
+                         wherecountrycondition, # This depends on cod/coo_alpha!
+                         paste(countryquery,collapse = "|"), 
+                         ")') AND (account_date IN ('",
+                         paste(daterangequery, collapse = "', '"),
+                         "'))",
+                         groupbyquery) # import = coo_alpha, export = cod_alpha!
+                         
+      progress$set(detail = "Querying Data from Database")
+
       conn <- poolCheckout(tradedata)
-      portsumraw <- dbGetQuery(conn, portsumquery)
-      
-      progress$set(detail = "Querying Comcode -> Port data")
-      countrysumraw <- dbGetQuery(conn, countrysumquery)
-      
+      dataraw <- dbGetQuery(conn, dataquery)
       poolReturn(conn)
-      
+
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
-      if (dim(portsumraw)[1] == 0) {
+      if (dim(dataraw)[1] == 0) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$nullDataframe <- TRUE
         nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
@@ -623,15 +617,21 @@ server <- function(input, output, session) {
         })
         req(FALSE)
       }
-      
+
+      # Set up correct colnames and create portsum/countrysum dataframes from dataraw
       if (input$impexpSelect == "Imports") {
-        colnames(portsumraw) = c("country","comcode","month","price", "weight")
-        colnames(countrysumraw) = c("comcode","port","month","price", "weight")
+        colnames(dataraw) = c("country","comcode","port","month","price", "weight")
+        portsumraw <- dataraw %>% select(country,comcode,month,price,weight) %>% group_by(country,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
+        countrysumraw <- dataraw %>% select(comcode,port,month,price,weight) %>% group_by(comcode,port,month) %>% summarise(price = sum(price), weight = sum(weight))
       } else if (input$impexpSelect == "Exports") {
-        colnames(portsumraw) = c("comcode","country","month","price", "weight")
-        colnames(countrysumraw) = c("port","comcode","month","price", "weight")
+        colnames(dataraw) = c("port","comcode","country","month","price", "weight")
+        portsumraw <- dataraw %>% select(comcode,country,month,price,weight) %>% group_by(comcode,country,month) %>% summarise(price = sum(price), weight = sum(weight))
+        countrysumraw <- dataraw %>% select(port,comcode,month,price,weight) %>% group_by(port,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
       }
-           
+      
+      portsumraw <- ungroup(portsumraw)
+      countrysumraw <- ungroup(countrysumraw)
+    
       # Transform month back to readable format 
       portsumraw$month <- paste0(substr(portsumraw$month,4,7),
                                 "-",
@@ -639,13 +639,13 @@ server <- function(input, output, session) {
       countrysumraw$month <- paste0(substr(countrysumraw$month,4,7),
                                 "-",
                                 substr(countrysumraw$month,1,2))
-                                
       portsumraw$country[is.na(portsumraw$country)] <- "Unknown Country" # blank country = <NA>
       countrysumraw$port[countrysumraw$port == ""] <- "Unknown Port" # blank port = ""
 
       # End Isolate
       })
     
+    queryData$dataraw <- dataraw
     queryData$portsumraw <- portsumraw
     queryData$countrysumraw <- countrysumraw
 
@@ -1016,7 +1016,25 @@ server <- function(input, output, session) {
       scale_fill_hue(l=40)
   })
 
-   
+
+  # DATA DOWNLOAD ------------------------------------------------------------
+    output$dataDownload <- downloadHandler(
+        filename = function() {
+        "TradeDataVisNonEUExtract.csv"
+        },
+        content = function(file) {
+            downloadfile <- queryData$dataraw %>%
+                left_join(comcodelookup, by=c("comcode" = "commoditycode")) %>%
+                left_join(portcode, by=c("port" = "portcode")) %>%
+                left_join(countrycode, by=c("country" = "countrycode"))
+            downloadfile <- downloadfile %>% select(comcode,port,portname,type,country,countryname,month,price,weight,description)
+            write.csv(downloadfile, file, row.names = FALSE)
+        }
+    )
+
+
+
+    
   # SERVER (EU) ==============================================================
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
@@ -1513,7 +1531,22 @@ server <- function(input, output, session) {
       scale_y_continuous(labels = comma) + 
       scale_fill_hue(l=40)
   })
-   
+
+
+  # DATA DOWNLOAD ------------------------------------------------------------
+    output$euDataDownload <- downloadHandler(
+        filename = function() {
+        "TradeDataVisEUExtract.csv"
+        },
+        content = function(file) {
+            eudownloadfile <- euQueryData$euDataRaw %>%
+                left_join(comcodelookup, by=c("comcode" = "commoditycode")) %>%
+                left_join(countrycode, by=c("country" = "countrycode"))
+            eudownloadfile <- eudownloadfile %>% select(comcode,country,countryname,month,price,consignments,description)
+            write.csv(eudownloadfile, file, row.names = FALSE)
+        }
+  )
+    
 # Close Server Function  
 }
 
