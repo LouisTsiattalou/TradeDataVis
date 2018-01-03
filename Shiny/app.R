@@ -89,10 +89,19 @@ countrycode <- dbGetQuery(conn, "SELECT * FROM country")
 
 poolReturn(conn)
 
-# Ordering by Ascending Codes
+# Order Ascending
 portcode <- portcode %>% arrange(portname)
 comcode <- comcode %>% arrange(commoditycode)
 countrycode <- countrycode %>% arrange(countryname)
+
+# Strip Minor Seaports
+# 1. If the record's portcode has many portnames to a single portcode, strip those
+#    without the first 3 letters being capitals (as this denotes the main port for the portcode).
+# 2. If the code isn't duplicated, keep the record.
+portcode <- portcode %>% filter((toupper(substr(portname,1,3)) == substr(portname,1,3) & 
+                                  (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == TRUE
+                                )
+                                | (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == FALSE)
 
 ### Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
@@ -951,7 +960,7 @@ server <- function(input, output, session) {
                         domain = 0:max(mapData$dataPolygons$value),
                         reverse = TRUE)
     
-    value_popup <- paste0("<strong>Country: </strong>", 
+    value_popup <- paste0(ifelse(input$impexpSelect == "Imports", "<strong>Country of Origin: </strong>","<strong>Country of Dispatch: </strong>"), 
                           mapData$dataPolygons$region, 
                           "<br><strong>Value: </strong>", 
                           mapData$dataPolygons$value)
@@ -1459,7 +1468,7 @@ server <- function(input, output, session) {
                         domain = 0:max(euMapData$dataPolygons$value),
                         reverse = TRUE)
     
-    value_popup <- paste0("<strong>Country: </strong>", 
+    value_popup <- paste0("<strong>Country of Dispatch: </strong>", 
                           euMapData$dataPolygons$region, 
                           "<br><strong>Value: </strong>", 
                           euMapData$dataPolygons$value)
