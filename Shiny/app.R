@@ -23,6 +23,12 @@ library("shinyWidgets")
 if(require("dplyr") == FALSE) {install.packages("dplyr")}
 library("dplyr")
 
+if(require("devtools") == FALSE) {install.packages("devtools")}
+library("devtools")
+
+# The development version of ggplot2 is necessary for the plotly time series plots to render correctly
+# install_github("tidyverse/ggplot2")
+
 if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
 library("RPostgreSQL")
 
@@ -259,9 +265,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
           tabPanel("MAP", leafletOutput(outputId = "worldMap", height = 600)),
           tabPanel("TIME SERIES",
             tabsetPanel(
-              tabPanel("By Commodity Code", plotOutput(outputId = "tsByComcode")),
-              tabPanel("By Country", plotOutput(outputId = "tsByCountry")),
-              tabPanel("By Port", plotOutput(outputId = "tsByPort"))
+              tabPanel("By Commodity Code", plotlyOutput(outputId = "tsByComcode")),
+              tabPanel("By Country", plotlyOutput(outputId = "tsByCountry")),
+              tabPanel("By Port", plotlyOutput(outputId = "tsByPort"))
             )
           )
         )
@@ -369,8 +375,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
           tabPanel("MAP", leafletOutput(outputId = "euworldMap", height = 600)),
           tabPanel("TIME SERIES",
             tabsetPanel(
-              tabPanel("By Commodity Code", plotOutput(outputId = "eutsByComcode")),
-              tabPanel("By Country", plotOutput(outputId = "eutsByCountry"))
+              tabPanel("By Commodity Code", plotlyOutput(outputId = "eutsByComcode")),
+              tabPanel("By Country", plotlyOutput(outputId = "eutsByCountry"))
             )
           )
         )
@@ -986,34 +992,43 @@ server <- function(input, output, session) {
   
   # TIME SERIES ---------------------------------------------------------------
   
-  output$tsByComcode <- renderPlot({
-    ggplot(data = timeseriesData$byComcode) + 
-      geom_col(aes(month,value,fill=comcode), colour = "black", show.legend = TRUE) +
-      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
-           y = input$unitSelect,
-           fill = "Commodity Codes") + 
-      scale_y_continuous(labels = comma) + 
-      scale_fill_hue(l=40)
+  output$tsByComcode <- renderPlotly({
+      nbars <- length(timeseriesData$byComcode$comcode)
+      ggplotly(
+          ggplot(data = timeseriesData$byComcode) + 
+          geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+          labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+               y = paste(input$unitSelect, " \n"),
+               fill = "Commodity Codes") + 
+          scale_y_continuous(labels = comma) + 
+          scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
+      )
   })
   
-  output$tsByCountry <- renderPlot({
-    ggplot(data = timeseriesData$byCountry) + 
-      geom_col(aes(month,value,fill=country), colour = "black", show.legend = TRUE) +
-      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
-           y = input$unitSelect,
-           fill = "Countries") + 
-      scale_y_continuous(labels = comma) + 
-      scale_fill_hue(l=40)
+  output$tsByCountry <- renderPlotly({
+      nbars <- length(timeseriesData$byCountry$country)
+      ggplotly(
+          ggplot(data = timeseriesData$byCountry) + 
+          geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+          labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+               y = paste(input$unitSelect, " \n"),
+               fill = "Countries") + 
+          scale_y_continuous(labels = comma) + 
+          scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
+      )
   })
   
-  output$tsByPort <- renderPlot({
-    ggplot(data = timeseriesData$byPort) + 
-      geom_col(aes(month,value,fill=port), colour = "black", show.legend = TRUE) +
-      labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
-           y = input$unitSelect,
-           fill = "Ports") + 
-      scale_y_continuous(labels = comma) + 
-      scale_fill_hue(l=40)
+  output$tsByPort <- renderPlotly({
+      nbars <- length(timeseriesData$byPort$port)
+      ggplotly(
+          ggplot(data = timeseriesData$byPort) + 
+          geom_col(aes(month,value,fill=port), show.legend = TRUE) +
+          labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
+               y = paste(input$unitSelect, " \n"),
+               fill = "Ports") + 
+          scale_y_continuous(labels = comma) + 
+          scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
+      )
   })
 
 
@@ -1512,24 +1527,30 @@ server <- function(input, output, session) {
   
   # TIME SERIES ---------------------------------------------------------------
   
-  output$eutsByComcode <- renderPlot({
-    ggplot(data = euTimeseriesData$byComcode) + 
-      geom_col(aes(month,value,fill=comcode), colour = "black", show.legend = TRUE) +
-      labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
-           y = input$euunitSelect,
-           fill = "Commodity Codes") + 
-      scale_y_continuous(labels = comma) + 
-      scale_fill_hue(l=40)
+  output$eutsByComcode <- renderPlotly({
+      nbars <- length(euTimeseriesData$byComcode$comcode)
+      ggplotly(
+          ggplot(data = euTimeseriesData$byComcode) + 
+          geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+          labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
+               y = paste(input$euunitSelect, " \n"),
+               fill = "Commodity Codes") + 
+          scale_y_continuous(labels = comma) + 
+          scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
+      )
   })
   
-  output$eutsByCountry <- renderPlot({
-    ggplot(data = euTimeseriesData$byCountry) + 
-      geom_col(aes(month,value,fill=country), colour = "black", show.legend = TRUE) +
-      labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
-           y = input$euunitSelect,
-           fill = "Countries") + 
-      scale_y_continuous(labels = comma) + 
-      scale_fill_hue(l=40)
+  output$eutsByCountry <- renderPlotly({
+      nbars <- length(euTimeseriesData$byCountry$country)
+      ggplotly(
+          ggplot(data = euTimeseriesData$byCountry) + 
+          geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+          labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
+               y = paste(input$euunitSelect, " \n"),
+               fill = "Countries") + 
+          scale_y_continuous(labels = comma) + 
+          scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
+      )
   })
 
 
