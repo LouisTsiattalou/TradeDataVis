@@ -23,6 +23,9 @@ library("shinyWidgets")
 if(require("dplyr") == FALSE) {install.packages("dplyr")}
 library("dplyr")
 
+if(require("purrr") == FALSE) {install.packages("purrr")}
+library("purrr")
+
 if(require("devtools") == FALSE) {install.packages("devtools")}
 library("devtools")
 
@@ -64,6 +67,25 @@ library("shinythemes")
 
 if(require("pool") == FALSE) {install.packages("pool")}
 library("pool")
+
+# Function Definitions -------------------------------------------------------
+
+# Descendants - obtain all descendants of a vector of commodity codes.
+# Tested on "01" and "02", takes 0.25 secs for 500 descendants. Quick!
+descendants <- function(data, code) {
+    # Strip 8-digit codes (these are leaf nodes)
+    code <- code[nchar(code) < 8]
+    if (length(code) == 0) {
+        return()
+    } else {
+        # get all the children's indices
+        f <- data$parent %in% code
+        # get current children
+        children <- data$commoditycode[f]
+        return(c(children, descendants(data, children)))
+    }
+}
+
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
@@ -455,26 +477,27 @@ server <- function(input, output, session) {
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
-    comcode_2_selection <- input$comcode2
+    allDescendants <- descendants(comcode,input$comcode2)
 
     # Update Comcodes
     updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_4[comcode_4$parent %in% comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
                       options = list(maxItems = 5))
     updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_6[comcode_6$parent %in% comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
                       options = list(maxItems = 5))
     updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_8[comcode_8$parent %in% comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                       options = list(maxItems = 5))
   })
 
   observe({
+    allDescendants <- descendants(comcode,input$comcode4)
     comcode_4_selection <- input$comcode4
-
+    
     # Update Comcodes
     if (is.null(comcode_4_selection) == FALSE) {
       if ("All" %in% comcode_4_selection){
@@ -489,17 +512,18 @@ server <- function(input, output, session) {
       } else {
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_6[comcode_6$parent %in% comcode_4_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
                           options = list(maxItems = 5))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8[comcode_8$parent %in% comcode_4_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                           options = list(maxItems = 5))
       }
     }
   })
 
   observe({
+    allDescendants <- descendants(comcode,input$comcode6)
     comcode_6_selection <- input$comcode6
     
     # Update Comcodes
@@ -512,7 +536,7 @@ server <- function(input, output, session) {
       } else {
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8[comcode_8$parent %in% comcode_6_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                           options = list(maxItems = 5))
       }
     }
@@ -1054,26 +1078,27 @@ server <- function(input, output, session) {
   
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
-    eu_comcode_2_selection <- input$eucomcode2
-
+    allDescendants <- descendants(comcode,input$eucomcode2)
+    
     # Update Comcodes
     updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_4[comcode_4$parent %in% eu_comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
                       options = list(maxItems = 5))
     updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_6[comcode_6$parent %in% eu_comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
                       options = list(maxItems = 5))
     updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                       selected = "All",
-                      choices=c("All", comcode_8[comcode_8$parent %in% eu_comcode_2_selection,"commoditycode"]),
+                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                       options = list(maxItems = 5))
   })
 
   observe({
+    allDescendants <- descendants(comcode,input$eucomcode4)
     eu_comcode_4_selection <- input$eucomcode4
-
+    
     # Update Comcodes
     if (is.null(eu_comcode_4_selection) == FALSE) {
       if ("All" %in% eu_comcode_4_selection){
@@ -1088,17 +1113,18 @@ server <- function(input, output, session) {
       } else {
         updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_6[comcode_6$parent %in% eu_comcode_4_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
                           options = list(maxItems = 5))
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8[comcode_8$parent %in% eu_comcode_4_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                           options = list(maxItems = 5))
       }
     }
   })
 
   observe({
+    allDescendants <- descendants(comcode,input$eucomcode6)
     eu_comcode_6_selection <- input$eucomcode6
     
     # Update Comcodes
@@ -1111,7 +1137,7 @@ server <- function(input, output, session) {
       } else {
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8[comcode_8$parent %in% eu_comcode_6_selection,"commoditycode"]),
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
                           options = list(maxItems = 5))
       }
     }
