@@ -20,6 +20,9 @@ library("shinyjs")
 if(require("shinyWidgets") == FALSE) {install.packages("shinyWidgets")}
 library("shinyWidgets")
 
+if(require("shinycssloaders") == FALSE) {install.packages("shinycssloaders")}
+library("shinycssloaders")
+
 if(require("dplyr") == FALSE) {install.packages("dplyr")}
 library("dplyr")
 
@@ -85,7 +88,6 @@ descendants <- function(data, code) {
         return(c(children, descendants(data, children)))
     }
 }
-
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
@@ -178,6 +180,8 @@ dates <- if (curday > 15) {
 
 
 # UI ==========================================================================
+# Set plot animation colour
+options(spinner.color="#0dc5c1")
 
 ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   
@@ -189,7 +193,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   tabPanel("Commodity Code Lookup",
            tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
            hr(),
-           dataTableOutput("ComcodeLookup")
+           dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
            ),
   
   # NON-EU TRADE --------------------------------------------------------------
@@ -283,13 +287,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     fluidRow(
       column(12,
         tabsetPanel(
-          tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade")), 
-          tabPanel("MAP", leafletOutput(outputId = "worldMap", height = 600)),
+          tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade") %>% withSpinner(type=6)), 
+          tabPanel("MAP", leafletOutput(outputId = "worldMap", height = 600) %>% withSpinner(type=6)),
           tabPanel("TIME SERIES",
             tabsetPanel(
-              tabPanel("By Commodity Code", plotlyOutput(outputId = "tsByComcode")),
-              tabPanel("By Country", plotlyOutput(outputId = "tsByCountry")),
-              tabPanel("By Port", plotlyOutput(outputId = "tsByPort"))
+              tabPanel("By Commodity Code", plotlyOutput(outputId = "tsByComcode") %>% withSpinner(type=6)),
+              tabPanel("By Country", plotlyOutput(outputId = "tsByCountry") %>% withSpinner(type=6)),
+              tabPanel("By Port", plotlyOutput(outputId = "tsByPort") %>% withSpinner(type=6))
             )
           )
         )
@@ -393,12 +397,12 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     fluidRow(
       column(12,
         tabsetPanel(
-          tabPanel("FLOW", sankeyNetworkOutput(outputId = "eusankeyTrade")), 
-          tabPanel("MAP", leafletOutput(outputId = "euworldMap", height = 600)),
+          tabPanel("FLOW", sankeyNetworkOutput(outputId = "eusankeyTrade") %>% withSpinner(type=6)), 
+          tabPanel("MAP", leafletOutput(outputId = "euworldMap", height = 600) %>% withSpinner(type=6)),
           tabPanel("TIME SERIES",
             tabsetPanel(
-              tabPanel("By Commodity Code", plotlyOutput(outputId = "eutsByComcode")),
-              tabPanel("By Country", plotlyOutput(outputId = "eutsByCountry"))
+              tabPanel("By Commodity Code", plotlyOutput(outputId = "eutsByComcode") %>% withSpinner(type=6)),
+              tabPanel("By Country", plotlyOutput(outputId = "eutsByCountry") %>% withSpinner(type=6))
             )
           )
         )
