@@ -191,6 +191,10 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   # COMMODITY CODE LOOKUP -----------------------------------------------------
   
   tabPanel("Commodity Code Lookup",
+           HTML("<div class=\"alert alert-dismissible alert-warning\">
+                    <strong>Alert:</strong> This application is currently in beta. There may be bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
+                Additionally, please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
+                </div>"),
            tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
            hr(),
            dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
@@ -302,8 +306,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(11),
-      column(1, downloadButton("dataDownload", "Download"))
+      column(10),
+      column(2, downloadButton("dataDownload", "Download"))
     )
   ),
   
@@ -411,10 +415,35 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(11),
-      column(1, downloadButton("euDataDownload", "Download"))
+      column(10),
+      column(2, downloadButton("euDataDownload", "Download"))
     )
   ),
+  # Feedback Form (I suggest you leave this part folded...)
+  tabPanel("Feedback",
+           HTML("
+               <div id=\"wufoo-mmr67cc1bqdty6\">
+                        Fill out my <a href=\"https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6\">online form</a>.
+               </div>
+                 <div id=\"wuf-adv\" style=\"font-family:inherit;font-size: small;color:#a7a7a7;text-align:center;display:block;\">The easy to use <a href=\"http://wufoo.co.uk/form-builder/\">Wufoo form builder</a> helps you make forms easy, fast, and fun.</div>
+                                                                                                                                                                                                                                                            <script type=\"text/javascript\">var mmr67cc1bqdty6;(function(d, t) {
+                                                                                                                                                                                                                                                                var s = d.createElement(t), options = {
+                                                                                                                                                                                                                                                                    'userName':'fsaanalytics',
+                                                                                                                                                                                                                                                                    'formHash':'mmr67cc1bqdty6',
+                                                                                                                                                                                                                                                                    'autoResize':true,
+                                                                                                                                                                                                                                                                    'height':'1262',
+                                                                                                                                                                                                                                                                    'async':true,
+                                                                                                                                                                                                                                                                    'host':'wufoo.co.uk',
+                                                                                                                                                                                                                                                                    'header':'show',
+                                                                                                                                                                                                                                                                    'ssl':true};
+                                                                                                                                                                                                                                                                s.src = ('https:' == d.location.protocol ? 'https://' : 'http://') + 'www.wufoo.co.uk/scripts/embed/form.js';
+                                                                                                                                                                                                                                                                s.onload = s.onreadystatechange = function() {
+                                                                                                                                                                                                                                                                    var rs = this.readyState; if (rs) if (rs != 'complete') if (rs != 'loaded') return;
+                                                                                                                                                                                                                                                                    try { mmr67cc1bqdty6 = new WufooForm();mmr67cc1bqdty6.initialize(options);mmr67cc1bqdty6.display(); } catch (e) {}};
+                                                                                                                                                                                                                                                                var scr = d.getElementsByTagName(t)[0], par = scr.parentNode; par.insertBefore(s, scr);
+                                                                                                                                                                                                                                                            })(document, 'script');</script>"
+           )
+        ),
   # Enable ShinyJS support for cleaner on-click and disable features.
   shinyjs::useShinyjs()
 )

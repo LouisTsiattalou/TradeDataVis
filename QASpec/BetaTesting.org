@@ -17,7 +17,6 @@
 This document is intended to be a checklist for the purposes of quality assuring the Trade Data Visualisation web application. If you have a copy of this sheet, it means that you have been asked to help identify bugs and errors in the application during the beta testing phase of the project.
   
 * Technical
-- [ ] Does the app crash when no data is returned from a query?
 - [ ] Do the Visualisations render correctly?
   - [ ] Sankey Diagrams
   - [ ] World Map Visualisation
@@ -25,7 +24,6 @@ This document is intended to be a checklist for the purposes of quality assuring
     - [ ] Comcode
     - [ ] Country
     - [ ] Port
-- [ ] Do the Visualisations make intuitive sense?
 - [ ] Is there anything missing from the application that you'd like to see?
 
 \vspace*{6cm}
@@ -37,6 +35,7 @@ This document is intended to be a checklist for the purposes of quality assuring
   /This means, are all the commodity codes displayed in the selectors descendants of those selected in lower-digit fields?/
 
 - [ ] Is the Date Range displaying all valid values?
+- [ ] Do the Visualisations make intuitive sense?
 - [ ] Is everything reasonably sized on the page?
 - [ ] When running new queries, is it clear that the app is working, or does it just look frozen?
 
@@ -54,3 +53,4 @@ This document is intended to be a checklist for the purposes of quality assuring
 
 - Please enter any additional comments and improvements below:
 
+  
