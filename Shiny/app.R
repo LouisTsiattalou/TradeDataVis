@@ -133,6 +133,9 @@ portcode <- portcode %>% filter((toupper(substr(portname,1,3)) == substr(portnam
                                 )
                                 | (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == FALSE)
 
+# Remove Duplicate Countrycodes
+countrycode <- countrycode[!duplicated(countrycode$countrycode),]
+
 ### Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
 
@@ -849,29 +852,19 @@ server <- function(input, output, session) {
       
       # WORLDMAP SPECIFIC -----------------------------------------------------
       mapWorld <- map_data("world")
-      
-      # Get map_data World names from iso codes using iso.expand
-      portsum_countries <- iso.expand(unique(portsum$country[portsum$country != "Unknown Country"]))
-      
-      # Special Case - replace China's iso.expand entry as it is not recognised by iso.alpha
-      if ("(^China(?!:Hong Kong|:Macao))|(^Paracel Islands)" %in% portsum_countries) {
-         portsum_countries[match("(^China(?!:Hong Kong|:Macao))|(^Paracel Islands)", portsum_countries)] <- "China" 
-      }
-      
-      # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
-      if ("XS" %in% unique(portsum$country)) {portsum_countries = c(portsum_countries, "Serbia")}
-      portsum_countries <- tibble(portsum_countries, iso.alpha(portsum_countries))
-      colnames(portsum_countries) <- c("name","code")
-      portsum_countries[portsum_countries$name == "Serbia","code"] = "XS"
+       
+      # Convert mapWorld region to iso codes
+      mapWorld$region <- iso.alpha(mapWorld$region)
       
       # Aggregate by country
       portsum_countrytotal <- portsum[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
-      # Match plot-compatible names to iso codes
-      portsum_countrytotal <- left_join(portsum_countrytotal,portsum_countries, by=c("country" = "code"))
-      # Join values to mapWorld for plotting
-      portsum_countrytotal <- tibble(country = portsum_countrytotal$name,value = portsum_countrytotal$value)
-      mapWorld <- left_join(mapWorld,portsum_countrytotal, by = c("region" = "country"))
       
+      # Join values to mapWorld for plotting
+      mapWorld <- left_join(mapWorld, portsum_countrytotal, by = c("region" = "country"))
+     
+      mapWorld <- left_join(mapWorld, countrycode, by = c("region" = "countrycode")) 
+      mapWorld <- mapWorld %>% select(-region)
+      mapWorld <- mapWorld %>% rename(region = "countryname")
       
       # If using GGPlot, mapWorld DF is sufficient. If using Leaflet, need SpatialPolygons object.
       
@@ -1406,26 +1399,20 @@ server <- function(input, output, session) {
       
       mapWorld <- map_data("world")
       
-      # Get map_data World names from iso codes using iso.expand
-      euData_countries <- iso.expand(unique(euData$country[euData$country != "Unknown Country"]))
-      
-      # Special Case - add serbia if XS is used - iso.expand only considers RS as Serbia
-      if ("XS" %in% unique(euData$country)) {euData_countries = c(euData_countries, "Serbia")}
-      euData_countries <- tibble(euData_countries, iso.alpha(euData_countries))
-      colnames(euData_countries) <- c("name","code")
-      euData_countries[euData_countries$name == "Serbia","code"] = "XS"
+      # Convert mapWorld region to iso codes
+      mapWorld$region <- iso.alpha(mapWorld$region)
       
       # Aggregate by country
       euData_countrytotal <- euData[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
-      # Match plot-compatible names to iso codes
-      euData_countrytotal <- left_join(euData_countrytotal,euData_countries, by=c("country" = "code"))
-      # Join values to mapWorld for plotting
-      euData_countrytotal <- tibble(country = euData_countrytotal$name,value = euData_countrytotal$value)
-      mapWorld <- left_join(mapWorld,euData_countrytotal, by = c("region" = "country"))
       
+      # Join values to mapWorld for plotting
+      mapWorld <- left_join(mapWorld,euData_countrytotal, by = c("region" = "country"))
+     
+      mapWorld <- left_join(mapWorld, countrycode, by = c("region" = "countrycode")) 
+      mapWorld <- mapWorld %>% select(-region)
+      mapWorld <- mapWorld %>% rename(region = "countryname")
       
       # If using GGPlot, mapWorld DF is sufficient. If using Leaflet, need SpatialPolygons object.
-      
       mapWorld_relevant <- mapWorld[!is.na(mapWorld$value),]
       rownames(mapWorld_relevant) <- NULL
       
@@ -1514,7 +1501,6 @@ server <- function(input, output, session) {
     euMapData$dataPolygons <- dataPolygons
     euTimeseriesData$byComcode <- byComcode
     euTimeseriesData$byCountry <- byCountry
-    
     
   })
   
