@@ -102,12 +102,14 @@ tradedata <- dbPool(
     password = dbenv[2,2],
     host = dbenv[3,2],
     port = dbenv[4,2],
-    dbname = dbenv[5,2]
+    dbname = dbenv[5,2],
+    minSize = 5,
+    idleTimeout = 3600000  # one hour
 )
 
-# onStop(function() {
-#     poolClose(tradedata)
-# })
+onStop(function() {
+    poolClose(tradedata)
+})
 
 
 # Load Metadata
@@ -190,14 +192,53 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   
   # Navbar Title
   title = "UK Trade Data Visualisation",
+
+  # ABOUT PAGE ----------------------------------------------------------------
+  tabPanel("Welcome",
+           tags$h1("Welcome to the Trade Data Visualisation Application!"),
+           tags$hr(),
+           HTML("<div class=\"alert alert-dismissible alert-warning\">
+                    <strong>Alert:</strong> This application is currently in beta. There may be bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
+                Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
+                Lastly, if the app keeps crashing, please close the application for 15 minutes and retry.
+                </div>"),
+           tags$hr(),
+           tags$h3("Introduction"),
+           tags$p("This application was born out of a requirement to analyse HMRC trade data in a much more robust way. The previous method involved downloading and unzipping numerous nested trade data archives from ", tags$a(href = "https://uktradeinfo.com", "UKTradeInfo"), ", importing it into Excel, performing endless VLOOKUPs to find what commodities, ports and countries you were actually looking at... It took a very long time to conduct even basic analysis."),
+           tags$p("This application aims to fix this by providing three key visualisations: ",
+                  tags$ul(
+                           tags$li("Sankey Diagram"),
+                           tags$li("World Choropleth Map"),
+                           tags$li("Bar Charts by *")
+                       )
+                  ),
+           tags$p("These interactive visualisations provide a level of detail that is very difficult to get quickly using Excel or other end-user analysis tools. The Sankey Diagram is a network diagram describing the flow of absolute quantities (Price and Weight for non-EU, Price and Consignments for EU) between countries, commodities and ports; you can hover over a network relationship to obtain the value. The World Choropleth Map is a colour map of the world showing where our imports/exports are coming in from; click a country for more information. Lastly, the Bar Charts are interactive and show the proportion of the imports/exports contributed by each country, commodity and port. However, since port data is not available in the EU source data, ports are not shown in visualisations for EU imports/exports."),
+           tags$hr(),
+           tags$h3("How to Use the Application"),
+           tags$p("To use the application, first obtain the commodity codes you wish to find in the ", tags$b("Comcode Lookup"), " tab. There are search functions that are designed to quickly find the codes you need. Then go to either the EU/Non-EU Trade tabs and fill in the options at the top of the page. Once you have done this, hit the ", tags$i("\"Run Query\""), " button. All the data will be fetched from the database, and visualisations generated."),
+           tags$p("Once the visualisations show up, you will see:",
+                  tags$ul(
+                           tags$li("A mini Commodity Code Lookup table, showing", tags$i("only the commodity codes currently in play")),
+                           tags$li("A row containing a Date Slider and a Unit Selector. This will enable you to filter the query you've already made to show the appropriate unit and enable you to see the evolution of trade data activity in time by clicking and dragging the date slider."),
+                           tags$li("A tab selection panel enabling you to switch between the interactive visualisations."),
+                           tags$li("A Download Button, which downloads the results of the unfiltered query you just made by clicking \"Run Query\"")
+                           ),
+                  "You can also run another query by changing the selectors at the top and clicking Run Query again."),
+           tags$p("We aim to continue developing this application to maximise its value to the organisation. ", tags$b("Please help us do this by filling in the Feedback tab"), " after having used the app for a while. This will help us see exactly where we need to improve, and will speed up the iteration process for the application greatly!"),
+           tags$hr(),
+           tags$h3("About"),
+           tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
+                  tags$br(),
+                  "Version Number:", "0.1",
+                  tags$br(),
+                  "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
+                  ),
+           tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with assistance from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research).")
+           ),
   
   # COMMODITY CODE LOOKUP -----------------------------------------------------
   
   tabPanel("Commodity Code Lookup",
-           HTML("<div class=\"alert alert-dismissible alert-warning\">
-                    <strong>Alert:</strong> This application is currently in beta. There may be bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
-                Additionally, please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
-                </div>"),
            tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
            hr(),
            dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
@@ -221,10 +262,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                               background-size: 40px 40px;
                               }
                               "))),
-    
-    # Generate a row with a sidebar
+    # Query Options
     fluidRow(      
-    
+        
     # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
       column(2,
         selectizeInput("datestart", "Period Start:",
