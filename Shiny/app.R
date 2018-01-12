@@ -8,9 +8,6 @@
 
 # Load Packages --------------------------------------------------------------
 
-if(require("readr") == FALSE) {install.packages("readr")}
-library("readr")
-
 if(require("shiny") == FALSE) {install.packages("shiny")}
 library("shiny")
 
@@ -23,17 +20,17 @@ library("shinyWidgets")
 if(require("shinycssloaders") == FALSE) {install.packages("shinycssloaders")}
 library("shinycssloaders")
 
-if(require("dplyr") == FALSE) {install.packages("dplyr")}
-library("dplyr")
-
-if(require("purrr") == FALSE) {install.packages("purrr")}
-library("purrr")
+if(require("tidyverse") == FALSE) {install.packages("tidyverse")}
+library("tidyverse")
 
 if(require("devtools") == FALSE) {install.packages("devtools")}
 library("devtools")
 
 # The development version of ggplot2 is necessary for the plotly time series plots to render correctly
 # install_github("tidyverse/ggplot2")
+
+# Same for pool - otherwise it's all over the place with my app
+# install_github("rstudio/pool")
 
 if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
 library("RPostgreSQL")
@@ -68,9 +65,6 @@ library("scales")
 if(require("shinythemes") == FALSE) {install.packages("shinythemes")}
 library("shinythemes")
 
-if(require("pool") == FALSE) {install.packages("pool")}
-library("pool")
-
 # Function Definitions -------------------------------------------------------
 
 # Descendants - obtain all descendants of a vector of commodity codes.
@@ -92,19 +86,18 @@ descendants <- function(data, code) {
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
 # setwd("~/R/ImportTool/Shiny/")
-pg <- dbDriver("PostgreSQL")
-dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
 #tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 tradedata <- dbPool(
-    drv = pg,
+    drv = RPostgreSQL::PostgreSQL(max.con=40),
     user = dbenv[1,2],
     password = dbenv[2,2],
     host = dbenv[3,2],
     port = dbenv[4,2],
     dbname = dbenv[5,2],
-    minSize = 5,
-    idleTimeout = 3600000  # one hour
+    minSize = 3,
+    idleTimeout = 1200000  # 20 minutes 
 )
 
 onStop(function() {
@@ -113,13 +106,13 @@ onStop(function() {
 
 
 # Load Metadata
-conn <- poolCheckout(tradedata)
+# conn <- poolCheckout(tradedata)
 
-portcode <- dbGetQuery(conn, "SELECT * FROM port")
-comcode <- dbGetQuery(conn, "SELECT * FROM comcode")
-countrycode <- dbGetQuery(conn, "SELECT * FROM country")
+portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
+comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
+countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
 
-poolReturn(conn)
+# poolReturn(conn)
 
 # Order Ascending
 portcode <- portcode %>% arrange(portname)
@@ -197,8 +190,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   tabPanel("Welcome",
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
-           HTML("<div class=\"alert alert-dismissible alert-warning\">
-                    <strong>Alert:</strong> This application is currently in beta. There may be bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
+           HTML("<div class=\"alert alert-dismissible alert-danger\">
+                    <strong>Alert:</strong> This application is currently in beta. You are <i>very likely</i> to encounter bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
                 Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
                 Lastly, if the app keeps crashing, please close the application for 15 minutes and retry.
                 </div>"),
@@ -215,16 +208,28 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$p("These interactive visualisations provide a level of detail that is very difficult to get quickly using Excel or other end-user analysis tools. The Sankey Diagram is a network diagram describing the flow of absolute quantities (Price and Weight for non-EU, Price and Consignments for EU) between countries, commodities and ports; you can hover over a network relationship to obtain the value. The World Choropleth Map is a colour map of the world showing where our imports/exports are coming in from; click a country for more information. Lastly, the Bar Charts are interactive and show the proportion of the imports/exports contributed by each country, commodity and port. However, since port data is not available in the EU source data, ports are not shown in visualisations for EU imports/exports."),
            tags$hr(),
            tags$h3("How to Use the Application"),
-           tags$p("To use the application, first obtain the commodity codes you wish to find in the ", tags$b("Comcode Lookup"), " tab. There are search functions that are designed to quickly find the codes you need. Then go to either the EU/Non-EU Trade tabs and fill in the options at the top of the page. Once you have done this, hit the ", tags$i("\"Run Query\""), " button. All the data will be fetched from the database, and visualisations generated."),
+           tags$p("To use the application, first obtain the commodity codes you wish to find in the ", tags$b("Comcode Lookup"), " tab. There are search functions that are designed to quickly find the codes you need. Then go to either the EU/Non-EU Trade tabs and fill in the options at the top of the page. ", tags$b("You can type in values, or select them from the dropdowns."), "Once you have done this, hit the ", tags$i("\"Run Query\""), " button. All the data will be fetched from the database, and visualisations generated."),
            tags$p("Once the visualisations show up, you will see:",
                   tags$ul(
-                           tags$li("A mini Commodity Code Lookup table, showing", tags$i("only the commodity codes currently in play")),
+                           tags$li("A mini Commodity Code Lookup table, showing", tags$i("only the commodity codes currently in play.")),
                            tags$li("A row containing a Date Slider and a Unit Selector. This will enable you to filter the query you've already made to show the appropriate unit and enable you to see the evolution of trade data activity in time by clicking and dragging the date slider."),
                            tags$li("A tab selection panel enabling you to switch between the interactive visualisations."),
-                           tags$li("A Download Button, which downloads the results of the unfiltered query you just made by clicking \"Run Query\"")
+                           tags$li("A Download Button, which downloads the results of the unfiltered query you just made by clicking \"Run Query\".")
                            ),
                   "You can also run another query by changing the selectors at the top and clicking Run Query again."),
-           tags$p("We aim to continue developing this application to maximise its value to the organisation. ", tags$b("Please help us do this by filling in the Feedback tab"), " after having used the app for a while. This will help us see exactly where we need to improve, and will speed up the iteration process for the application greatly!"),
+           tags$p("I aim to continue developing this application to maximise its value to the organisation. ", tags$b("Please help in this effort by filling in the Feedback tab"), " after having used the app for a while. This will help me to see exactly where the app needs improvement, and will speed up the iteration process for the application greatly!"),
+           tags$hr(),
+           tags$h3("Known Bugs"),
+           tags$p(tags$u("Screen Grey-out"),
+                  tags$br(),
+                  "If you haven't run a successful query yet in your session and you make a query with no underlying data, it will display a message saying \"No Data Found\", which you can exit from and continue working. However, it will not show after a successful query has been made. Since it does not show, you can't exit from it, so the screen is essentially frozen from that point on.",
+                  tags$br(),
+                  tags$b("Solution: "), "Simply reload the App.",
+                  tags$br(),
+                  tags$br(),
+                  tags$u("Small Visualisations/Data Tables not loading"),
+                  tags$br(),
+                  tags$b("Solution: "), "Use Chrome"),
            tags$hr(),
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
@@ -233,7 +238,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),
-           tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with assistance from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research).")
+           tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with assistance from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research). Alpha-stage QA was performed by Harry Grantham-Hill (Operational Research).")
            ),
   
   # COMMODITY CODE LOOKUP -----------------------------------------------------
@@ -350,7 +355,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     # Create a spot for the download button
     fluidRow(
       column(10),
-      column(2, downloadButton("dataDownload", "Download"))
+      column(2, downloadButton("dataDownload", "Download Query Data"))
     )
   ),
   
@@ -459,9 +464,10 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     # Create a spot for the download button
     fluidRow(
       column(10),
-      column(2, downloadButton("euDataDownload", "Download"))
+      column(2, downloadButton("euDataDownload", "Download Query Data"))
     )
   ),
+  
   # Feedback Form (I suggest you leave this part folded...)
   tabPanel("Feedback",
            HTML("
@@ -534,7 +540,7 @@ server <- function(input, output, session) {
   shinyjs::onclick("eucomcode8", {updateSelectizeInput(session, "eucomcode8", selected = "")})
   
   observeEvent(input$dateSliderAll, {
-      if (input$dateSliderAll == FALSE) {
+      if (!input$dateSliderAll) {
           shinyjs::enable("dateSlider")
       } else {
           shinyjs::disable("dateSlider")
@@ -542,7 +548,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$eudateSliderAll, {
-      if (input$eudateSliderAll == FALSE) {
+      if (!input$eudateSliderAll) {
           shinyjs::enable("eudateSlider")
       } else {
           shinyjs::disable("eudateSlider")
@@ -695,9 +701,9 @@ server <- function(input, output, session) {
                          
       progress$set(detail = "Querying Data from Database")
 
-      conn <- poolCheckout(tradedata)
-      dataraw <- dbGetQuery(conn, dataquery)
-      poolReturn(conn)
+      # conn <- poolCheckout(tradedata)
+      dataraw <- dbGetQuery(tradedata, dataquery)
+      # poolReturn(conn)
 
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
       if (dim(dataraw)[1] == 0) {
@@ -1274,9 +1280,9 @@ server <- function(input, output, session) {
       # Query data
       progress$set(detail = "Querying Data from Database")
       
-      conn <- poolCheckout(tradedata)
-      euDataRaw <- dbGetQuery(conn, eudataquery)
-      poolReturn(conn)
+      # conn <- poolCheckout(tradedata)
+      euDataRaw <- dbGetQuery(tradedata, eudataquery)
+      # poolReturn(conn)
       
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
       if (dim(euDataRaw)[1] == 0) {
@@ -1447,7 +1453,10 @@ server <- function(input, output, session) {
       
       # Join values to mapWorld for plotting
       mapWorld <- left_join(mapWorld,euData_countrytotal, by = c("region" = "country"))
-     
+
+      # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
+      mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
+      
       mapWorld <- left_join(mapWorld, countrycode, by = c("region" = "countrycode")) 
       mapWorld <- mapWorld %>% select(-region)
       mapWorld <- mapWorld %>% rename(region = "countryname")
