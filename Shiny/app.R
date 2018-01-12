@@ -902,6 +902,9 @@ server <- function(input, output, session) {
       # Convert mapWorld region to iso codes
       mapWorld$region <- iso.alpha(mapWorld$region)
       
+      # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
+      mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
+
       # Aggregate by country
       portsum_countrytotal <- portsum[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
       
@@ -1453,9 +1456,6 @@ server <- function(input, output, session) {
       
       # Join values to mapWorld for plotting
       mapWorld <- left_join(mapWorld,euData_countrytotal, by = c("region" = "country"))
-
-      # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
-      mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
       
       mapWorld <- left_join(mapWorld, countrycode, by = c("region" = "countrycode")) 
       mapWorld <- mapWorld %>% select(-region)
