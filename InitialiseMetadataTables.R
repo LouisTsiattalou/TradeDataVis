@@ -152,17 +152,29 @@ Seaportcode$type <- "Seaport"
 
 portcode <- rbind(Airportcode, Seaportcode)
 portcode <- portcode[is.na(portcode$portname) == FALSE,]
-#portcode$portname <- toupper(portcode$portname)
 colnames(portcode) <- dbSafeNames(colnames(portcode))
 
-# OBTAIN LAT/LONG COORDINATES -------------------------------------------------
+# FILTER PORTCODE BY MAJOR PORTS -----------------------------------------------
+
+# Strip Minor Seaports
+# 1. If the record's portcode has many portnames to a single portcode, strip those
+#    without the first 3 letters being capitals (as this denotes the main port for the portcode).
+# 2. If the code isn't duplicated, keep the record.
+portcode <- portcode %>% filter((toupper(substr(portname,1,3)) == substr(portname,1,3) & 
+                                  (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == TRUE
+                                )
+                                | (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == FALSE)
+
+# OBTAIN LAT/LONG COORDINATES --------------------------------------------------
 
 # Set URL and FileName
 portlatlonURL <- "http://www.unece.org/fileadmin/DAM/cefact/locode/loc171csv.zip"
 portlatlonFN <- "datafiles/LatLonPorts.zip"
 
 # Download ZIP to datafiles, obtain list of items
-download.file(portlatlonURL,portlatlonFN)
+# download.file(portlatlonURL,portlatlonFN)
+# Download manually into datafiles and rename LatLonPorts.zip:
+# http://www.unece.org/cefact/codesfortrade/codes_index.html
 portlatlonlist <- unzip(portlatlonFN, list=TRUE)
 
 # Unzip to datafiles, paste csvs together
@@ -213,15 +225,26 @@ portlatlon$portname <- toupper(portlatlon$portname)
 # Delete unzipped files
 unlink(portlatlonlist$Name)
 
-# JOIN LAT/LONG TO PORTCODE ---------------------------------------------------
-# <<This section is incomplete>> 
-# TODO Find a way to match UN/LOCODE to HMRC Ports. Maybe manually.
-portcode2 <- left_join(portcode,portlatlon, by = "portcode")
-portcode2 <- portcode2 %>% select(portname = portname.x, portcode, type, lat, long)
+# JOIN LAT/LONG TO PORTCODE ----------------------------------------------------
+portcode <- left_join(portcode,portlatlon, by = "portcode")
 
+# We have now introduced duplicates! Luckily, they can be removed in the same way as we removed them earlier in the script.
+portcode <- portcode %>% filter((substr(portname.x,1,3) == substr(portname.y,1,3) & 
+                                 (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == TRUE
+                               )
+                               | (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == FALSE)
+
+# Drop unnecessary columns, rename portname column.
+portcode <- portcode %>% select(portname = portname.x, portcode, type, lat, long)
+
+# Replace NAs with somewhere in the sea
+portcode$long[is.na(portcode$long)] <- 0
+portcode$lat[is.na(portcode$lat)] <- 56
+
+# WRITE TO DATABASE ------------------------------------------------------------
 dbWriteTable(tradedata, 'port', portcode, row.names=FALSE)
 dbSendQuery(tradedata, "delete from port")
-dbWriteTable(tradedata,'port', portcode, row.names=FALSE, append = TRUE)
+dbWriteTable(tradedata, 'port', portcode, row.names=FALSE, append = TRUE)
 
 unlink(portcodeFN)
 

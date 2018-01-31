@@ -28,9 +28,11 @@ library("devtools")
 
 # The development version of ggplot2 is necessary for the plotly time series plots to render correctly
 # install_github("tidyverse/ggplot2")
+library("ggplot2")
 
 # Same for pool - otherwise it's all over the place with my app
 # install_github("rstudio/pool")
+library("pool")
 
 if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
 library("RPostgreSQL")
@@ -85,10 +87,11 @@ descendants <- function(data, code) {
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
-# setwd("~/R/ImportTool/Shiny/")
+# setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/Shiny/")
 dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
-#tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
+# pg <- dbDriver("PostgreSQL")
+# tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 tradedata <- dbPool(
     drv = RPostgreSQL::PostgreSQL(max.con=40),
     user = dbenv[1,2],
@@ -118,15 +121,6 @@ countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
 portcode <- portcode %>% arrange(portname)
 comcode <- comcode %>% arrange(commoditycode)
 countrycode <- countrycode %>% arrange(countryname)
-
-# Strip Minor Seaports
-# 1. If the record's portcode has many portnames to a single portcode, strip those
-#    without the first 3 letters being capitals (as this denotes the main port for the portcode).
-# 2. If the code isn't duplicated, keep the record.
-portcode <- portcode %>% filter((toupper(substr(portname,1,3)) == substr(portname,1,3) & 
-                                  (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == TRUE
-                                )
-                                | (duplicated(portcode) | duplicated(portcode, fromLast = TRUE)) == FALSE)
 
 # Remove Duplicate Countrycodes
 countrycode <- countrycode[!duplicated(countrycode$countrycode),]
@@ -229,7 +223,12 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                   tags$br(),
                   tags$u("Small Visualisations/Data Tables not loading"),
                   tags$br(),
-                  tags$b("Solution: "), "Use Chrome"),
+                  tags$b("Solution: "), "Use Chrome.",
+                  tags$br(),
+                  tags$br(),
+                  tags$u("Sankey Diagram only shows lines, not nodes"),
+                  tags$br(),
+                  tags$b("Solution: "), "Too many countries/comcodes/ports. Narrow your query down."),
            tags$hr(),
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
@@ -354,8 +353,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(10),
-      column(2, downloadButton("dataDownload", "Download Query Data"))
+      column(9),
+      column(3, downloadButton("dataDownload", "Download Query Data"))
     )
   ),
   
@@ -463,8 +462,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(10),
-      column(2, downloadButton("euDataDownload", "Download Query Data"))
+      column(9),
+      column(3, downloadButton("euDataDownload", "Download Query Data"))
     )
   ),
   
