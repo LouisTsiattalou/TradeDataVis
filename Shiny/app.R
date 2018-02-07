@@ -88,7 +88,7 @@ descendants <- function(data, code) {
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
 # setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/Shiny/")
-dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
 # pg <- dbDriver("PostgreSQL")
 # tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
@@ -331,7 +331,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
       column(6,
         tags$label("Select Units:"),
         radioButtons("unitSelect", label = NULL, inline = TRUE,
-                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)")))
+                     choices = c("Price (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)")))
     ),
     
     # Create a spot for the plots
@@ -353,8 +353,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(9),
-      column(3, downloadButton("dataDownload", "Download Query Data"))
+      column(10),
+      column(2, downloadButton("dataDownload", "Download Query Data"))
     )
   ),
   
@@ -440,8 +440,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
       column(6,
         tags$label("Select Units:"),
         radioButtons("euunitSelect", label = NULL, inline = TRUE,
-#                     choices = c("Value (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)", "Number of Consignments")))
-                     choices = c("Value (GBP)","Number of Consignments")))
+#                     choices = c("Price (GBP)", "Weight (KG)", "Price Per Kilo (GBP/KG)", "Number of Consignments")))
+                     choices = c("Price (GBP)","Number of Consignments")))
     ),
     
     # Create a spot for the plots
@@ -462,8 +462,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     
     # Create a spot for the download button
     fluidRow(
-      column(9),
-      column(3, downloadButton("euDataDownload", "Download Query Data"))
+      column(10),
+      column(2, downloadButton("euDataDownload", "Download Query Data"))
     )
   ),
   
@@ -634,10 +634,9 @@ server <- function(input, output, session) {
     on.exit(progress$close())
     progress$set(message = "Generating Visualisations", value = 1)
     
-    
     # Use selectors information to build plot
     isolate({
-      
+        
       # Set nullDataframe flag to FALSE
       nullDataframe$nullDataframe <- FALSE
       
@@ -731,13 +730,25 @@ server <- function(input, output, session) {
         req(FALSE)
       }
 
+      # Transform month back to readable format 
+      dataraw$account_date <- paste0(substr(dataraw$account_date,4,7),
+                                "-",
+                                substr(dataraw$account_date,1,2))
+      
       # Set up correct colnames and create portsum/countrysum dataframes from dataraw
       if (input$impexpSelect == "Imports") {
         colnames(dataraw) = c("country","comcode","port","month","price", "weight")
+        dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
+        dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
+
         portsumraw <- dataraw %>% select(country,comcode,month,price,weight) %>% group_by(country,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
         countrysumraw <- dataraw %>% select(comcode,port,month,price,weight) %>% group_by(comcode,port,month) %>% summarise(price = sum(price), weight = sum(weight))
+        
       } else if (input$impexpSelect == "Exports") {
         colnames(dataraw) = c("port","comcode","country","month","price", "weight")
+        dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
+        dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
+
         portsumraw <- dataraw %>% select(comcode,country,month,price,weight) %>% group_by(comcode,country,month) %>% summarise(price = sum(price), weight = sum(weight))
         countrysumraw <- dataraw %>% select(port,comcode,month,price,weight) %>% group_by(port,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
       }
@@ -745,16 +756,6 @@ server <- function(input, output, session) {
       portsumraw <- ungroup(portsumraw)
       countrysumraw <- ungroup(countrysumraw)
     
-      # Transform month back to readable format 
-      portsumraw$month <- paste0(substr(portsumraw$month,4,7),
-                                "-",
-                                substr(portsumraw$month,1,2))
-      countrysumraw$month <- paste0(substr(countrysumraw$month,4,7),
-                                "-",
-                                substr(countrysumraw$month,1,2))
-      portsumraw$country[is.na(portsumraw$country)] <- "Unknown Country" # blank country = <NA>
-      countrysumraw$port[countrysumraw$port == ""] <- "Unknown Port" # blank port = ""
-
       # End Isolate
       })
     
@@ -767,8 +768,10 @@ server <- function(input, output, session) {
   # ||||||||||||
   # CHAINS WITH
   # ||||||||||||
-  
+
   observe({
+    # FILTER DATE/UNIT IN DATA -------------------------------------------------
+      
     # Conditions for observe statement to run
     if (input$queryButton == 0) return()
     req(input$dateSlider)
@@ -801,7 +804,7 @@ server <- function(input, output, session) {
     }
     
     # Select correct unit
-    if (input$unitSelect == "Value (GBP)"){
+    if (input$unitSelect == "Price (GBP)"){
       portsum <- portsum %>% select(-weight)
       countrysum <- countrysum %>% select(-weight)
       
@@ -810,6 +813,14 @@ server <- function(input, output, session) {
       countrysum <- countrysum %>% select(-price)
       
     } else if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
+      # For map:
+      portcomcodesum <- portsum %>%
+                            select(country, price, weight) %>%
+                            group_by(country) %>%
+                            summarise(price = sum(price), weight = sum(weight)) %>%
+                            mutate(value = price/weight) %>%
+                            select(country,value)
+      # For sankey:
       portsum$value <- portsum$price / portsum$weight
       portsum <- portsum %>% select(-c(price,weight))
       countrysum$value <- countrysum$price / countrysum$weight
@@ -845,7 +856,7 @@ server <- function(input, output, session) {
     }
     
      
-    # Clean and Shape Data --------------------------------------------------
+    # CLEAN AND SHAPE DATA --------------------------------------------------
     
     isolate({
       # Create a Progress object
@@ -906,8 +917,13 @@ server <- function(input, output, session) {
       # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
       mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
 
-      # Aggregate by country
-      portsum_countrytotal <- portsum[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
+      # If an absolute quantity is selected, use portsum, strip commodities and aggregate.
+      # If Price Per Kilo is selected, use portcomcodesum, which is already in our preferred format.
+      if (input$unitSelect == "Price Per Kilo (GBP/KG)") {
+          portsum_countrytotal <- portcomcodesum
+      } else {
+          portsum_countrytotal <- portsum[,c("country","value")] %>% group_by(country) %>% summarise(value = sum(value))
+      }
       
       # Join values to mapWorld for plotting
       mapWorld <- left_join(mapWorld, portsum_countrytotal, by = c("region" = "country"))
@@ -944,35 +960,48 @@ server <- function(input, output, session) {
       #   comcode, by port, and by country then divided for each month.
       
       # Select correct unit
-      if (input$unitSelect == "Value (GBP)"){
-        byComcode <- queryData$portsumraw %>% select(month,comcode,price)
-        byCountry <- queryData$portsumraw %>% select(month,country,price)
-        byPort <- queryData$countrysumraw %>% select(month,port,price)
+      if (input$unitSelect == "Price (GBP)"){
+        byComcode <- queryData$dataraw %>% select(month,comcode,price)
+        byCountry <- queryData$dataraw %>% select(month,country,price)
+        byPort <- queryData$dataraw %>% select(month,port,price)
         
       } else if (input$unitSelect == "Weight (KG)"){
-        byComcode <- queryData$portsumraw %>% select(month,comcode,weight)
-        byCountry <- queryData$portsumraw %>% select(month,country,weight)
-        byPort <- queryData$countrysumraw %>% select(month,port,weight)
+        byComcode <- queryData$dataraw %>% select(month,comcode,weight)
+        byCountry <- queryData$dataraw %>% select(month,country,weight)
+        byPort <- queryData$dataraw %>% select(month,port,weight)
         
       }
       
       # Special case for Price Per Kilo
       if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
-        byComcode <- queryData$portsumraw %>%
+        if (input$dateSliderAll != TRUE) {
+          byComcode <- queryData$dataraw %>% filter(month == input$dateSlider)
+          byCountry <- queryData$dataraw %>% filter(month == input$dateSlider)
+          byPort <- queryData$dataraw %>% filter(month == input$dateSlider)
+        } else {
+          byComcode <- queryData$dataraw
+          byCountry <- queryData$dataraw
+          byPort <- queryData$dataraw
+        }
+        
+        byComcode <- byComcode %>%
                        select(month,comcode,price,weight) %>%
+                       group_by(month,comcode) %>%
+                       summarise(price = sum(price), weight = sum(weight)) %>%
                        mutate(value = price/weight) %>%
-                       select(-c(price,weight)) %>%
-                       group_by(month,comcode) %>% summarise(value = sum(value))
-        byCountry <- queryData$portsumraw %>%
+                       select(-c(price,weight))
+        byCountry <- byCountry %>%
                        select(month,country,price,weight) %>%
+                       group_by(month,country) %>%
+                       summarise(price = sum(price), weight = sum(weight)) %>%
                        mutate(value = price/weight) %>%
-                       select(-c(price,weight)) %>%
-                       group_by(month,country) %>% summarise(value = sum(value))
-        byPort <- queryData$countrysumraw %>%
-                    select(month,port,price,weight) %>%
-                    mutate(value = price/weight) %>%
-                    select(-c(price,weight)) %>%
-                    group_by(month,port) %>% summarise(value = sum(value))
+                       select(-c(price,weight))
+        byPort <- byPort %>%
+                       select(month,port,price,weight) %>%
+                       group_by(month,port) %>%
+                       summarise(price = sum(price), weight = sum(weight)) %>%
+                       mutate(value = price/weight) %>%
+                       select(-c(price,weight))
       } else { 
         # else statement required for non-PricePerKilo options
         colnames(byComcode)[colnames(byComcode) %in% c("price","weight")] <- "value"
@@ -1010,8 +1039,9 @@ server <- function(input, output, session) {
     # End Isolate
     })
     
-    
-    # Now modify reactive variables with output from isolate() to trigger plot renders.
+    # TRIGGER PLOT RENDERING ---------------------------------------------------
+    # This is done right at the end of the observe() function, before all our
+    # lovely datasets disappear into the aether...!
     comcodeLegendData$comcodelegend <- comcodelegend
     sankeyData$links <- links
     sankeyData$nodes <- nodes
@@ -1359,7 +1389,7 @@ server <- function(input, output, session) {
     }
     
     # Select correct unit
-    if (input$euunitSelect == "Value (GBP)"){
+    if (input$euunitSelect == "Price (GBP)"){
       euData <- euData %>% select(-c(weight,consignments))
       
     } else if (input$euunitSelect == "Weight (KG)"){
@@ -1489,7 +1519,7 @@ server <- function(input, output, session) {
       #   comcode, by port, and by country then divided for each month.
       
       # Select correct unit
-      if (input$euunitSelect == "Value (GBP)"){
+      if (input$euunitSelect == "Price (GBP)"){
         byComcode <- euQueryData$euDataRaw %>% select(month,comcode,price)
         byCountry <- euQueryData$euDataRaw %>% select(month,country,price)
         
