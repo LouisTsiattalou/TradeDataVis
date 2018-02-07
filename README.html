@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <title>Trade Data Visualisation Developer Guide</title>
-<!-- 2018-02-07 Wed 09:13 -->
+<!-- 2018-02-07 Wed 12:02 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="Org-mode">
@@ -771,10 +771,218 @@ The following list is the tasks executed and how they work.
 </li>
 </ul>
 </div>
+</li>
+
+<li><a id="sec-3-3-6-5" name="sec-3-3-6-5"></a>Filter Date/Unit in Data<br ><div class="outline-text-5" id="text-3-3-6-5">
+<p>
+This section, and all the ones that follow it, will run both when the query data has been loaded into R <i>and</i> when the Date Slider/Unit Selectors are changed. 
+</p>
+
+<p>
+We need to take the raw query data and transform it into formats accepted by the three types of visualisation.
+</p>
+
+<p>
+Firstly, we filter out irrelevant data according to the Date Slider and Unit Selectors.
+</p>
+
+<ul class="org-ul">
+<li>Check whether the query that was run has data. If not, break out of the reactive chain.
+</li>
+<li>Filter by correct month:
+<ul class="org-ul">
+<li>If the <code>All</code> checkbox is ticked, remove the <i>month</i> column and aggregate the data.
+</li>
+<li>If the <code>All</code> checkbox is unticked, select records where the Date Slider matches the <i>month</i> field.
+</li>
+</ul>
+</li>
+<li>Filter by correct unit:
+<ul class="org-ul">
+<li>If <i>Price (GBP)</i> is selected, remove the <i>weight</i> column in the data.
+</li>
+<li>If <i>Weight (KG)</i> is selected, remove the <i>price</i> column in the data.
+</li>
+<li>If <i>Price Per Kilo (GBP/KG)</i> is selected, calculate the value by taking <i>value</i> = <i>price</i> / <i>weight</i> and removing the <i>price</i> and <i>weight</i> columns.
+</li>
+</ul>
+</li>
+<li>Rename <i>price</i> or <i>weight</i> to <i>value</i> from this point forward (to prevent death by <code>if</code> statement later on)
+</li>
+</ul>
+
+<p>
+We now have <code>portsum</code> and <code>countrysum</code> dataframes with just the relevant data; <i>country</i> or <i>port</i>, <i>comcode</i>, and <i>value</i>.
+</p>
+
+<ul class="org-ul">
+<li><code>ungroup</code> the <code>portsum</code> and <code>countrysum</code> dataframes to prevent weird <code>dplyr</code> errors when aggregating.
+</li>
+<li>Check once again for empty dataframe. If the dataframe is empty, then show the modal dialog error message and break out of the reactive chain.
+</li>
+</ul>
+</div>
+</li>
+
+<li><a id="sec-3-3-6-6" name="sec-3-3-6-6"></a>Clean and Shape Data<br ><div class="outline-text-5" id="text-3-3-6-6">
+<p>
+This is the section where we take our <code>portsum</code> and <code>countrysum</code> dataframes and convert them over to the formats that <code>renderSankeyNetwork</code>, <code>renderLeaflet</code> and <code>ggplotly</code> take, for the three visualisations.
+</p>
+
+<ul class="org-ul">
+<li>Update Progress Bar
+</li>
+<li>Create the <code>comcodelegend</code> dataframe by joining descriptions to a unique vector of commodity codes found in the query.
+</li>
+</ul>
+</div>
+
+<ol class="org-ol"><li><a id="sec-3-3-6-6-1" name="sec-3-3-6-6-1"></a>Sankey Specific<br ><div class="outline-text-6" id="text-3-3-6-6-1">
+<p>
+The <i>Sankey Diagram</i> (pictured below) is a type of network diagram that details the flow of absolute quantities between nodes. A Sankey Diagram takes two dataframes as its arguments:
+</p>
+<ul class="org-ul">
+<li><b>nodes</b>: m x 1 dataframe with column <i>name</i>.
+</li>
+<li><b>links</b>: n x 3 dataframe with columns <i>source</i>, <i>target</i>, <i>value</i>. 
+</li>
+</ul>
+
+
+<figure id="fig:SankeyExample">
+<p><img src="./Documentation/SankeyExample.png" class="img-responsive" alt="SankeyExample.png">
+</p>
+<figcaption><span class="figure-number">Figure 1:</span> Example Sankey Diagram output from the application</figcaption>
+</figure>
+
+<p>
+The <i>nodes</i> dataframe is just a full list of unique, ordered nodes found in the Sankey Diagram.
+</p>
+
+<p>
+The <i>links</i> dataframe is a bit more complex. Each record is a <i>link</i>; a <i>source</i> node, a <i>target</i> node, and the size of the quantity that links them (the <i>value</i>). The source and target nodes in the <i>links</i> dataframe are indices, as ordered in the <i>nodes</i> dataframe.
+</p>
+
+<p>
+With this information in mind, the steps should be clear.
+</p>
+
+<ul class="org-ul">
+<li>Create copies of <code>portsum</code> and <code>countrysum</code>. Change their column names to <i>source</i>, <i>target</i>, <i>value</i>.
+</li>
+<li>Create the <code>links</code> dataframe by binding together the <code>portsum</code> and <code>countrysum</code> copies.
+</li>
+<li>Create the <code>nodes</code> dataframe by creating a vector of all the sources and targets (and therefore, all the nodes) in the <code>links</code> dataframe, and creating a unique dataframe of these nodes.
+</li>
+<li>Replace the <i>source</i> and <i>target</i> columns in <code>links</code> with their indices as defined in <code>nodes</code>.
+</li>
+<li>Replace the codes in <code>nodes</code> with their names as defined in the <code>desclookup</code> dataframe, which is essentially a lookup table of all port/country codes and their corresponding names.
+<ul class="org-ul">
+<li>We truncate names &gt; 30 characters long.
+</li>
+<li>Leave commodity code nodes alone, as almost all descriptions are far too long to look good on a Sankey Network Diagram.
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</li>
+
+<li><a id="sec-3-3-6-6-2" name="sec-3-3-6-6-2"></a>World Map Specific<br ><div class="outline-text-6" id="text-3-3-6-6-2">
+<p>
+The <code>maps</code> library has a whole bunch of standardised dataframes that can be called with <code>ggplot2::map_data("&lt;map&gt;")</code>. These maps have <i>long</i>, <i>lat</i>, <i>group</i>, <i>order</i>, <i>region</i> and <i>subregion</i> columns. Each <i>group</i> defines a polygon to be drawn; for most countries there will be one <i>group</i>, but other countries with exclaves/island archipelagos etc will have more than one <i>group</i>. The <i>order</i> defines the order in which to connect the <i>long</i> and <i>lat</i> coordinates.
+</p>
+
+<table class="table table-striped table-bordered table-hover table-condensed">
+
+
+<colgroup>
+<col  class="right">
+
+<col  class="right">
+
+<col  class="right">
+
+<col  class="right">
+
+<col  class="left">
+
+<col  class="left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="text-right">long</th>
+<th scope="col" class="text-right">lat</th>
+<th scope="col" class="text-right">group</th>
+<th scope="col" class="text-right">order</th>
+<th scope="col" class="text-left">region</th>
+<th scope="col" class="text-left">subregion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="text-right">-69.90</td>
+<td class="text-right">12.45</td>
+<td class="text-right">1</td>
+<td class="text-right">1</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+
+<tr>
+<td class="text-right">-69.90</td>
+<td class="text-right">12.42</td>
+<td class="text-right">1</td>
+<td class="text-right">2</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+
+<tr>
+<td class="text-right">-69.94</td>
+<td class="text-right">12.44</td>
+<td class="text-right">1</td>
+<td class="text-right">3</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+
+<tr>
+<td class="text-right">-70.00</td>
+<td class="text-right">12.50</td>
+<td class="text-right">1</td>
+<td class="text-right">4</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+
+<tr>
+<td class="text-right">-70.07</td>
+<td class="text-right">12.55</td>
+<td class="text-right">1</td>
+<td class="text-right">5</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+
+<tr>
+<td class="text-right">-70.05</td>
+<td class="text-right">12.60</td>
+<td class="text-right">1</td>
+<td class="text-right">6</td>
+<td class="text-left">Aruba</td>
+<td class="text-left">&lt;NA&gt;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li></ol>
 </li></ol>
 </div>
 </div>
 </div>
+
+
 
 <div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> Complexities</h2>
