@@ -180,7 +180,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   # Navbar Title
   title = "UK Trade Data Visualisation",
 
-  # ABOUT PAGE ----------------------------------------------------------------
+  # WELCOME PAGE --------------------------------------------------------------
   tabPanel("Welcome",
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
@@ -623,6 +623,8 @@ server <- function(input, output, session) {
     }
   })
 
+  # EXECUTE QUERY --------------------------------------------------------------
+  
   observeEvent(input$queryButton,{
     input$queryButton
     

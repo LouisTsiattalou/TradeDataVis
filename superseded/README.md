@@ -54,38 +54,6 @@ Additionally - selectors at top in a fluidrow. Then have slider across the date 
 ### Complexities
 * Price per KG - It should be noted here that it's impossible to have the same number matching up on either side of the commodity code node on the Sankey Diagram and still have detail from both sides. Price per KG is a relative quantity, not an absolute one. Sankey diagrams are meant to show the flow of an absolute quantity, not a collection of ratios. The map is still valuable in this case. For H1-2009, we can see that Brazil's GBP/KG value is higher than the UAE, despite the magnitude of UAE's total exports to us dwarfing that of Brazil.
 
-### TODO
-- [x] Improve query speed on the tool.
-  - [x] Test index-only scan definitions in Initialise\_Data\_Tables.R
-	- [x] Imports
-	- [x] Exports
-	- [x] Arrivals
-	- [x] Dispatches
-- [x] Get SelectizeInputs in numeric order!
-- [x] Change Map to leaflet.js.
-- [x] Enable multi-comcode selection on data tab.
-- [x] Create a test to prevent errors if no data returned by postgres!
-  - [ ] Get modal dialogs to show on success-error use case.
-- [x] Add export support for Non-EU Trade.
-- [ ] Add EU Trade tab.
-- [x] Commodity Code Lookup to include a searchbox, which shows a list of Commodity Codes and their Descriptions matching the search string (lookup on both Commodity Code and Descriptions - eg "Nuts" will show all descriptions containing the token "Nuts" case insensitive, and "010" will show all commodity codes containing string "010").
-  - [x] Enable multi-comcode selection using SelectizeInput.
-- [ ] Within the data tabs, we need:
-  - [x] A Sankey Diagram and World Map, with an option to select between £ Value, Net Weight (KG), Number of Consignments (note this is included in EU files, must aggregate in non-EU files), and Price per Kilo (£/KG). Rendered large.
-  - [x] A Legend, with commodity code descriptions for all commodity codes "in play" on the screen at that time.
-  - [x] A time-series chart, which modifies based on reactive selectors and month-slider selections.
-  - [x] Possibly a sliding scale object which enables individual-month analysis within the specified date range. I'll need to think about the best way to implement this and whether the performance of the application will be impacted as a result.
-    - [ ] This is currently implemented as a SelectInput - needs to be modified to be a slider (with great difficulty and lots of JS!)
-  - [x] A CSS theme from bootswatch.com, or shiny theme using the shinythemes R package.
-- [ ] Additional Functionality:
-  - [ ] A UK Map, where Commodities and Date Ranges show a "heat-map" showing the value of those selected commodities and which ports they are entering/exiting the UK from. Note this is only possible for Non-EU data, as EU data does not contain Port information.
-  - [ ] Ability to export the data driving the visualisations to .csv for download (https://shiny.rstudio.com/gallery/file-download.html).
-- [ ] Backend Functionality:
-  - [ ] Create an automated monthly-updating script which downloads and inserts new monthly trade data into the PostgreSQL database that the visualisations run from. Set to run regularly on linux server
-	- [ ] Include VACUUM PostgreSQL statement to improve performance
-  - [ ] Possibly, in future, modify this to run at shorter time scales when that information is made available by HMRC.
-- [ ] QA Spec
-
 ## Complexities
 
 ### Commodity Codes
@@ -94,10 +62,3 @@ Commodity Codes Control Files (SMKA_) contain some serious complexities. They ar
 * SMKA files prior to 201201 have the SUB unicode character in one of the commodity code descriptions. All data analysis tools use this character as the EOF marker - stopping the dataload! This is an outstanding issue.
 * Older pre-2012 SMKA files also split the description up with a | delimiter after it reaches a certain character limit for god knows what reason. SQL table limits pre-2012 maybe? I don't know. I do know that it's annoying to deal with. There's some lines which merge the final two columns in the data frame if they exceed the number of columns in the new data format to homogenise the data structures so everything can be loaded into the same table.
 * Lastly, since the descriptions contain both " and ' chars, quoting is set to null for the `read.table` load. Apostrophes are all converted to double apostrophes `''` during the data cleaning routine, as SQL statements rely on the ' char for denoting strings!
-
-
-## ToDo
-- [ ] Adapt `DownloadData.R` and `InitialiseDataTables.R` to include importers/exporters data if necessary.
-- [ ] Fully update the readme with POC documentation for shiny app.
-- [x] Develop shiny app from POC to alpha tool based on tasklist from imports team requirements meeting.
-- [x] Research tools to run on cloud.
