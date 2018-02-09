@@ -43,7 +43,7 @@ for (i in years ) {
 
 # 2016/17 all files have been split into half years for some reason. Need JulDec files too!
     
-  if (years >= 2016) {
+  if (i >= 2016) {
     tryCatch({ suppressWarnings(
       download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_", i , "archive_JulDec.zip", sep = ""), paste("SMKE19_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKE19_", i,"archive_JulDec.zip", sep = ""))})
