@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <title>Trade Data Visualisation Developer Guide</title>
-<!-- 2018-02-07 Wed 12:02 -->
+<!-- 2018-02-12 Mon 11:20 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="Org-mode">
@@ -643,8 +643,6 @@ Simple as that. Allows the user to download the full set of data queried in the 
 </li></ol>
 </div>
 
-
-
 <div id="outline-container-sec-3-3-6" class="outline-4">
 <h4 id="sec-3-3-6"><span class="section-number-4">3.3.6</span> <code>server()</code></h4>
 <div class="outline-text-4" id="text-3-3-6">
@@ -852,7 +850,7 @@ The <i>Sankey Diagram</i> (pictured below) is a type of network diagram that det
 <figure id="fig:SankeyExample">
 <p><img src="./Documentation/SankeyExample.png" class="img-responsive" alt="SankeyExample.png">
 </p>
-<figcaption><span class="figure-number">Figure 1:</span> Example Sankey Diagram output from the application</figcaption>
+<figcaption><span class="figure-number">Figure 1:</span> Example Sankey Diagram output from the application.</figcaption>
 </figure>
 
 <p>
@@ -975,14 +973,125 @@ The <code>maps</code> library has a whole bunch of standardised dataframes that 
 </tr>
 </tbody>
 </table>
-</div>
-</li></ol>
-</li></ol>
-</div>
-</div>
-</div>
+
+<p>
+You can convert these dataframes into a <code>SpatialPolygons</code> object, which is the format the interactive maps package <code>leaflet</code> uses for its data input. This section is about obtaining obtaining the relevant polygons for the returned countries, and converting them into this <code>SpatialPolygons</code> object with appropriate descriptors when a country's polygon is clicked, and a colour assigned based on how much the trade value with that country is (<i>this is called a choropleth map</i>).
+</p>
 
 
+<figure id="fig:MapExample">
+<p><img src="./Documentation/MapExample.png" class="img-responsive" alt="MapExample.png">
+</p>
+<figcaption><span class="figure-number">Figure 2:</span> Example World Map output from the application.</figcaption>
+</figure>
+
+<ul class="org-ul">
+<li>Define <code>mapWorld</code> by getting the <code>world</code> map from <code>map_data</code>.
+</li>
+<li>Convert the <i>region</i> table to ISO-alpha codes used in our lookup tables.
+</li>
+<li>Replace Serbia's iso code <code>RS</code> with <code>XS</code>, which is what our HMRC-sourced <code>portcode</code> lookup table uses for some reason.
+</li>
+<li>Get the total trade value by country from <code>portsum</code> and put it in a dataframe <code>portsum_countrytotal</code>.
+<ul class="org-ul">
+<li>This will be different for Price Per Kilo. <code>portsum</code> has already been divided by this point in the application, but the aggregation needs to happen before calculating <i>Price per Kilo</i>; so we use the version that has already been aggregated and later divided from when <code>portsum</code> is initially calculated from <code>portsumraw</code>.
+</li>
+</ul>
+</li>
+<li>Join <code>portsum_countrytotal</code> to <code>mapWorld</code> to obtain values for plotting.
+</li>
+<li>Join <code>countrycode</code> to <code>mapWorld</code> so the dataframe has country names as well as codes.
+</li>
+<li>Remove the <i>region</i> column, which had country codes in it, and rename the <i>countryname</i> field joined from <code>countrycode</code> to <i>region</i>.
+</li>
+</ul>
+
+<p>
+We now have a <code>mapWorld</code> dataframe with the values we obtained from the query and <i>region</i> names from the HMRC data. This would be sufficient to plot using just <code>ggplot</code>, but we want to go one step further and create an <i>interactive</i> map using the excellent <code>Leaflet</code> package; which is essentially a wrapper around a JavaScript library <code>Leaflet.js</code>.
+</p>
+
+<ul class="org-ul">
+<li>Define <code>mapWorld_relevant</code> by stripping away countries that aren't in our query's result dataframe (can do this simply by checking if <i>value</i> is <code>&lt;NA&gt;</code>).
+</li>
+<li>Reset the indices/rownames of <code>mapWorld_relevant</code>.
+</li>
+<li>Create a list <code>sp_Mapworld</code> of <code>Polygon</code> objects by running a <code>lapply</code> on each unique <i>group</i> from <code>mapWorld_relevant</code>, which corresponds to a distinct polygon.
+</li>
+<li>Turn into a <code>SpatialPolygonsDataFrame</code> by turning <code>sp_mapWorld</code> into a <code>SpatialPolygons</code> object, and append the <i>region</i>, <i>group</i> and <i>value</i> columns from <code>mapWorld_relevant</code>.
+</li>
+</ul>
+
+<p>
+We can now pass this <code>SpatialPolygonsDataFrame</code> into the Leaflet function to render the interactive map.
+</p>
+</div>
+</li>
+
+<li><a id="sec-3-3-6-6-3" name="sec-3-3-6-6-3"></a>Time Series Specific<br ><div class="outline-text-6" id="text-3-3-6-6-3">
+<p>
+This section actually renders three visualisations; a stacked bar chart showing Price/Weight/Price per kilo per Month by Comcode, by Port, and by Country. We do this by creating three separate dataframes to plot; <code>byComcode</code>, <code>byPort</code> and <code>byCountry</code>.
+</p>
+
+
+<figure id="fig:TimeSeriesExample">
+<p><img src="./Documentation/TimeSeriesExample.png" class="img-responsive" alt="TimeSeriesExample.png">
+</p>
+<figcaption><span class="figure-number">Figure 3:</span> Example Time Series Diagram output from the application.</figcaption>
+</figure>
+
+<p>
+In order to do this correctly, Price per Kilo must be treated a bit differently. It needs to be calculated <i>after</i> the aggregation of comcodes and ports to get a correct figure. So we start from the raw data query stored in the reactive variable <code>queryData$dataraw</code>
+</p>
+
+<ul class="org-ul">
+<li>Filter by unit
+<ul class="org-ul">
+<li>If <i>price</i> or <i>weight</i> is selected, simply strip the non-relevant measures out of the dataframe to get <code>byComcode</code>, <code>byCountry</code> and <code>byPort</code>.
+</li>
+<li>If <i>Price Per Kilo</i> is selected, first check the Date Slider and strip out irrelevant months if necessary. Then load <code>byComcode</code>, <code>byCountry</code> and <code>byPort</code> with <code>queryData$dataraw</code>. Lastly, strip out all irrelevant information, aggregate <i>price</i> and <i>weight</i>, then calculate <i>price per kilo</i> and store it in the <i>value</i> column. Lastly, get rid of the <i>price</i> and <i>weight</i> columns.
+</li>
+</ul>
+</li>
+<li>If <i>Price Per Kilo</i> wasn't selected, some processing still needs to take place. Rename the <i>price</i> or <i>weight</i> column to <i>value</i> (the other one would have been stripped out by this point). Then strip away irrelevant months if the Date Slider is active, and aggregate.
+</li>
+<li>Ungroup the data frames to prevent <code>dplyr</code> nastiness.
+</li>
+<li>For <code>byCountry</code> and <code>byPort</code>, replace the <i>country</i> and <i>port</i> codes with full names as defined in <code>desclookup</code>.
+</li>
+</ul>
+</div>
+</li>
+
+<li><a id="sec-3-3-6-6-4" name="sec-3-3-6-6-4"></a>Trigger Plot Rendering<br ><div class="outline-text-6" id="text-3-3-6-6-4">
+<p>
+The final thing to do after all this data processing is to save the objects used in the plotting functions into reactive variables. The reason for this is that dataframes etc defined in an <code>observe()</code> function disappear when you exit the function, so obviously you want to save them.
+</p>
+
+<p>
+We can also use this need to trigger the visualisation rendering functions to run when the reactive variables <code>comcodeLegendData</code>, <code>sankeyData</code>, <code>mapData</code> and <code>timeseriesData</code> are modified. They all get modified now, so all our visualisations will render!
+</p>
+</div>
+</li></ol>
+</li>
+
+<li><a id="sec-3-3-6-7" name="sec-3-3-6-7"></a>Fill in the Plots<br ><ol class="org-ol"><li><a id="sec-3-3-6-7-1" name="sec-3-3-6-7-1"></a>Sankey Diagram<br ></li>
+
+<li><a id="sec-3-3-6-7-2" name="sec-3-3-6-7-2"></a>World Map<br ></li>
+
+<li><a id="sec-3-3-6-7-3" name="sec-3-3-6-7-3"></a>Time Series<br ></li></ol>
+</li>
+
+<li><a id="sec-3-3-6-8" name="sec-3-3-6-8"></a>Data Download<br ><div class="outline-text-5" id="text-3-3-6-8">
+<p>
+The final function to perform is the Download button. It's obviously important that the users can perform further analysis in other applications. So, I provide the ability to download whatever was queried in the Query Pane in .CSV format. It takes the query's raw format, and appends the commodity code's description, the port code's full name, and the country code's full name. It organises these fields into a reasonable format and writes to CSV, leaving out row names (since they're just crappy indices).
+</p>
+</div>
+</li>
+
+<li><a id="sec-3-3-6-9" name="sec-3-3-6-9"></a>EU Data<br ></li></ol>
+</div>
+</div>
+</div>
 
 <div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> Complexities</h2>

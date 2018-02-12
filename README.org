@@ -1,4 +1,4 @@
-#+TITLE: Trade Data Visualisation Developer Guide
+#+TITLE: Trade Data Visualisation Developer Guide v0.1
 #+DATE: <2018-01-22 Mon>
 #+AUTHOR: Louis Tsiattalou
 #+EMAIL: louis.tsiattalou@food.gov.uk
@@ -199,6 +199,8 @@ All of these visualisations are interactive, allowing the user to obtain more in
 ***** Download Button
 Simple as that. Allows the user to download the full set of data queried in the *Query Pane*.
 
+**** EU Trade
+Exactly the same is Non-EU Trade, except with the removal of Port selection, the removal of /weight/ and /price per kilo/ unit selections (as the weight field for EU trade data is highly unreliable) and the addition of /number of consignments/, which is included in EU Data but not Non-EU Data.
 
 *** ~server()~
 The server function is the engine behind the application - what drives all the visualisations, selectors, etc. This section will go through and explain the different sections of the code, as defined by the capitalised headers for each section.
@@ -287,7 +289,7 @@ The /Sankey Diagram/ (pictured below) is a type of network diagram that details 
 - *links*: n x 3 dataframe with columns /source/, /target/, /value/. 
 
 #+NAME: fig:SankeyExample
-#+CAPTION: Example Sankey Diagram output from the application
+#+CAPTION: Example Sankey Diagram output from the application.
 [[./Documentation/SankeyExample.png]]
 
 The /nodes/ dataframe is just a full list of unique, ordered nodes found in the Sankey Diagram.
@@ -320,6 +322,10 @@ The ~maps~ library has a whole bunch of standardised dataframes that can be call
 
 You can convert these dataframes into a ~SpatialPolygons~ object, which is the format the interactive maps package ~leaflet~ uses for its data input. This section is about obtaining obtaining the relevant polygons for the returned countries, and converting them into this ~SpatialPolygons~ object with appropriate descriptors when a country's polygon is clicked, and a colour assigned based on how much the trade value with that country is (/this is called a choropleth map/).
 
+#+NAME: fig:MapExample
+#+CAPTION: Example World Map output from the application. Clicking a country brings up information about the country and the value driving that colour.
+[[./Documentation/MapExample.png]]
+
 - Define ~mapWorld~ by getting the ~world~ map from ~map_data~.
 - Convert the /region/ table to ISO-alpha codes used in our lookup tables.
 - Replace Serbia's iso code ~RS~ with ~XS~, which is what our HMRC-sourced ~portcode~ lookup table uses for some reason.
@@ -341,6 +347,10 @@ We can now pass this ~SpatialPolygonsDataFrame~ into the Leaflet function to ren
 ***** Time Series Specific
 This section actually renders three visualisations; a stacked bar chart showing Price/Weight/Price per kilo per Month by Comcode, by Port, and by Country. We do this by creating three separate dataframes to plot; ~byComcode~, ~byPort~ and ~byCountry~.
 
+#+NAME: fig:TimeSeriesExample
+#+CAPTION: Example Time Series Diagram output from the application. Hovering over a bar brings up more information about it.
+[[./Documentation/TimeSeriesExample.png]]
+
 In order to do this correctly, Price per Kilo must be treated a bit differently. It needs to be calculated /after/ the aggregation of comcodes and ports to get a correct figure. So we start from the raw data query stored in the reactive variable ~queryData$dataraw~
 
 - Filter by unit
@@ -350,26 +360,34 @@ In order to do this correctly, Price per Kilo must be treated a bit differently.
 - Ungroup the data frames to prevent ~dplyr~ nastiness.
 - For ~byCountry~ and ~byPort~, replace the /country/ and /port/ codes with full names as defined in ~desclookup~.
 
-
 ***** Trigger Plot Rendering
 The final thing to do after all this data processing is to save the objects used in the plotting functions into reactive variables. The reason for this is that dataframes etc defined in an ~observe()~ function disappear when you exit the function, so obviously you want to save them.
 
 We can also use this need to trigger the visualisation rendering functions to run when the reactive variables ~comcodeLegendData~, ~sankeyData~, ~mapData~ and ~timeseriesData~ are modified. They all get modified now, so all our visualisations will render!
 
-
 **** Fill in the Plots
 
 ***** Sankey Diagram
+Render using ~renderSankeyNetwork~, a specialised form of ~renderPlot~ just for Sankey Diagrams. Set font size to 12, and node width to 30. Takes data ~sankeyData$links~, ~sankeyData$nodes~.
 
 ***** World Map
+Render using ~renderLeaflet~, a specialised form of ~renderPlot~ just for Leaflet maps. Defines a colour palette ~pal~ using the /inferno/ colour scheme, from values 0 to the maximum value found in the data set.
+
+When clicking a polygon, its /region/ and /value/ (either Price, Weight, or Price Per Kilo) will be displayed, as well as whether it's the country of Origin or Dispatch.
+
+Takes the ~mapData$dataPolygons~ SpatialPolygonsDataFrame object as its data input. I set the view to an appropriate area, use CartoDB's /Positron/ map overlay, and assign colourings from ~pal~. Lastly, I put a legend in the top right hand corner.
 
 ***** Time Series
+Another specialised plotting function... ~renderPlotly~. The ~Plotly~ package is nice in that it can take ~ggplot2~ objects and make them interactive. This is ideal for Shiny apps, so the user can hover over the visualisation and get more information. The code you see is just a stacked bar chart, with appropriate labelling and formatting. 
+
+I also randomise the colours for each bar using the ~sample~ function. This needs to be done otherwise they're assigned alphabetically in each bar and in the legend; meaning it's very difficult to see the difference between, say, United States and United Arab Emirates when there's lots of different countries in the bar.
 
 **** Data Download
 
 The final function to perform is the Download button. It's obviously important that the users can perform further analysis in other applications. So, I provide the ability to download whatever was queried in the Query Pane in .CSV format. It takes the query's raw format, and appends the commodity code's description, the port code's full name, and the country code's full name. It organises these fields into a reasonable format and writes to CSV, leaving out row names (since they're just crappy indices).
 
 **** EU Data
+I'm not going to go into much detail here; the EU section of the server function is essentially a copy of the Non-EU section, with different date format manipulation, the removal of the /ports/ field, and commented out code for /weight/ and /price per kilo/ fields, as the /weight/ field is highly unreliable for EU Trade Data. It also contains a new unit, /number of consignments/, which is included for EU Data, but not Non-EU Data.
 
 * Complexities
 ** Commodity Codes

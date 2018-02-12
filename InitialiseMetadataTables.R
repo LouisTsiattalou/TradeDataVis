@@ -182,23 +182,26 @@ unzip(portlatlonFN)
 unlink(portlatlonFN)
 
 # Read data and reshape
-portlatlon <- portlatlonlist$Name[grepl("CodeList",portlatlonlist$Name)] %>% # Take Data only
+portlatlon <- portlatlonlist$Name[grepl("CodeList", portlatlonlist$Name)] %>% # Take Data only
   lapply(read_csv, col_names = FALSE) %>% # read them into R
   bind_rows %>% # Paste them together
   filter(X2 == "GB") %>% # Take only United Kingdom ports (GB)
-  select(choices = c(X3,X5,X11)) # Select code, name, and lat/lon location
+  select(choices = c(X3, X5, X11)) # Select code, name, and lat/lon location
 
 # Now have GB ports, by portcode,portname,lat/lon.
 colnames(portlatlon) <- c("portcode","portname","latlon")
 
 portlatlon <- portlatlon %>%
-  mutate(lat = substr(latlon,1,4)) %>% # Obtain Latitude
-  mutate(long = substr(latlon,nchar(latlon)-6,nchar(latlon)-1)) %>% # Obtain Longitude
+  mutate(lat = substr(latlon, 1, 4)) %>% # Obtain Latitude
+  mutate(long = substr(latlon,nchar(latlon) - 5,nchar(latlon) - 1)) %>% # Obtain Longitude
   filter(!is.na(latlon))
 
-# Convert to Numeric Vectors and Divide by 100 to get decimal form
-portlatlon$lat <- as.numeric(portlatlon$lat) / 100
-portlatlon$long <- as.numeric(portlatlon$long) / 100
+# Convert from DMS to Decimal Lat/Lon format
+portlatlon$lat <- as.numeric(substr(portlatlon$lat, 1, 2)) +                    # Degrees
+    as.numeric(substr(portlatlon$lat, 3, 4)) / 60                               # Minutes
+portlatlon$long <- as.numeric(substr(portlatlon$long, 1, 2)) +                  # Degrees
+    as.numeric(substr(portlatlon$long, 3, 4)) / 60 +                            # Minutes
+    as.numeric(substr(portlatlon$long, 5, 5)) / 3600                            # Seconds
 
 # Multiply - North = +1, South = -1, West = -1, East = +1
 portlatlon$lat <- ifelse(grepl("N", portlatlon$latlon), portlatlon$lat*1, portlatlon$lat*-1)
