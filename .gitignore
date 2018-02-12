@@ -6,5 +6,6 @@ dbextract/
 .env
 Shiny/.env
 Shiny/rsconnect/
+*.tex
 *~
 *#

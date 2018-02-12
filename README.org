@@ -13,8 +13,10 @@
 #+KEYWORDS:
 #+LANGUAGE: en
 #+SELECT_TAGS: export
+#+LATEX_HEADER: \usepackage[margin=0.75in]{geometry}
+#+LATEX_HEADER: \renewcommand{\familydefault}{\sfdefault}
 
-* Contents
+* Contents                                                         :noexport:
 
 1. Introduction
 2. Live R Scripts
@@ -22,6 +24,7 @@
 4. Complexities
 
 * Introduction
+  
 Welcome to my Trade Data Visualisation project. This project is an online tool developed in R, with a frontend in Shiny. It talks to a PostgreSQL database hosted on AWS. Its purpose is to simplify the act of working with UK Trade Data; which is archived at [[https://uktradeinfo.com][UKTradeInfo]] in nested Zip files.
 
 The data itself isn't very descriptive. You have to cross reference a bunch of different explanatory documents to understand the format of the data, what each column represents, Country/Port/Commodity codes, etc. This application does all of this for the user by doing all the necessary data work on a PostgreSQL database, which is maintained fully by (and can be recreated completely from) the Live R Scripts in this repository.
@@ -33,6 +36,7 @@ A similar tool existed in the past, but was not robust and not entirely suited t
 ** Data Cleaning and Setup
 
 *** ~DownloadData.R~
+    
 This R Script automatically connects to [[https://uktradeinfo.com/][UKTradeInfo]], and downloads the archives for a set number of years of the following files:
 - SMKA12 // Commodity Codes and their Descriptions
 - SMKI19 // Imports from Non-EU Sources
@@ -46,6 +50,7 @@ More information on these files, as well as their column names and formats, can 
 /Note: A PostgreSQL Database must be set up either locally or remotely for these scripts to work. Their parameters must be saved in the ~.env~ file in the order denoted by the ~.env.example~ files in the repository./
 
 *** ~InitialiseDataTables.R~
+    
 This script takes the unzipped ~SMK*~ files and loads them into a PostgreSQL database defined in the user-specified ~.env~ file, to be found in the root directory of the repository. Four tables are created (or destroyed and recreated if they already exist):
 
 - ~imports~
@@ -59,6 +64,7 @@ There's a lot more processing that goes on for the control table; this is becaus
 Lastly, it defines indices for the ~imports~, ~exports~, ~arrivals~ and ~dispatches~ tables. This means that, when queried by the application, query times go from $>1$ minute to $~2-10$ seconds.
 
 *** ~InitialiseMetadataTables.R~
+    
 This script creates the following tables:
 
 - ~comcode~
@@ -95,14 +101,17 @@ This one's easy. UKTradeInfo has a list of country codes available with a very s
 *** Other Scripts
 
 **** ~MonthlyUpdate.R~
+     
 This is a modified ~InitialiseDataTables.R~, with some additional bells and whistles. By modifying the ~syr~ and ~smth~ variables, you can load a single month of data into the database. Before loading anything, it checks if there's more than 50 records with that month, to stop double-loading into the database.
 
 ***** TODO I plan on creating a UI for this using Shiny.
 
 **** ~QueryTemplate.R~
+     
 This is essentially a scratch script providing a way to query data from either a local/remote copy of the trade data database to play around with in the console. You may need to make some changes to it, as with the other scripts, to get it working with your setup. 
 
-** Shiny Application Script ~app.R~
+* Shiny Application Script ~app.R~
+  
 You can find this in the /Shiny/ folder in the root of the repository. This contains its own ~.env~ file, which is published with ~app.R~ to [[https://shinyapps.io/][shinyapps.io]] from the RStudio Publish function.
 
 #+BEGIN_QUOTE WARNING
@@ -111,7 +120,8 @@ You can find this in the /Shiny/ folder in the root of the repository. This cont
 *You will struggle to understand how the application works if you do not have a basic working knowledge of Shiny applications. Concepts like reactivity are difficult to get your head around at first. The ~app.R~ script is very long, and not executed in a linear fashion by the Shiny server. Make sure that you have a working knowledge of Shiny and reactivity first. I recommend starting [[https://shiny.rstudio.com/tutorial/][with this video tutorial]], making a couple of basic apps using online templates, /then/ taking a look at ~app.R~.*
 #+END_QUOTE
 
-*** Packages
+** Packages
+   
 Below is a list of all the packages used by the application.
 
 - ~shiny~
@@ -121,7 +131,7 @@ Below is a list of all the packages used by the application.
 - ~shinythemes~
 - ~tidyverse~
 - ~devtools~
-- ~Development Versions of:
+- Development Versions of:
   - ~ggplot2~
   - ~pool~
 - ~RPostgreSQL~
@@ -134,20 +144,24 @@ Below is a list of all the packages used by the application.
 - ~plotly~
 - ~scales~
 
-*** Functions
+** Functions
+   
 Below is a list of custom functions used in the application, and how they work.
 
-**** ~descendants(data,code)~
+*** ~descendants(data,code)~
+    
 - Arguments:
   - ~data~: Data Frame with columns /commoditycode/ and /parent/. Used to look up descendants.
   - ~code~: Character vector containing commodity codes to find the descendants of.
 
 This function implements a recursive algorithm to obtain all the descendants of a vector of commodity codes. It finds all the children of the codes in the /code/ vector. If these are all 8-digit codes, great! The function exits. If they aren't, then there must be more children, since 2/4/6-digit codes must have children.
 
-*** Database Connection
+** Database Connection
+   
 The shiny app needs to connect to the database in a way such that it supports multiple users. In order to do this, I'm using a package called ~pool~. It opens up a certain amount of database connections (in our case, 3) and opens more if more connections are required by people using the application. Using an elastic database connection system like this means that parallel queries are possible for when many people are using the app at once. It has a maximum database connection limit of 40; this is effectively a hard limit on the number of concurrent users who can use the app at once. This can be raised to 100 without making changes to the underlying Postgres database.
 
-*** Preamble
+** Preamble
+   
 There is some code in ~app.R~ prior to the "meat" of the Shiny App, the UI and Server functions. This is mainly used for setup functions and loading in lookup tables from Postgres. In order, here are the tasks performed:
 - Load ~port~, ~country~, ~comcode~ tables into R and clean them up by removing duplicates.
 - Generate secondary lookup dataframes:
@@ -156,39 +170,43 @@ There is some code in ~app.R~ prior to the "meat" of the Shiny App, the UI and S
   - ~comcode_x~: Replace x with 2/4/6/8. Subsets of the ~comcode~ dataframe by commodity code length. Used for the 2/4/6/8-digit commodity code selectors in the UI.
 - Creating the ~dates~ list; in a universal format (YYYY-MM), in reverse order, including the 2.5 month time lag on trade data becoming available.
 
-*** ~ui()~
+** ~ui()~
 
 There are five sections to the ~ui~ function. It uses a ~navbarPage~ setup; which is essentially multiple fluidpages found under different tabs. So; five tabs are accessible and each is defined with a big =# <NAME> PAGE= title to separate them easily.
 
-**** Welcome Page
+*** Welcome Page
 
 This is a bit of a dump of shiny-fied HTML with no interactive elements. In shiny, HTML tags are implemented as methods of the ~tags~ object. So HTML: ~<b>text</b>~ is implemented with the syntax in R: ~tags$b("text")~. This acts as the user guide for the application, so make sure it is regularly updated and descriptive.
 
-**** Commodity Code Lookup
+*** Commodity Code Lookup
 
 A very simple tab that fulfills a very important function. It simply contains a DataTable (from package ~DT~) for looking up commodity codes using search bars. Its properties are defined in the ~server~ function.
 
-**** Non-EU Trade
+*** Non-EU Trade
 
 This will be very similar in layout to EU Trade. In the ~head~ section of the HTML, a custom theme for the progress bar is defined. The rest of the code in this section is mostly organised into fluidrows so I can organise the UI Elements like ~selectizeInput~ boxes into neat columns.
 
-***** Query Pane
+**** Query Pane
+     
 From left to right, this pane contains:
 - Date Start and End selectors, with options defined in the preamble (~dates~ vector)
 - Country and Port selectors, containing the /countryname/ and /portname/ fields of the countrycode/portcode lookup dataframes loaded in the preamble.
 - Comcode Selectors (2/4/6/8 digits). These use the ~descendants~ function defined in the preamble to repopulate all the descendant selectors with its children. So, selecting 01 in the 2-digit selector will populate the 4/6/8-digit selectors with its descendants.
 - Radio Buttons to choose between Imports/Exports and the button to execute the query.
 
-***** Comcode Legend
+**** Comcode Legend
+     
 This is a simple DataTable populated with all the 8-digit commodity codes found within the current query, along with their descriptions. It acts as a quick-reference table so you don't have to switch tabs to the Comcode Lookup page and search for the relevant codes.
 
-***** Filter Pane
+**** Filter Pane
+     
 This fluidrow contains controls for filtering the results of the query made in the *Query Pane*. It contains:
 - All tickbox: This tickbox controls whether the visualisations show all the data in the query, or single months.
 - Date Slider: This becomes active if the All tickbox is unticked (disabled by default). It is a slider which allows the user of the application to select individual months in the query's date range. Sliding across the Date Slider allows you to see the evolution in time of the trade data.
 - Unit Selector: A radio button selector which allows you to change the Units represented in the visualisations. For Non-EU Trade, you can select between /Price/ (£), /Weight/ (KG), and /Price per Kilo/ (£/KG).
 
-***** Visualisation Pane
+**** Visualisation Pane
+     
 The real star of the show. A tabsetPanel allowing you to switch between:
 - Sankey Diagram: for viewing the flow from country > commodity > port. Implemented with the ~networkD3~ package.
 - World Map: for viewing the distribution of imports/exports on an interactive world map. Implemented with the ~Leaflet~ package.
@@ -196,32 +214,40 @@ The real star of the show. A tabsetPanel allowing you to switch between:
 
 All of these visualisations are interactive, allowing the user to obtain more information by hovering, clicking, etc. They are mostly wrappers for Javascript libraries, implemented in R for Shiny Applications.
 
-***** Download Button
+**** Download Button
+     
 Simple as that. Allows the user to download the full set of data queried in the *Query Pane*.
 
-**** EU Trade
+*** EU Trade
+    
 Exactly the same is Non-EU Trade, except with the removal of Port selection, the removal of /weight/ and /price per kilo/ unit selections (as the weight field for EU trade data is highly unreliable) and the addition of /number of consignments/, which is included in EU Data but not Non-EU Data.
 
-*** ~server()~
+** ~server()~
+   
 The server function is the engine behind the application - what drives all the visualisations, selectors, etc. This section will go through and explain the different sections of the code, as defined by the capitalised headers for each section.
 
 The application first defines all reactive values necessary for the application. When the queries are run, these reactive values are populated with raw and processed data (in formats relevant for each visualisation; Sankey/Map/TimeSeries).
 
-**** Server Side Commodity Code Lookup
+*** Server Side Commodity Code Lookup
+    
 This section contains the code necessary for rendering the DataTable (which is essentially a bunch of arguments for the different options offered by the ~DT~ package for the ~renderDataTable()~ function).
 
-**** ShinyJS OnClick Statements
+*** ShinyJS OnClick Statements
+    
 We use the ~shinyjs~ package for some fine tuned javascript settings. This section contains code to:
 - Blank out the commodity code selectors when clicked (Non-EU and EU)
 - Disable/Enable the Date Slider according to whether the All tickbox is Enabled/Disabled (respectively)
 
-**** Observe Statements for Modifying Dropdowns
+*** Observe Statements for Modifying Dropdowns
+    
 When the commodity code selectors are changed, then all of the descendant levels need to be updated to show only descendants of those commodity codes. By default, the selectors show all valid commodity codes to begin with. Then, when the 2-digit selector is changed to, say, =01=, then the 4-digit, 6-digit and 8-digit selectors need to be updated to show /only the descendants of commodity code =01=/.
 
 So, using ~observe()~ functions, which fire the code contained within them whenever a reactive object in that code block is changed, we are able to make the selectors update with descendants whenever they're changed, and only when they're changed. 
 
 There is also an =All= option in the selectors; this is used when you don't want to specify the detail all the way down to 8-digit level. You may be interested in /All Live Horse Imports/. You would then select =01= in the 2-digit selector, =0101= in the 4-digit selector, and leave the 6 and 8-digit selectors on "All". This allows the user to make wider ranging queries easily, rather than having to hunt down all horse-related 8-digit commodity codes.
-**** Execute Query
+
+*** Execute Query
+    
 This code runs when the /Run Query/ button is pressed. The code in this section is wrapped in an ~observeEvent()~ function, which runs the code if and only if the reactive object specified in the first argument (so ~input$queryButton~, for us) is activated or changed in some way. Since it's a button in our case, it reacts every time it is pressed and executes the code.
 
 The point of this block of code is to essentially take the input information from the Query Pane, construct a valid SQL query from this, and query the PostgreSQL table that holds all the trade data to get the data in an R Dataframe for analysis and visualisation.
@@ -255,7 +281,8 @@ The following list is the tasks executed and how they work.
 - Handle missing values in ~portsumraw~ and ~countrysumraw~ by replacing with "Unknown Country/Port".
 - Store ~dataraw~, ~portsumraw~, and ~countrysumraw~ in the ~queryData~ reactive variable defined at the beginning of the ~server~ section.
 
-**** Filter Date/Unit in Data 
+*** Filter Date/Unit in Data 
+    
 This section, and all the ones that follow it, will run both when the query data has been loaded into R /and/ when the Date Slider/Unit Selectors are changed. 
 
 We need to take the raw query data and transform it into formats accepted by the three types of visualisation.
@@ -277,13 +304,15 @@ We now have ~portsum~ and ~countrysum~ dataframes with just the relevant data; /
 - ~ungroup~ the ~portsum~ and ~countrysum~ dataframes to prevent weird ~dplyr~ errors when aggregating.
 - Check once again for empty dataframe. If the dataframe is empty, then show the modal dialog error message and break out of the reactive chain.
 
-**** Clean and Shape Data
+*** Clean and Shape Data
+    
 This is the section where we take our ~portsum~ and ~countrysum~ dataframes and convert them over to the formats that ~renderSankeyNetwork~, ~renderLeaflet~ and ~ggplotly~ take, for the three visualisations.
 
 - Update Progress Bar
 - Create the ~comcodelegend~ dataframe by joining descriptions to a unique vector of commodity codes found in the query.
 
-***** Sankey Specific
+**** Sankey Specific
+     
 The /Sankey Diagram/ (pictured below) is a type of network diagram that details the flow of absolute quantities between nodes. A Sankey Diagram takes two dataframes as its arguments:
 - *nodes*: m x 1 dataframe with column /name/.
 - *links*: n x 3 dataframe with columns /source/, /target/, /value/. 
@@ -306,7 +335,8 @@ With this information in mind, the steps should be clear.
   - We truncate names > 30 characters long.
   - Leave commodity code nodes alone, as almost all descriptions are far too long to look good on a Sankey Network Diagram.
 
-***** World Map Specific
+**** World Map Specific
+     
 The ~maps~ library has a whole bunch of standardised dataframes that can be called with ~ggplot2::map_data("<map>")~. These maps have /long/, /lat/, /group/, /order/, /region/ and /subregion/ columns. Each /group/ defines a polygon to be drawn; for most countries there will be one /group/, but other countries with exclaves/island archipelagos etc will have more than one /group/. The /order/ defines the order in which to connect the /long/ and /lat/ coordinates.
 
 |--------+-------+-------+-------+--------+-----------|
@@ -344,7 +374,8 @@ We now have a ~mapWorld~ dataframe with the values we obtained from the query an
 
 We can now pass this ~SpatialPolygonsDataFrame~ into the Leaflet function to render the interactive map.
 
-***** Time Series Specific
+**** Time Series Specific
+     
 This section actually renders three visualisations; a stacked bar chart showing Price/Weight/Price per kilo per Month by Comcode, by Port, and by Country. We do this by creating three separate dataframes to plot; ~byComcode~, ~byPort~ and ~byCountry~.
 
 #+NAME: fig:TimeSeriesExample
@@ -360,42 +391,50 @@ In order to do this correctly, Price per Kilo must be treated a bit differently.
 - Ungroup the data frames to prevent ~dplyr~ nastiness.
 - For ~byCountry~ and ~byPort~, replace the /country/ and /port/ codes with full names as defined in ~desclookup~.
 
-***** Trigger Plot Rendering
+**** Trigger Plot Rendering
+     
 The final thing to do after all this data processing is to save the objects used in the plotting functions into reactive variables. The reason for this is that dataframes etc defined in an ~observe()~ function disappear when you exit the function, so obviously you want to save them.
 
 We can also use this need to trigger the visualisation rendering functions to run when the reactive variables ~comcodeLegendData~, ~sankeyData~, ~mapData~ and ~timeseriesData~ are modified. They all get modified now, so all our visualisations will render!
 
-**** Fill in the Plots
+*** Fill in the Plots
 
-***** Sankey Diagram
+**** Sankey Diagram
+     
 Render using ~renderSankeyNetwork~, a specialised form of ~renderPlot~ just for Sankey Diagrams. Set font size to 12, and node width to 30. Takes data ~sankeyData$links~, ~sankeyData$nodes~.
 
-***** World Map
+**** World Map
+     
 Render using ~renderLeaflet~, a specialised form of ~renderPlot~ just for Leaflet maps. Defines a colour palette ~pal~ using the /inferno/ colour scheme, from values 0 to the maximum value found in the data set.
 
 When clicking a polygon, its /region/ and /value/ (either Price, Weight, or Price Per Kilo) will be displayed, as well as whether it's the country of Origin or Dispatch.
 
 Takes the ~mapData$dataPolygons~ SpatialPolygonsDataFrame object as its data input. I set the view to an appropriate area, use CartoDB's /Positron/ map overlay, and assign colourings from ~pal~. Lastly, I put a legend in the top right hand corner.
 
-***** Time Series
+**** Time Series
+     
 Another specialised plotting function... ~renderPlotly~. The ~Plotly~ package is nice in that it can take ~ggplot2~ objects and make them interactive. This is ideal for Shiny apps, so the user can hover over the visualisation and get more information. The code you see is just a stacked bar chart, with appropriate labelling and formatting. 
 
 I also randomise the colours for each bar using the ~sample~ function. This needs to be done otherwise they're assigned alphabetically in each bar and in the legend; meaning it's very difficult to see the difference between, say, United States and United Arab Emirates when there's lots of different countries in the bar.
 
-**** Data Download
+*** Data Download
 
 The final function to perform is the Download button. It's obviously important that the users can perform further analysis in other applications. So, I provide the ability to download whatever was queried in the Query Pane in .CSV format. It takes the query's raw format, and appends the commodity code's description, the port code's full name, and the country code's full name. It organises these fields into a reasonable format and writes to CSV, leaving out row names (since they're just crappy indices).
 
-**** EU Data
+*** EU Data
+    
 I'm not going to go into much detail here; the EU section of the server function is essentially a copy of the Non-EU section, with different date format manipulation, the removal of the /ports/ field, and commented out code for /weight/ and /price per kilo/ fields, as the /weight/ field is highly unreliable for EU Trade Data. It also contains a new unit, /number of consignments/, which is included for EU Data, but not Non-EU Data.
 
 * Complexities
 ** Commodity Codes
+   
 Commodity Codes Control Files (SMKA_) contain some serious complexities. They are listed below in bulletted form. 
 - Commodity Codes are obviously primary keys - you can't have the same commodity code contain completely different types of data! The way this is handled is that the commodity code is _added_ if it does not exist within the table. If it _already exists_, that entry is updated with the information in the current SMKA file. This method of adding/updating is referred to as ~UPSERT~ (portmanteau of update-insert). This has to be done using line-by-line SQL queries, as R's ~DBI~ package does not support UPSERT operations. As we consider SMKA files sequentially from 200901, we always have the most up-to-date description for each commodity code.
 - SMKA files prior to 201201 have the SUB unicode character in one of the commodity code descriptions. All data analysis tools use this character as the EOF marker - stopping the dataload! This is an outstanding issue.
 - Older pre-2012 SMKA files also split the description up with a | delimiter after it reaches a certain character limit for god knows what reason. SQL table limits pre-2012 maybe? I don't know. I do know that it's annoying to deal with. There's some lines which merge the final two columns in the data frame if they exceed the number of columns in the new data format to homogenise the data structures so everything can be loaded into the same table.
 - Lastly, since the descriptions contain both " and ' chars, quoting is set to null for the ~read.table~ load. Apostrophes are all converted to double apostrophes ~''~ during the data cleaning routine, as SQL statements rely on the ~'~ char for denoting strings!
+  
 ** Shiny Application
 *** Price per KG
+    
 It should be noted here that it's impossible to have the same number matching up on either side of the commodity code node on the Sankey Diagram and still have detail from both sides. Price per KG is a relative quantity, not an absolute one. Sankey diagrams are meant to show the flow of an absolute quantity, not a collection of ratios. The map is still valuable in this case. For H1-2009, we can see that Brazil's GBP/KG value is higher than the UAE, despite the magnitude of UAE's total exports to us dwarfing that of Brazil.
