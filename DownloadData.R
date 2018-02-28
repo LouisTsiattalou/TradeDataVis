@@ -154,7 +154,17 @@ datafiles <- sapply(datafiles, FUN = function(txt) {
   file.rename(from = txt, to = sub(pattern = "V2", replacement = "", txt))
 })
 
-
+# Final check for missing files
+datafiles <- list.files(getwd())
+for (i in syrs) {
+  for (j in smths) {
+    if (! paste0("SMKE19",i,j) %in% datafiles) {print(paste0("SMKE19",i,j," is missing!"))}
+    if (! paste0("SMKI19",i,j) %in% datafiles) {print(paste0("SMKI19",i,j," is missing!"))}
+    if (! paste0("SMKX46",i,j) %in% datafiles) {print(paste0("SMKX46",i,j," is missing!"))}
+    if (! paste0("SMKM46",i,j) %in% datafiles) {print(paste0("SMKM46",i,j," is missing!"))}
+    if (! paste0("SMKA12",i,j) %in% datafiles) {print(paste0("SMKA12",i,j," is missing!"))}
+  }
+}
 
 # Print info =================================================================
 end <- Sys.time()
