@@ -26,6 +26,9 @@ library("tidyverse")
 if(require("devtools") == FALSE) {install.packages("devtools")}
 library("devtools")
 
+if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
+library("RPostgreSQL")
+
 # The development version of ggplot2 is necessary for the plotly time series plots to render correctly
 # install_github("tidyverse/ggplot2")
 library("ggplot2")
@@ -34,10 +37,8 @@ library("ggplot2")
 # install_github("rstudio/pool")
 library("pool")
 
-if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
-library("RPostgreSQL")
-
-if(require("networkD3") == FALSE) {install.packages("networkD3")}
+# Same for networkD3 - to get modal dialogs working
+# install_github("christophergandrud/networkD3")
 library("networkD3")
 
 if(require("rgeos") == FALSE) {install.packages("rgeos")}
@@ -87,7 +88,7 @@ descendants <- function(data, code) {
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
-# setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/Shiny/")
+# setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/ShinyMain/")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
 # pg <- dbDriver("PostgreSQL")
@@ -233,7 +234,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "0.1",
+                  "Version Number:", "0.1.1",
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),
@@ -1331,7 +1332,7 @@ server <- function(input, output, session) {
                                          input$eudatestart, " - ", input$eudateend,
                                          " and Commodity Code(s) ",
                                          nullDataframe$comcodequery,
-                                         ".")), session)
+                                          ".")), session)
         })
         req(FALSE)
       }

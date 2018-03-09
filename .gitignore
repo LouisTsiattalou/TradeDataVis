@@ -4,8 +4,10 @@ zipfiles/
 .Rhistory
 dbextract/
 .env
-Shiny/.env
-Shiny/rsconnect/
+ShinyMain/.env
+ShinyUpdate/.env
+ShinyMain/rsconnect/
+ShinyUpdate/rsconnect/
 *.tex
 *~
 *#
