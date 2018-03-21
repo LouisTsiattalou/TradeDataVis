@@ -153,7 +153,7 @@ dates <- character(0)
 
 # Current Year
 for (j in curmth:1) {
-  dates <- c(dates, paste0(as.character(curyr), "-", as.character(sprintf("%02d", j)) ))
+  dates <- c(dates, paste0(20, as.character(curyr), "-", as.character(sprintf("%02d", j)) ))
 }
 
 # All Other Years
