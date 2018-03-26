@@ -197,7 +197,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                   tags$ul(
                            tags$li("Sankey Diagram"),
                            tags$li("World Choropleth Map"),
-                           tags$li("Bar Charts by *")
+                           tags$li("Bar Charts by Comcode/Country/Port")
                        )
                   ),
            tags$p("These interactive visualisations provide a level of detail that is very difficult to get quickly using Excel or other end-user analysis tools. The Sankey Diagram is a network diagram describing the flow of absolute quantities (Price and Weight for non-EU, Price and Consignments for EU) between countries, commodities and ports; you can hover over a network relationship to obtain the value. The World Choropleth Map is a colour map of the world showing where our imports/exports are coming in from; click a country for more information. Lastly, the Bar Charts are interactive and show the proportion of the imports/exports contributed by each country, commodity and port. However, since port data is not available in the EU source data, ports are not shown in visualisations for EU imports/exports."),
@@ -234,7 +234,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "0.1.1",
+                  "Version Number:", "0.1.2",
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),

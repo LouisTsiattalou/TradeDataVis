@@ -15,13 +15,13 @@ start <- Sys.time()
 errors <- character()
 
 # Set working directory
-setwd("~/Documents/R/ImportTool/")
+setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
 suppressWarnings(dir.create(paste0(getwd(), "/datafiles")))
 setwd("datafiles")
 
 # Connect to Database
 pg <- dbDriver("PostgreSQL")
-dbenv <- read_delim("../.env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
                        host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
 
@@ -37,8 +37,8 @@ dbSafeNames = function(names) {
 ### Note: There is a 2 month time lag for when data comes out.
 ### Always check uktradeinfo.com/Statistics/Documents for new data.
 
-syr <- "17"
-smth <- "10"
+syr <- "18"
+smth <- "01"
 
 # Data Structure constants
 files <- c("SMKA12", "SMKE19", "SMKI19", "SMKX46", "SMKM46", "SESX16", "SESM16")

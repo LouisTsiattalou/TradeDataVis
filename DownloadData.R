@@ -18,7 +18,6 @@ start <- Sys.time()
 errors <- character()
 
 years <- c(2009:2017)
-
 # File Downloads =============================================================
 for (i in years ) {
   tryCatch({ suppressWarnings(

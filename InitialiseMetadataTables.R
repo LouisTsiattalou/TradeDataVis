@@ -254,6 +254,7 @@ unlink(portcodeFN)
 
 # COUNTRYCODE TABLE BUILD =====================================================
 
+# Get Country Names and Codes from uktradeinfo
 countrycodeURL <- "https://www.uktradeinfo.com/CodesAndGuides/Documents/Country_alpha.xls"
 countrycodeFN <- "countrycode.xls"
 download.file(countrycodeURL, countrycodeFN, mode = "wb")
@@ -264,6 +265,25 @@ countrycode <- read_excel(countrycodeFN,
 countrycode <- countrycode[is.na(countrycode$countryname) == FALSE,]
 colnames(countrycode) <- dbSafeNames(colnames(countrycode))
 
+# Query DB for valid EU countries
+arrquery <- "SELECT DISTINCT smk_cod_alpha FROM arrivals"
+arrcountries <- dbGetQuery(tradedata, arrquery)
+dispquery <- "SELECT DISTINCT smk_cod_alpha FROM dispatches"
+dispcountries <- dbGetQuery(tradedata, dispquery)
+eucountries <- unique(c(arrcountries[,],dispcountries[,]))
+
+# Query DB for valid Non-EU countries
+impquery <- "SELECT DISTINCT coo_alpha FROM imports"
+impcountries <- dbGetQuery(tradedata, impquery)
+expquery <- "SELECT DISTINCT cod_alpha FROM exports"
+expcountries <- dbGetQuery(tradedata, expquery)
+noneucountries <- unique(c(impcountries[,],expcountries[,]))
+
+# Use these to generate EU and Non-EU columns
+countrycode <- countrycode %>%
+    mutate(eu = ifelse(countrycode %in% eucountries, TRUE, FALSE)) %>%
+    mutate(non_eu = ifelse(countrycode %in% noneucountries, TRUE, FALSE))
+    
 dbWriteTable(tradedata, 'country', countrycode, row.names=FALSE)
 dbSendQuery(tradedata, "delete from country")
 dbWriteTable(tradedata,'country', countrycode, row.names=FALSE, append = TRUE)
