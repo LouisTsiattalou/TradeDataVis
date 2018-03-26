@@ -125,8 +125,10 @@ countrycode <- countrycode %>% arrange(countryname)
 
 # Remove Duplicate Countrycodes
 countrycode <- countrycode[!duplicated(countrycode$countrycode),]
+eucountrycode <- countrycode %>% filter(eu == TRUE)
+noneucountrycode <- countrycode %>% filter(non_eu == TRUE)
 
-### Factor enables multiple search terms in comcode lookup tab
+# Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
 
 desclookup <- c(portcode$portname,countrycode$countryname)
@@ -215,7 +217,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$p("I aim to continue developing this application to maximise its value to the organisation. ", tags$b("Please help in this effort by filling in the Feedback tab"), " after having used the app for a while. This will help me to see exactly where the app needs improvement, and will speed up the iteration process for the application greatly!"),
            tags$hr(),
            tags$h3("Known Bugs"),
-           tags$p(tags$u("Screen Grey-out"),
+                  tags$p(tags$u("Screen Grey-out"),
                   tags$br(),
                   "If you haven't run a successful query yet in your session and you make a query with no underlying data, it will display a message saying \"No Data Found\", which you can exit from and continue working. However, it will not show after a successful query has been made. Since it does not show, you can't exit from it, so the screen is essentially frozen from that point on.",
                   tags$br(),
@@ -279,7 +281,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
         ),
       column(2,
         selectizeInput("countryselect", "Country:",
-                       choices=c("All",countrycode$countryname)),
+                       choices=c("All",noneucountrycode$countryname)),
         selectizeInput("portselect", "Port:",
                        choices=c("All",portcode$portname))
         ),
@@ -390,7 +392,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
         ),
       column(2,
         selectizeInput("eucountryselect", "Country:",
-                       choices=c("All",countrycode$countryname))
+                       choices=c("All",eucountrycode$countryname))
         ),
       column(3,
         selectizeInput("eucomcode2", "2-digit Commodity Code:",
