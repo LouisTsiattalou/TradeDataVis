@@ -275,15 +275,19 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
       column(2,
         selectizeInput("datestart", "Period Start:",
-                     choices=dates),
+                       choices=dates),
         selectizeInput("dateend", "Period End:",
                        choices=dates)
         ),
       column(2,
         selectizeInput("countryselect", "Country:",
-                       choices=c("All",noneucountrycode$countryname)),
+                       selected = "All",
+                       choices=c("All",noneucountrycode$countryname),
+                       options = list(maxItems = 20)),
         selectizeInput("portselect", "Port:",
-                       choices=c("All",portcode$portname))
+                       selected = "All",
+                       choices=c("All",portcode$portname),
+                       options = list(maxItems = 20))
         ),
       column(3,
         selectizeInput("comcode2", "2-digit Commodity Code:",
@@ -392,7 +396,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
         ),
       column(2,
         selectizeInput("eucountryselect", "Country:",
-                       choices=c("All",eucountrycode$countryname))
+                       selected = "All",
+                       choices=c("All",eucountrycode$countryname),
+                       options = list(maxItems = 20))
         ),
       column(3,
         selectizeInput("eucomcode2", "2-digit Commodity Code:",
