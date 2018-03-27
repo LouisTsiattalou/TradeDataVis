@@ -72,14 +72,14 @@ library("shinythemes")
 
 # Descendants - obtain all descendants of a vector of commodity codes.
 # Tested on "01" and "02", takes 0.25 secs for 500 descendants. Quick!
-descendants <- function(data, code) {
+descendants <- function(data, codes) {
     # Strip 8-digit codes (these are leaf nodes)
-    code <- code[nchar(code) < 8]
-    if (length(code) == 0) {
+    codes <- codes[nchar(codes) < 8]
+    if (length(codes) == 0) {
         return()
     } else {
         # get all the children's indices
-        f <- data$parent %in% code
+        f <- data$parent %in% codes
         # get current children
         children <- data$commoditycode[f]
         return(c(children, descendants(data, children)))
@@ -291,8 +291,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
         ),
       column(3,
         selectizeInput("comcode2", "2-digit Commodity Code:",
-                    selected = "01",
-                    choices=c(comcode_2$commoditycode),
+                    selected = "All",
+                    choices=c("All", comcode_2$commoditycode),
                     options = list(maxItems = 5)),
         selectizeInput("comcode4", "4-digit Commodity Code:",
                     selected = "All",
@@ -402,8 +402,8 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
         ),
       column(3,
         selectizeInput("eucomcode2", "2-digit Commodity Code:",
-                    selected = "01",
-                    choices=c(comcode_2$commoditycode),
+                    selected = "All",
+                    choices=c("All", comcode_2$commoditycode),
                     options = list(maxItems = 5)),
         selectizeInput("eucomcode4", "4-digit Commodity Code:",
                     selected = "All",
@@ -537,11 +537,14 @@ server <- function(input, output, session) {
                                   )
   
   # SHINYJS ONCLICK STATEMENTS -----------------------------------------------
+  shinyjs::onclick("countryselect", {updateSelectizeInput(session, "countryselect", selected = "")})
+  shinyjs::onclick("portselect", {updateSelectizeInput(session, "portselect", selected = "")})
   shinyjs::onclick("comcode2", {updateSelectizeInput(session, "comcode2", selected = "")})
   shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = "")})
   shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = "")})
   shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = "")})
 
+  shinyjs::onclick("eucountryselect", {updateSelectizeInput(session, "eucountryselect", selected = "")})
   shinyjs::onclick("eucomcode2", {updateSelectizeInput(session, "eucomcode2", selected = "")})
   shinyjs::onclick("eucomcode4", {updateSelectizeInput(session, "eucomcode4", selected = "")})
   shinyjs::onclick("eucomcode6", {updateSelectizeInput(session, "eucomcode6", selected = "")})
@@ -568,20 +571,38 @@ server <- function(input, output, session) {
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
     allDescendants <- descendants(comcode,input$comcode2)
+    comcode_2_selection <- input$comcode2
 
     # Update Comcodes
-    updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                      options = list(maxItems = 5))
-    updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                      options = list(maxItems = 5))
-    updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                      options = list(maxItems = 5))
+    if (is.null(comcode_2_selection) == FALSE) {
+      if ("All" %in% comcode_2_selection){
+        updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_4$commoditycode),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_6$commoditycode),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8$commoditycode),
+                          options = list(maxItems = 5))
+      } else {
+        updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
+                          options = list(maxItems = 5))
+      }
+    }
   })
 
   observe({
@@ -650,7 +671,7 @@ server <- function(input, output, session) {
       nullDataframe$nullDataframe <- FALSE
       
       # Control handling for comcode selectors
-      comcode2query = input$comcode2
+      if ("All" %in% input$comcode2 | is.null(input$comcode2)) {comcode2query = "__"} else {comcode2query = input$comcode2}
       if ("All" %in% input$comcode4 | is.null(input$comcode4)) {comcode4query = "__"} else {comcode4query = input$comcode4}
       if ("All" %in% input$comcode6 | is.null(input$comcode6)) {comcode6query = "__"} else {comcode6query = input$comcode6}
       if ("All" %in% input$comcode8 | is.null(input$comcode8)) {comcode8query = "__"} else {comcode8query = input$comcode8}
@@ -659,7 +680,7 @@ server <- function(input, output, session) {
       # together and taking the last 8 characters works quickly, easily and cleanly.
       comcodequery = paste(comcode2query, comcode4query, comcode6query, comcode8query, sep = "")
       comcodequery = substr(comcodequery, nchar(comcodequery)-7, nchar(comcodequery))
-      
+
       # Country and Port Queries
       if ("All" %in% input$portselect) {
         portquery <- portcode$portcode
@@ -922,7 +943,7 @@ server <- function(input, output, session) {
        
       # Convert mapWorld region to iso codes
       mapWorld$region <- iso.alpha(mapWorld$region)
-      
+
       # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
       mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
 
@@ -960,7 +981,7 @@ server <- function(input, output, session) {
                                                 group = mapWorld_relevant$group,
                                                 value = mapWorld_relevant$value)),
                                               match.ID = FALSE)
-      
+
       # TIME SERIES SPECIFIC --------------------------------------------------
       
       # > We have to have month information, which means portsum/countrysum aren't sufficient.
@@ -1194,20 +1215,38 @@ server <- function(input, output, session) {
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
     allDescendants <- descendants(comcode,input$eucomcode2)
-    
+    eu_comcode_2_selection <- input$eucomcode2
+
     # Update Comcodes
-    updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                      options = list(maxItems = 5))
-    updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                      options = list(maxItems = 5))
-    updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                      selected = "All",
-                      choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                      options = list(maxItems = 5))
+    if (is.null(eu_comcode_2_selection) == FALSE) {
+      if ("All" %in% eu_comcode_2_selection){
+        updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_4$commoditycode ),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_6$commoditycode ),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", comcode_8$commoditycode),
+                          options = list(maxItems = 5))
+      } else {
+        updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
+                          options = list(maxItems = 5))
+        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
+                          selected = "All",
+                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
+                          options = list(maxItems = 5))
+      }
+    }
   })
 
   observe({
@@ -1275,7 +1314,7 @@ server <- function(input, output, session) {
       nullDataframe$nullDataframe <- FALSE
       
       # Control handling for comcode selectors
-      eucomcode2query = input$eucomcode2
+      if ("All" %in% input$eucomcode2 | is.null(input$eucomcode2)) {eucomcode2query = "__"} else {eucomcode2query = input$eucomcode2}
       if ("All" %in% input$eucomcode4 | is.null(input$eucomcode4)) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
       if ("All" %in% input$eucomcode6 | is.null(input$eucomcode6)) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
       if ("All" %in% input$eucomcode8 | is.null(input$eucomcode8)) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
