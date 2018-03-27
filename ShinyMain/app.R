@@ -944,7 +944,10 @@ server <- function(input, output, session) {
       # Convert mapWorld region to iso codes
       mapWorld$region <- iso.alpha(mapWorld$region)
 
-      # replace RS (Serbia mapWorld) with XS (Serbia countrycode)
+      # Special cases
+      ## Nigeria: maps package doesn't distinguish Niger and Nigeria...
+      mapWorld$region[map_data("world")$region == "Nigeria"] <- "NG"
+      ## replace RS (Serbia mapWorld) with XS (Serbia countrycode)
       mapWorld$region <- mapWorld$region %>% str_replace("RS","XS")
 
       # If an absolute quantity is selected, use portsum, strip commodities and aggregate.
