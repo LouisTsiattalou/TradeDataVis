@@ -68,6 +68,9 @@ library("scales")
 if(require("shinythemes") == FALSE) {install.packages("shinythemes")}
 library("shinythemes")
 
+if(require("xlsx") == FALSE) {install.packages("xlsx")}
+library("xlsx")
+
 # Function Definitions -------------------------------------------------------
 
 # Descendants - obtain all descendants of a vector of commodity codes.
@@ -1198,15 +1201,17 @@ server <- function(input, output, session) {
   # DATA DOWNLOAD ------------------------------------------------------------
     output$dataDownload <- downloadHandler(
         filename = function() {
-        "TradeDataVisNonEUExtract.csv"
+            # "TradeDataVisNonEUExtract.csv"
+            "TradeDataVisNonEUExtract.xlsx"
         },
         content = function(file) {
             downloadfile <- queryData$dataraw %>%
                 left_join(comcodelookup, by=c("comcode" = "commoditycode")) %>%
                 left_join(portcode, by=c("port" = "portcode")) %>%
                 left_join(countrycode, by=c("country" = "countrycode"))
-            downloadfile <- downloadfile %>% select(comcode,port,portname,type,country,countryname,month,price,weight,description)
-            write.csv(downloadfile, file, row.names = FALSE)
+            downloadfile <- downloadfile %>% select("Commodity Code" = comcode, "Port Code" = port, "Port Name" = portname, "Port Type" = type, "Country Code" = country, "Country Name" = countryname, "Month" = month, "Value (£)" = price, "Weight (kg)" = weight, "Commodity Description" = description)
+            #write.csv(downloadfile, file, row.names = FALSE)
+            write.xlsx2(downloadfile, file, sheetName = "Non-EU Trade Data", row.names = FALSE)
         }
     )
 
@@ -1733,14 +1738,16 @@ server <- function(input, output, session) {
   # DATA DOWNLOAD ------------------------------------------------------------
     output$euDataDownload <- downloadHandler(
         filename = function() {
-        "TradeDataVisEUExtract.csv"
+            #"TradeDataVisEUExtract.csv"
+            "TradeDataVisEUExtract.xlsx"
         },
         content = function(file) {
             eudownloadfile <- euQueryData$euDataRaw %>%
                 left_join(comcodelookup, by=c("comcode" = "commoditycode")) %>%
                 left_join(countrycode, by=c("country" = "countrycode"))
-            eudownloadfile <- eudownloadfile %>% select(comcode,country,countryname,month,price,consignments,description)
-            write.csv(eudownloadfile, file, row.names = FALSE)
+            eudownloadfile <- eudownloadfile %>% select("Commodity Code" = comcode, "Country Code" = country, "Country Name" = countryname, "Month" = month, "Value (£)" = price, "Number of Consignments" = consignments, "Commodity Description" = description)
+            #write.csv(eudownloadfile, file, row.names = FALSE)
+            write.xlsx2(eudownloadfile, file, sheetName = "EU Trade Data", row.names = FALSE)
         }
   )
     
