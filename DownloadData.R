@@ -86,20 +86,9 @@ for (i in years) {
 }
 
 # Unzip monthly files --------------------------------------------------------
-syrs <- as.character(sprintf("%02d",c(9:17)))
-smths <- as.character(sprintf("%02d",c(1:12)))
-
-for (i in syrs) {
-  for (j in smths) {
-    unzip(paste("SMKE19", i, j, ".zip", sep = ""), exdir = getwd())
-    unzip(paste("SMKI19", i, j, ".zip", sep = ""), exdir = getwd())
-    unzip(paste("SMKX46", i, j, ".zip", sep = ""), exdir = getwd())
-    unzip(paste("SMKM46", i, j, ".zip", sep = ""), exdir = getwd())
-    unzip(paste("SMKA12", i, j, ".zip", sep = ""), exdir = getwd())
-  }
-}
 
 # Convoluted way for special ~1 case in Feb 2009 - otherwise just ignored!
+# Has to be done first as Windows machines cry when they see a tilde.
 dirFeb09 <- "0902"
 fullDirFeb09 <- paste(getwd(),"/", dirFeb09, sep = "")
 suppressWarnings(dir.create(dirFeb09))
@@ -119,6 +108,21 @@ sapply(datafiles, FUN = function(txt) {
 })
 unlink(fullDirFeb09, recursive = TRUE)
 
+# Normal Cases
+syrs <- as.character(sprintf("%02d",c(9:17)))
+smths <- as.character(sprintf("%02d",c(1:12)))
+
+for (i in syrs) {
+  for (j in smths) {
+    if (paste0(i, j) != "0902") {
+      unzip(paste0("SMKE19", i, j, ".zip"), exdir = getwd())
+      unzip(paste0("SMKI19", i, j, ".zip"), exdir = getwd())
+      unzip(paste0("SMKX46", i, j, ".zip"), exdir = getwd())
+      unzip(paste0("SMKM46", i, j, ".zip"), exdir = getwd())
+      unzip(paste0("SMKA12", i, j, ".zip"), exdir = getwd())
+    }
+  }
+}
 
 
 # Cleanup =====================================================================
