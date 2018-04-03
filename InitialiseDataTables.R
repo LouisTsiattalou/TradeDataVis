@@ -17,7 +17,7 @@ start <- Sys.time()
 errors <- character()
 
 # Database Driver
-setwd("~/Documents/R/ImportTool/")
+setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/")
 pg <- dbDriver("PostgreSQL")
 dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
