@@ -45,7 +45,6 @@ tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2],
 # COMCODE TABLE BUILD =========================================================
 
 # Read Data using readr and tidy as appropriate -------------------------------
-# Note that this data comes in semi-colon delimited format. Despite CSV in url...
 
 CNURL <- "http://ec.europa.eu/eurostat/ramon/nomenclatures/index.cfm?TargetUrl=ACT_OTH_CLS_DLD&StrNom=CN_2017&StrFormat=CSV&StrLanguageCode=EN&IntKey=&IntLevel=&bExport="
 #CN <- read_csv2(CNURL)

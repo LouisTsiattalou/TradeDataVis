@@ -348,7 +348,12 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
     fluidRow(
       column(12,
         tabsetPanel(
-          tabPanel("FLOW", sankeyNetworkOutput(outputId = "sankeyTrade") %>% withSpinner(type=6)), 
+          tabPanel("FLOW",
+            tabsetPanel(
+              tabPanel("Full", sankeyNetworkOutput(outputId = "sankeyTrade") %>% withSpinner(type=6)), 
+              tabPanel("Country & Port Only", sankeyNetworkOutput(outputId = "pcSankeyTrade") %>% withSpinner(type=6))
+            )
+          ),
           tabPanel("MAP", leafletOutput(outputId = "worldMap", height = 600) %>% withSpinner(type=6)),
           tabPanel("TIME SERIES",
             tabsetPanel(
@@ -513,9 +518,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
 
 server <- function(input, output, session) {
   
-  queryData <- reactiveValues(dataraw = NULL, portsumraw = NULL, countrysumraw = NULL)
+  queryData <- reactiveValues(dataraw = NULL, portsumraw = NULL, countrysumraw = NULL, comcodesumraw = NULL)
   comcodeLegendData <- reactiveValues(comcodelegend = NULL)
-  sankeyData <- reactiveValues(links = NULL, nodes = NULL)
+  sankeyData <- reactiveValues(links = NULL, nodes = NULL, pclinks = NULL, pcnodes = NULL)
   mapData <- reactiveValues(mapWorld = NULL)
   timeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL, byPort = NULL)
 
@@ -776,6 +781,7 @@ server <- function(input, output, session) {
 
         portsumraw <- dataraw %>% select(country,comcode,month,price,weight) %>% group_by(country,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
         countrysumraw <- dataraw %>% select(comcode,port,month,price,weight) %>% group_by(comcode,port,month) %>% summarise(price = sum(price), weight = sum(weight))
+        comcodesumraw <- dataraw %>% select(country,port,month,price,weight) %>% group_by(country,port,month) %>% summarise(price = sum(price), weight = sum(weight))
         
       } else if (input$impexpSelect == "Exports") {
         colnames(dataraw) = c("port","comcode","country","month","price", "weight")
@@ -784,10 +790,12 @@ server <- function(input, output, session) {
 
         portsumraw <- dataraw %>% select(comcode,country,month,price,weight) %>% group_by(comcode,country,month) %>% summarise(price = sum(price), weight = sum(weight))
         countrysumraw <- dataraw %>% select(port,comcode,month,price,weight) %>% group_by(port,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
+        comcodesumraw <- dataraw %>% select(port,country,month,price,weight) %>% group_by(port,country,month) %>% summarise(price = sum(price), weight = sum(weight))
       }
       
       portsumraw <- ungroup(portsumraw)
       countrysumraw <- ungroup(countrysumraw)
+      comcodesumraw <- ungroup(comcodesumraw)
     
       # End Isolate
       })
@@ -795,6 +803,7 @@ server <- function(input, output, session) {
     queryData$dataraw <- dataraw
     queryData$portsumraw <- portsumraw
     queryData$countrysumraw <- countrysumraw
+    queryData$comcodesumraw <- comcodesumraw
 
   })
   
@@ -817,33 +826,39 @@ server <- function(input, output, session) {
     input$dateSlider
     input$unitSelect
     
-    # Prepare portsum and countrysum into appropriate format for rest of app
+    # Prepare portsum, countrysum and comcodesum into appropriate format for rest of app
     # Based on date and unit, selected from fluidrow beneath comcode legend
     
     # Select correct month
     if (input$dateSliderAll == TRUE) {
       portsum <- queryData$portsumraw %>% select(-month)
       countrysum <- queryData$countrysumraw %>% select(-month)
+      comcodesum <- queryData$comcodesumraw %>% select(-month)
       if (input$impexpSelect == "Imports") {
         portsum <- portsum %>% group_by(country,comcode) %>% summarise(price = sum(price), weight = sum(weight))
         countrysum <- countrysum %>% group_by(comcode,port) %>% summarise(price = sum(price), weight = sum(weight))
+        comcodesum <- comcodesum %>% group_by(country,port) %>% summarise(price = sum(price), weight = sum(weight))
       } else if (input$impexpSelect == "Exports") {
         portsum <- portsum %>% group_by(comcode,country) %>% summarise(price = sum(price), weight = sum(weight))
         countrysum <- countrysum %>% group_by(port,comcode) %>% summarise(price = sum(price), weight = sum(weight))
+        comcodesum <- comcodesum %>% group_by(port,country) %>% summarise(price = sum(price), weight = sum(weight))
       }
     } else {
       portsum <- queryData$portsumraw %>% filter(month == input$dateSlider) %>% select(-month)
       countrysum <- queryData$countrysumraw %>% filter(month == input$dateSlider) %>% select(-month)
+      comcodesum <- queryData$comcodesumraw %>% filter(month == input$dateSlider) %>% select(-month)
     }
     
     # Select correct unit
     if (input$unitSelect == "Price (GBP)"){
       portsum <- portsum %>% select(-weight)
       countrysum <- countrysum %>% select(-weight)
+      comcodesum <- comcodesum %>% select(-weight)
       
     } else if (input$unitSelect == "Weight (KG)"){
       portsum <- portsum %>% select(-price)
       countrysum <- countrysum %>% select(-price)
+      comcodesum <- comcodesum %>% select(-price)
       
     } else if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
       # For map:
@@ -858,18 +873,21 @@ server <- function(input, output, session) {
       portsum <- portsum %>% select(-c(price,weight))
       countrysum$value <- countrysum$price / countrysum$weight
       countrysum <- countrysum %>% select(-c(price,weight))
+      comcodesum$value <- comcodesum$price / comcodesum$weight
+      comcodesum <- comcodesum %>% select(-c(price,weight))
     }
     
-    # At this point there should be two string and one numeric vector in both portsum
-    # and countrysum dataframes. Now rename that numeric vector, which is the unit used,
-    # to value.
+    # At this point there should be two string and one numeric vector in all sum 
+    # dataframes. Now rename that numeric vector, which is the unit used, to value.
     
     colnames(portsum)[colnames(portsum) %in% c("price","weight")] <- "value"
     colnames(countrysum)[colnames(countrysum) %in% c("price","weight")] <- "value"
+    colnames(comcodesum)[colnames(comcodesum) %in% c("price","weight")] <- "value"
     
     # Ungroup the data frames.
     portsum <- ungroup(portsum)
     countrysum <- ungroup(countrysum)
+    comcodesum <- ungroup(comcodesum)
     
     # Check again if, after sorting, we're dealing with a blank df.
     if (dim(portsum)[1] == 0) {
@@ -907,7 +925,7 @@ server <- function(input, output, session) {
       comcodelegend <- left_join(comcodelegend, comcodelookup, by = "commoditycode") %>% arrange(commoditycode)
       
       
-      # SANKEY SPECIFIC -------------------------------------------------------
+      # FULL SANKEY SPECIFIC --------------------------------------------------
       
       # Create Links & Nodes dataframe.
       
@@ -940,7 +958,35 @@ server <- function(input, output, session) {
         else {x}
         return(x)
       }, character(1))
+
+      # COUNTRY -> PORT SANKEY SPECIFIC ---------------------------------------
+
+      pclinks <- comcodesum
+      colnames(pclinks) <- c("source","target","value")
+      pcnodes <- data.frame(unique(c(pclinks$source,pclinks$target)),stringsAsFactors = FALSE)
+      colnames(pcnodes) = "name"
       
+      # Replace pclinks source, target columns with IDs specified in pcnodes.
+      # Match to row number in pcnodes (which is uniquely indexed!)
+      # Note - must be zero indexed, hence match - 1
+      pclinks$source = vapply(pclinks$source, function(x){
+        x = match(x,pcnodes[,1])-1
+      }, double(1))
+      
+      pclinks$target = vapply(pclinks$target, function(x){
+        x = match(x,pcnodes[,1])-1
+      }, double(1))
+      
+      # Replace node codes for country and port with full name
+      pcnodes$name = vapply(pcnodes$name,function(x){
+        replacement = desclookup[match(x,desclookup$keyName),"value"]
+        if (is.na(replacement) == FALSE){
+          x = replacement
+          if(nchar(x) > 30){x = substr(x,1,30)}}
+        else {x}
+        return(x)
+      }, character(1))
+
       # WORLDMAP SPECIFIC -----------------------------------------------------
       mapWorld <- map_data("world")
        
@@ -1081,6 +1127,8 @@ server <- function(input, output, session) {
     comcodeLegendData$comcodelegend <- comcodelegend
     sankeyData$links <- links
     sankeyData$nodes <- nodes
+    sankeyData$pclinks <- pclinks
+    sankeyData$pcnodes <- pcnodes
     mapData$mapWorld <- mapWorld
     mapData$dataPolygons <- dataPolygons
     timeseriesData$byComcode <- byComcode
@@ -1121,6 +1169,18 @@ server <- function(input, output, session) {
                   fontSize = 12, nodeWidth = 30)
   })
   
+  # COUNTRY -> PORT SANKEY -----------------------------------------------------
+  
+  output$pcSankeyTrade <- renderSankeyNetwork({
+  
+  # Suppress output if nothing has been selected yet
+    if (input$queryButton == 0) return()
+    req(!nullDataframe$nullDataframe)
+    
+    sankeyNetwork(sankeyData$pclinks, sankeyData$pcnodes,
+                  "source", "target", "value", "name",
+                  fontSize = 12, nodeWidth = 30)
+  })
   
   # MAP -----------------------------------------------------------------------
   
