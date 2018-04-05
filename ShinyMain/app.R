@@ -258,13 +258,65 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with assistance from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research). Alpha-stage QA was performed by Harry Grantham-Hill (Operational Research).")
            ),
   
-  # COMMODITY CODE LOOKUP -----------------------------------------------------
+  # QUERY PARAMETERS-----------------------------------------------------
   
-  tabPanel("Commodity Code Lookup",
-           tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
-           hr(),
-           dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
-           ),
+  tabPanel("Query Panel",
+    # Query Options
+    fluidRow(      
+        
+    # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
+      column(3,
+        selectizeInput("datestart", "Period Start:",
+                       choices=dates),
+        selectizeInput("dateend", "Period End:",
+                       choices=dates),
+        selectizeInput("countryselect", "Country:",
+                       selected = "All",
+                       choices=list(`All` = "All",
+                                    `Non-EU` = noneucountrycode$countryname,
+                                    `EU` = eucountrycode$countryname),
+                       options = list(maxItems = 20)),
+        selectizeInput("portselect", "Port:",
+                       selected = "All",
+                       choices=c("All",portcode$portname),
+                       options = list(maxItems = 20))
+        ),
+      column(9,
+        selectizeInput("comcode2", "2-digit Commodity Code:",
+                       selected = "All",
+                       width = "100%",
+                       choices=c("All", comcodelong(comcode_2$commoditycode)),
+                       options = list(maxItems = 10)),
+        selectizeInput("comcode4", "4-digit Commodity Code:",
+                       selected = "All",
+                       width = "100%",
+                       choices=c("All", comcodelong(comcode_4$commoditycode)),
+                       options = list(maxItems = 10)),
+        selectizeInput("comcode6", "6-digit Commodity Code:",
+                       selected = "All",
+                       width = "100%",
+                       choices=c("All", comcodelong(comcode_6$commoditycode)),
+                       options = list(maxItems = 10)),
+        selectizeInput("comcode8", "8-digit Commodity Code:",
+                       selected = "All",
+                       width = "100%",
+                       choices=c("All", comcodelong(comcode_8$commoditycode)),
+                       options = list(maxItems = 10))
+      ),
+      column(2,
+        radioButtons("impexpSelect", label = NULL, inline = TRUE,
+                     choices = c("Imports","Exports")),
+        actionButton("queryButton", "Run Query"),
+        br(),
+        br(),
+        actionButton("queryClear", "Clear Selections")
+      )
+    ),
+    hr(),
+    tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
+    hr(),
+    dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
+    ),
   
   # NON-EU TRADE --------------------------------------------------------------
   
@@ -284,53 +336,6 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                               background-size: 40px 40px;
                               }
                               "))),
-    # Query Options
-    fluidRow(      
-        
-    # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
-      column(2,
-        selectizeInput("datestart", "Period Start:",
-                       choices=dates),
-        selectizeInput("dateend", "Period End:",
-                       choices=dates)
-        ),
-      column(2,
-        selectizeInput("countryselect", "Country:",
-                       selected = "All",
-                       choices=c("All",noneucountrycode$countryname),
-                       options = list(maxItems = 20)),
-        selectizeInput("portselect", "Port:",
-                       selected = "All",
-                       choices=c("All",portcode$portname),
-                       options = list(maxItems = 20))
-        ),
-      column(3,
-        selectizeInput("comcode2", "2-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_2$commoditycode),
-                    options = list(maxItems = 5)),
-        selectizeInput("comcode4", "4-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_4$commoditycode),
-                    options = list(maxItems = 5))
-      ),
-      column(3,
-        selectizeInput("comcode6", "6-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_6$commoditycode),
-                    options = list(maxItems = 5)),
-        selectizeInput("comcode8", "8-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_8$commoditycode),
-                    options = list(maxItems = 5))
-      ),
-      column(2,
-        radioButtons("impexpSelect", label = NULL,
-                     choices = c("Imports","Exports")),
-        actionButton("queryButton", "Run Query")
-      ),
-      hr()
-    ),
     
     # Create comcode legend
     fluidRow(
@@ -403,50 +408,6 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                               background-size: 40px 40px;
                               }
                               "))),
-    
-    # Generate a row with a sidebar
-    fluidRow(      
-    
-    # Define date selectors and four cascading inputs - don't allow "All" on 2-digit comcode
-      column(2,
-        selectizeInput("eudatestart", "Period Start:",
-                     choices=dates),
-        selectizeInput("eudateend", "Period End:",
-                       choices=dates)
-        ),
-      column(2,
-        selectizeInput("eucountryselect", "Country:",
-                       selected = "All",
-                       choices=c("All",eucountrycode$countryname),
-                       options = list(maxItems = 20))
-        ),
-      column(3,
-        selectizeInput("eucomcode2", "2-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_2$commoditycode),
-                    options = list(maxItems = 5)),
-        selectizeInput("eucomcode4", "4-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_4$commoditycode),
-                    options = list(maxItems = 5))
-      ),
-      column(3,
-        selectizeInput("eucomcode6", "6-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_6$commoditycode),
-                    options = list(maxItems = 5)),
-        selectizeInput("eucomcode8", "8-digit Commodity Code:",
-                    selected = "All",
-                    choices=c("All", comcode_8$commoditycode),
-                    options = list(maxItems = 5))
-      ),
-      column(2,
-        radioButtons("euimpexpSelect", label = NULL,
-                     choices = c("Imports","Exports")),
-        actionButton("euqueryButton", "Run Query")
-      ),
-      hr()
-    ),
     
     # Create comcode legend
     fluidRow(
@@ -536,14 +497,14 @@ server <- function(input, output, session) {
   mapData <- reactiveValues(mapWorld = NULL)
   timeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL, byPort = NULL)
 
-  nullDataframe <- reactiveValues(nullDataframe = NULL, comcodequery = NULL)
+  nullDataframe <- reactiveValues(nullDataframe = NULL, eunullDataframe = NULL, comcodequery = NULL)
 
   euQueryData <- reactiveValues(euDataRaw = NULL)
   euComcodeLegendData <- reactiveValues(comcodelegend = NULL)
   euSankeyData <- reactiveValues(links = NULL, nodes = NULL)
   euMapData <- reactiveValues(mapWorld = NULL)
   euTimeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL)
- 
+
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
    output$ComcodeLookup = renderDataTable(comcodelookup,
                                           # filter = "top",
@@ -565,12 +526,6 @@ server <- function(input, output, session) {
   shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = "")})
   shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = "")})
   shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = "")})
-
-  shinyjs::onclick("eucountryselect", {updateSelectizeInput(session, "eucountryselect", selected = "")})
-  shinyjs::onclick("eucomcode2", {updateSelectizeInput(session, "eucomcode2", selected = "")})
-  shinyjs::onclick("eucomcode4", {updateSelectizeInput(session, "eucomcode4", selected = "")})
-  shinyjs::onclick("eucomcode6", {updateSelectizeInput(session, "eucomcode6", selected = "")})
-  shinyjs::onclick("eucomcode8", {updateSelectizeInput(session, "eucomcode8", selected = "")})
 
   # DATESLIDER OPTIONS ---------------------------------------------------------
 
@@ -594,122 +549,95 @@ server <- function(input, output, session) {
     }
   })
   
+  # DROPDOWN CASCADING =========================================================
   observe({
-    input$eudatestart
-    input$eudateend
-    
-    if (input$eudatestart == input$eudateend) {
-      shinyjs::disable("eudateSliderAll")
-    } else {
-      shinyjs::enable("eudateSliderAll")
-    }
-  })
-
-  observeEvent(input$eudateSliderAll, {
-    if (!input$eudateSliderAll) {
-      shinyjs::enable("eudateSlider")
-    } else {
-      shinyjs::disable("eudateSlider")
-    }
-  })
-  
-  # SERVER (NON-EU) ==========================================================
-  
-  # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
-  observe({
-    allDescendants <- descendants(comcode,input$comcode2)
-    comcode_2_selection <- input$comcode2
+    comcode_2_selection <- comcodeshort(input$comcode2)
+    allDescendants <- descendants(comcode, comcode_2_selection)
 
     # Update Comcodes
     if (is.null(comcode_2_selection) == FALSE) {
       if ("All" %in% comcode_2_selection){
         updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_4$commoditycode),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_4$commoditycode)),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_6$commoditycode),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_6$commoditycode)),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_8$commoditycode)),
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 4]))),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 6]))),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
+                          options = list(maxItems = 10))
       }
     }
   })
 
   observe({
-    allDescendants <- descendants(comcode,input$comcode4)
-    comcode_4_selection <- input$comcode4
+    comcode_4_selection <- comcodeshort(input$comcode4)
+    allDescendants <- descendants(comcode, comcode_4_selection)
     
     # Update Comcodes
     if (is.null(comcode_4_selection) == FALSE) {
       if ("All" %in% comcode_4_selection){
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_6$commoditycode)),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_8$commoditycode)),
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 6]))),
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
+                          options = list(maxItems = 10))
       }
     }
   })
 
   observe({
-    allDescendants <- descendants(comcode,input$comcode6)
-    comcode_6_selection <- input$comcode6
+    comcode_6_selection <- comcodeshort(input$comcode6)
+    allDescendants <- descendants(comcode, comcode_6_selection) 
     
     # Update Comcodes
     if (is.null(comcode_6_selection) == FALSE) {
       if ("All" %in% comcode_6_selection){
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(comcode_8$commoditycode)),
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
+                          options = list(maxItems = 10))
       }
     }
   })
 
-  # EXECUTE QUERY --------------------------------------------------------------
+  # QUERY EXECUTION ============================================================
   
   observeEvent(input$queryButton,{
     input$queryButton
-    
-    # Create a Progress object
-    progress <- shiny::Progress$new()
-    # Make sure it closes when we exit this reactive, even if there's an error
-    on.exit(progress$close())
-    progress$set(message = "Generating Visualisations", value = 1)
     
     # Use selectors information to build plot
     isolate({
@@ -718,10 +646,10 @@ server <- function(input, output, session) {
       nullDataframe$nullDataframe <- FALSE
       
       # Control handling for comcode selectors
-      if ("All" %in% input$comcode2 | is.null(input$comcode2)) {comcode2query = "__"} else {comcode2query = input$comcode2}
-      if ("All" %in% input$comcode4 | is.null(input$comcode4)) {comcode4query = "__"} else {comcode4query = input$comcode4}
-      if ("All" %in% input$comcode6 | is.null(input$comcode6)) {comcode6query = "__"} else {comcode6query = input$comcode6}
-      if ("All" %in% input$comcode8 | is.null(input$comcode8)) {comcode8query = "__"} else {comcode8query = input$comcode8}
+      if ("All" %in% input$comcode2 | is.null(input$comcode2)) {comcode2query = "__"} else {comcode2query = comcodeshort(input$comcode2)}
+      if ("All" %in% input$comcode4 | is.null(input$comcode4)) {comcode4query = "__"} else {comcode4query = comcodeshort(input$comcode4)}
+      if ("All" %in% input$comcode6 | is.null(input$comcode6)) {comcode6query = "__"} else {comcode6query = comcodeshort(input$comcode6)}
+      if ("All" %in% input$comcode8 | is.null(input$comcode8)) {comcode8query = "__"} else {comcode8query = comcodeshort(input$comcode8)}
       
       # This is kind of a funny way of doing things, but simply pasting the strings
       # together and taking the last 8 characters works quickly, easily and cleanly.
@@ -741,6 +669,9 @@ server <- function(input, output, session) {
         countryquery <- countrycode %>% filter(countryname %in% input$countryselect) %>% pull(countrycode)
       }
           
+
+      # NON-EU SPECIFIC --------------------------------------------------------
+      
       # Obtain date range
       daterangequery <- rev(dates[match(input$dateend,dates):match(input$datestart,dates)])
       # Update dateSlider with daterangequery
@@ -773,14 +704,11 @@ server <- function(input, output, session) {
                          paste(countryquery,collapse = "|"), 
                          ")') AND (account_date IN ('",
                          paste(daterangequery, collapse = "', '"),
-                         "'))",
+                         "')) ",
                          groupbyquery) # import = coo_alpha, export = cod_alpha!
                          
-      progress$set(detail = "Querying Data from Database")
-
-      # conn <- poolCheckout(tradedata)
+      # Run Query
       dataraw <- dbGetQuery(tradedata, dataquery)
-      # poolReturn(conn)
 
       # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
       if (dim(dataraw)[1] == 0) {
@@ -789,53 +717,135 @@ server <- function(input, output, session) {
         nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
         isolate({
             showModal(modalDialog(title = "Alert!",
-                                  paste0("No ",
+                                  paste0("No Non-EU ",
                                          input$impexpSelect,
                                          " for Date Range ",
                                          input$datestart, " - ", input$dateend,
                                          " and Commodity Code(s) ",
                                          nullDataframe$comcodequery,
                                          ".")), session)
-            print(paste0("No ",
-                         input$impexpSelect,
-                         " for Date Range ",
-                         input$datestart, " - ", input$dateend,
-                         " and Commodity Code(s) ",
-                         nullDataframe$comcodequery,
-                         "."))
         })
-        req(FALSE)
+      } else {
+          
+        # Transform month back to readable format 
+        dataraw$account_date <- paste0(substr(dataraw$account_date,4,7),
+                                       "-",
+                                       substr(dataraw$account_date,1,2))
+
+        # Set up correct colnames and create portsum/countrysum dataframes from dataraw
+        if (input$impexpSelect == "Imports") {
+            colnames(dataraw) = c("country","comcode","port","month","price", "weight")
+            dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
+            dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
+
+            portsumraw <- dataraw %>%
+                select(country,comcode,month,price,weight) %>%
+                group_by(country,comcode,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+            countrysumraw <- dataraw %>%
+                select(comcode,port,month,price,weight) %>%
+                group_by(comcode,port,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+            comcodesumraw <- dataraw %>%
+                select(country,port,month,price,weight) %>%
+                group_by(country,port,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+
+        } else if (input$impexpSelect == "Exports") {
+            colnames(dataraw) = c("port","comcode","country","month","price", "weight")
+            dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
+            dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
+
+            portsumraw <- dataraw %>%
+                select(comcode,country,month,price,weight) %>%
+                group_by(comcode,country,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+            countrysumraw <- dataraw %>%
+                select(port,comcode,month,price,weight) %>%
+                group_by(port,comcode,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+            comcodesumraw <- dataraw %>%
+                select(port,country,month,price,weight) %>%
+                group_by(port,country,month) %>%
+                summarise(price = sum(price), weight = sum(weight))
+        }
+
+        portsumraw <- ungroup(portsumraw)
+        countrysumraw <- ungroup(countrysumraw)
+        comcodesumraw <- ungroup(comcodesumraw)
+
       }
 
-      # Transform month back to readable format 
-      dataraw$account_date <- paste0(substr(dataraw$account_date,4,7),
-                                "-",
-                                substr(dataraw$account_date,1,2))
+
+
+      # EU SPECIFIC ------------------------------------------------------------
       
-      # Set up correct colnames and create portsum/countrysum dataframes from dataraw
+      # Set nullDataframe flag to FALSE
+      nullDataframe$eunullDataframe <- FALSE
+      
+      # Obtain date range
+      eudaterangequery <- rev(dates[match(input$dateend,dates):match(input$datestart,dates)])
+      # Update dateSlider with daterangequery
+      updateSliderTextInput(session,"eudateSlider",
+                           choices=eudaterangequery)
+      # Transform to EU Query Format
+      eudaterangequery <- paste0("0",
+                                 substr(eudaterangequery,1,4),
+                                 substr(eudaterangequery,6,7))
+      
+      # First line of query dependent on Import or Export
       if (input$impexpSelect == "Imports") {
-        colnames(dataraw) = c("country","comcode","port","month","price", "weight")
-        dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
-        dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
-
-        portsumraw <- dataraw %>% select(country,comcode,month,price,weight) %>% group_by(country,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
-        countrysumraw <- dataraw %>% select(comcode,port,month,price,weight) %>% group_by(comcode,port,month) %>% summarise(price = sum(price), weight = sum(weight))
-        comcodesumraw <- dataraw %>% select(country,port,month,price,weight) %>% group_by(country,port,month) %>% summarise(price = sum(price), weight = sum(weight))
-        
+        euselectquery <- "SELECT smk_cod_alpha, smk_comcode, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM arrivals "
+        eugroupbyquery <- "GROUP BY smk_cod_alpha,smk_comcode,smk_period_reference"
       } else if (input$impexpSelect == "Exports") {
-        colnames(dataraw) = c("port","comcode","country","month","price", "weight")
-        dataraw$country[is.na(dataraw$country)] <- "Unknown Country" # blank country = <NA>
-        dataraw$port[dataraw$port == ""] <- "Unknown Port" # blank port = ""
-
-        portsumraw <- dataraw %>% select(comcode,country,month,price,weight) %>% group_by(comcode,country,month) %>% summarise(price = sum(price), weight = sum(weight))
-        countrysumraw <- dataraw %>% select(port,comcode,month,price,weight) %>% group_by(port,comcode,month) %>% summarise(price = sum(price), weight = sum(weight))
-        comcodesumraw <- dataraw %>% select(port,country,month,price,weight) %>% group_by(port,country,month) %>% summarise(price = sum(price), weight = sum(weight))
-      }
+        euselectquery <- "SELECT smk_comcode, smk_cod_alpha, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM dispatches "
+        eugroupbyquery <- "GROUP BY smk_comcode,smk_cod_alpha,smk_period_reference"
+      } 
       
-      portsumraw <- ungroup(portsumraw)
-      countrysumraw <- ungroup(countrysumraw)
-      comcodesumraw <- ungroup(comcodesumraw)
-    
+      eudataquery = paste0(euselectquery,
+                         "WHERE (smk_comcode SIMILAR TO '(",
+                         paste(comcodequery,collapse = "|"),
+                         ")') AND (smk_cod_alpha SIMILAR TO '(",
+                         paste(countryquery,collapse = "|"), 
+                         ")') AND (smk_period_reference IN ('",
+                         paste(eudaterangequery, collapse = "', '"),
+                         "')) ",
+                         eugroupbyquery)
+
+      # Query Data
+      euDataRaw <- dbGetQuery(tradedata, eudataquery)
+
+      # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
+      if (dim(euDataRaw)[1] == 0) {
+        # Set nullDataframe flag to TRUE to stop downstream reactivity
+        nullDataframe$eunullDataframe <- TRUE
+        nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
+        isolate({
+            showModal(modalDialog(title = "Alert!",
+                                  paste0("No EU ",
+                                         input$impexpSelect,
+                                         " for Date Range ",
+                                         input$datestart, " - ", input$dateend,
+                                         " and Commodity Code(s) ",
+                                         nullDataframe$comcodequery,
+                                          ".")), session)
+        })
+      } else {
+
+          if (input$impexpSelect == "Imports") {
+              colnames(euDataRaw) = c("country","comcode","month", "consignments", "price", "weight")
+          } else if (input$impexpSelect == "Exports") {
+              colnames(euDataRaw) = c("comcode","country","month", "consignments", "price", "weight")
+          }
+          
+          # Transform month back to readable format 
+          euDataRaw$month <- paste0(substr(euDataRaw$month,2,5),
+                                    "-",
+                                    substr(euDataRaw$month,6,7))
+          # Handle NAs
+          euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
+      }
+
       # End Isolate
       })
     
@@ -843,12 +853,12 @@ server <- function(input, output, session) {
     queryData$portsumraw <- portsumraw
     queryData$countrysumraw <- countrysumraw
     queryData$comcodesumraw <- comcodesumraw
+    euQueryData$euDataRaw <- euDataRaw 
 
   })
-  
-  # ||||||||||||
-  # CHAINS WITH
-  # ||||||||||||
+      
+
+  # NON-EU DATA SHAPING AND PLOTTING ===========================================
 
   observe({
     # FILTER DATE/UNIT IN DATA -------------------------------------------------
@@ -949,13 +959,6 @@ server <- function(input, output, session) {
     # CLEAN AND SHAPE DATA --------------------------------------------------
     
     isolate({
-      # Create a Progress object
-      progress <- shiny::Progress$new()
-      # Make sure it closes when we exit this reactive, even if there's an error
-      on.exit(progress$close())
-      progress$set(message = "Generating Visualisations", value = 1)
-      progress$set(detail = "Clean + Shape Data")
-      
       
       # COMCODE LEGEND SPECIFIC -----------------------------------------------
       
@@ -1333,209 +1336,13 @@ server <- function(input, output, session) {
 
 
     
-  # SERVER (EU) ==============================================================
-  
-  # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
-  observe({
-    allDescendants <- descendants(comcode,input$eucomcode2)
-    eu_comcode_2_selection <- input$eucomcode2
-
-    # Update Comcodes
-    if (is.null(eu_comcode_2_selection) == FALSE) {
-      if ("All" %in% eu_comcode_2_selection){
-        updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_4$commoditycode ),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
-      } else {
-        updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
-      }
-    }
-  })
-
-  observe({
-    allDescendants <- descendants(comcode,input$eucomcode4)
-    eu_comcode_4_selection <- input$eucomcode4
-    
-    # Update Comcodes
-    if (is.null(eu_comcode_4_selection) == FALSE) {
-      if ("All" %in% eu_comcode_4_selection){
-        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
-      } else {
-        updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
-      }
-    }
-  })
-
-  observe({
-    allDescendants <- descendants(comcode,input$eucomcode6)
-    eu_comcode_6_selection <- input$eucomcode6
-    
-    # Update Comcodes
-    if (is.null(eu_comcode_6_selection) == FALSE) {
-      if ("All" %in% eu_comcode_6_selection){
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
-      } else {
-        updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
-                          selected = "All",
-                          choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
-      }
-    }
-  })
-
-  observeEvent(input$euqueryButton,{
-    input$euqueryButton
-    
-    # Create a Progress object
-    progress <- shiny::Progress$new()
-    # Make sure it closes when we exit this reactive, even if there's an error
-    on.exit(progress$close())
-    progress$set(message = "Generating Visualisations", value = 1)
-    
-    
-    # Use selectors information to build plot
-    isolate({
-      
-      # Set nullDataframe flag to FALSE
-      nullDataframe$nullDataframe <- FALSE
-      
-      # Control handling for comcode selectors
-      if ("All" %in% input$eucomcode2 | is.null(input$eucomcode2)) {eucomcode2query = "__"} else {eucomcode2query = input$eucomcode2}
-      if ("All" %in% input$eucomcode4 | is.null(input$eucomcode4)) {eucomcode4query = "__"} else {eucomcode4query = input$eucomcode4}
-      if ("All" %in% input$eucomcode6 | is.null(input$eucomcode6)) {eucomcode6query = "__"} else {eucomcode6query = input$eucomcode6}
-      if ("All" %in% input$eucomcode8 | is.null(input$eucomcode8)) {eucomcode8query = "__"} else {eucomcode8query = input$eucomcode8}
-      
-      # This is kind of a funny way of doing things, but simply pasting the strings
-      # together and taking the last 8 characters works quickly, easily and cleanly.
-      eucomcodequery = paste0(eucomcode2query, eucomcode4query, eucomcode6query, eucomcode8query)
-      eucomcodequery = substr(eucomcodequery, nchar(eucomcodequery)-7, nchar(eucomcodequery))
-      
-      if ("All" %in% input$eucountryselect){
-        eucountryquery <- countrycode$countrycode
-      } else {
-        eucountryquery <- countrycode %>% filter(countryname %in% input$eucountryselect) %>% pull(countrycode)
-      }
-      
-      # Obtain date range
-      eudaterangequery <- rev(dates[match(input$eudateend,dates):match(input$eudatestart,dates)])
-      # Update dateSlider with daterangequery
-      updateSliderTextInput(session,"eudateSlider",
-                           choices=eudaterangequery)
-      # Transform to EU Query Format
-      eudaterangequery <- paste0("0",
-                                 substr(eudaterangequery,1,4),
-                                 substr(eudaterangequery,6,7))
-      
-      # First line of query dependent on Import or Export
-      if (input$euimpexpSelect == "Imports") {
-        euselectquery <- "SELECT smk_cod_alpha, smk_comcode, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM arrivals "
-        eugroupbyquery <- "GROUP BY smk_cod_alpha,smk_comcode,smk_period_reference"
-      } else if (input$euimpexpSelect == "Exports") {
-        euselectquery <- "SELECT smk_comcode, smk_cod_alpha, smk_period_reference, sum(smk_no_of_consignments), sum(smk_stat_value), sum(smk_nett_mass) FROM dispatches "
-        eugroupbyquery <- "GROUP BY smk_comcode,smk_cod_alpha,smk_period_reference"
-      } 
-      
-      eudataquery = paste0(euselectquery,
-                         "WHERE (smk_comcode SIMILAR TO '(",
-                         paste(eucomcodequery,collapse = "|"),
-                         ")') AND (smk_cod_alpha SIMILAR TO '(",
-                         paste(eucountryquery,collapse = "|"), 
-                         ")') AND (smk_period_reference IN ('",
-                         paste(eudaterangequery, collapse = "', '"),
-                         "')) ",
-                         eugroupbyquery)
-     
-      # Query data
-      progress$set(detail = "Querying Data from Database")
-      
-      # conn <- poolCheckout(tradedata)
-      euDataRaw <- dbGetQuery(tradedata, eudataquery)
-      # poolReturn(conn)
-      
-      # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
-      if (dim(euDataRaw)[1] == 0) {
-        # Set nullDataframe flag to TRUE to stop downstream reactivity
-        nullDataframe$nullDataframe <- TRUE
-        nullDataframe$comcodequery <- paste(gsub("_","",eucomcodequery),collapse = ",")
-        isolate({
-            showModal(modalDialog(title = "Alert!",
-                                  paste0("No ",
-                                         input$euimpexpSelect,
-                                         " for Date Range ",
-                                         input$eudatestart, " - ", input$eudateend,
-                                         " and Commodity Code(s) ",
-                                         nullDataframe$comcodequery,
-                                          ".")), session)
-        })
-        req(FALSE)
-      }
-      
-      if (input$euimpexpSelect == "Imports") {
-        colnames(euDataRaw) = c("country","comcode","month", "consignments", "price", "weight")
-      } else if (input$euimpexpSelect == "Exports") {
-        colnames(euDataRaw) = c("comcode","country","month", "consignments", "price", "weight")
-      }
-     
-      # Transform month back to readable format 
-      euDataRaw$month <- paste0(substr(euDataRaw$month,2,5),
-                                "-",
-                                substr(euDataRaw$month,6,7))
-      # Handle NAs
-      euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
-
-      # End Isolate
-      })
-    
-    euQueryData$euDataRaw <- euDataRaw 
-
-  })
-  
-  # ||||||||||||
-  # CHAINS WITH
-  # ||||||||||||
+  # EU DATA SHAPING AND PLOTTING ===============================================
   
   observe({
     # Conditions for observe statement to run
-    if (input$euqueryButton == 0) return()
+    if (input$queryButton == 0) return()
     req(input$eudateSlider)
-    if (nullDataframe$nullDataframe == TRUE) {
+    if (nullDataframe$eunullDataframe == TRUE) {
       # Break out of reactive chain
       req(FALSE)
     }
@@ -1550,9 +1357,9 @@ server <- function(input, output, session) {
     # Select correct month
     if (input$eudateSliderAll == TRUE) {
       euData <- euQueryData$euDataRaw %>% select(-month)
-      if (input$euimpexpSelect == "Imports") {
+      if (input$impexpSelect == "Imports") {
         euData <- euData %>% group_by(country,comcode) %>% summarise(consignments = sum(consignments), price = sum(price), weight = sum(weight))
-      } else if (input$euimpexpSelect == "Exports") {
+      } else if (input$impexpSelect == "Exports") {
         euData <- euData %>% group_by(comcode,country) %>% summarise(consignments = sum(consignments), price = sum(price), weight = sum(weight))
       }
     } else {
@@ -1584,11 +1391,11 @@ server <- function(input, output, session) {
     
     # Check again if, after sorting, we're dealing with a blank df.
     if (dim(euData)[1] == 0) {
-      nullDataframe$nullDataframe <- TRUE
+      nullDataframe$eunullDataframe <- TRUE
       isolate({
         showModal(modalDialog(title = "Alert!",
                               paste0("No ",
-                                     input$euimpexpSelect,
+                                     input$impexpSelect,
                                      " for ",
                                      input$eudateSlider,
                                      "."),
@@ -1602,13 +1409,6 @@ server <- function(input, output, session) {
     # Clean and Shape Data --------------------------------------------------
     
     isolate({
-      # Create a Progress object
-      progress <- shiny::Progress$new()
-      # Make sure it closes when we exit this reactive, even if there's an error
-      on.exit(progress$close())
-      progress$set(message = "Generating Visualisations", value = 1)
-      progress$set(detail = "Clean + Shape Data")
-      
       
       # COMCODE LEGEND SPECIFIC -----------------------------------------------
       
@@ -1758,8 +1558,8 @@ server <- function(input, output, session) {
   # Fill in the comcode legend ================================================
   
   output$euComcodeLegend = renderDataTable({
-    if (input$euqueryButton == 0) return()
-    req(!nullDataframe$nullDataframe)
+    if (input$queryButton == 0) return()
+    req(!nullDataframe$eunullDataframe)
     
     datatable(euComcodeLegendData$comcodelegend,
               rownames = FALSE,
@@ -1778,8 +1578,8 @@ server <- function(input, output, session) {
   output$eusankeyTrade <- renderSankeyNetwork({
   
   # Suppress output if nothing has been selected yet
-    if (input$euqueryButton == 0) return()
-    req(!nullDataframe$nullDataframe)
+    if (input$queryButton == 0) return()
+    req(!nullDataframe$eunullDataframe)
     
     sankeyNetwork(euSankeyData$links, euSankeyData$nodes,
                   "source", "target", "value", "name",
@@ -1790,8 +1590,8 @@ server <- function(input, output, session) {
   # MAP -----------------------------------------------------------------------
   
   output$euworldMap <- renderLeaflet({
-    if (input$euqueryButton == 0) return()
-    req(!nullDataframe$nullDataframe)
+    if (input$queryButton == 0) return()
+    req(!nullDataframe$eunullDataframe)
     
     pal <- colorNumeric(palette = "inferno",
                         domain = 0:max(euMapData$dataPolygons$value),
@@ -1845,7 +1645,7 @@ server <- function(input, output, session) {
       ggplotly(
           ggplot(data = euTimeseriesData$byComcode) + 
           geom_col(aes(month,value,fill=comcode), show.legend = TRUE, position = colposition) +
-          labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
+          labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Commodity Codes") + 
           scale_y_continuous(labels = comma) + 
@@ -1859,7 +1659,7 @@ server <- function(input, output, session) {
       ggplotly(
           ggplot(data = euTimeseriesData$byCountry) + 
           geom_col(aes(month,value,fill=country), show.legend = TRUE, position = colposition) +
-          labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
+          labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Countries") + 
           scale_y_continuous(labels = comma) + 
