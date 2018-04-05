@@ -314,8 +314,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
       ),
       column(2,
         radioButtons("impexpSelect", label = NULL,
+      column(2, align = "center",
+        radioButtons("impexpSelect", label = NULL, inline = TRUE,
                      choices = c("Imports","Exports")),
-        actionButton("queryButton", "Run Query")
+        actionButton("queryButton", "Run Query", width = "100%"),
+        br(),
+        br(),
+        actionButton("queryClear", "Clear Selection", width = "100%")
       ),
       hr()
     ),
@@ -428,10 +433,13 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                     choices=c("All", comcode_8$commoditycode),
                     options = list(maxItems = 5))
       ),
-      column(2,
-        radioButtons("euimpexpSelect", label = NULL,
+      column(2, align = "center",
+        radioButtons("euimpexpSelect", label = NULL, inline = TRUE,
                      choices = c("Imports","Exports")),
-        actionButton("euqueryButton", "Run Query")
+        actionButton("euqueryButton", "Run Query", width = "100%"),
+        br(),
+        br(),
+        actionButton("euqueryClear", "Clear Selection", width = "100%")
       ),
       hr()
     ),
@@ -603,6 +611,38 @@ server <- function(input, output, session) {
   
   # SERVER (NON-EU) ==========================================================
   
+  # CLEAR DROPDOWNS ----------------------------------------------------------
+    observeEvent(input$queryClear, {
+        updateSelectizeInput(session, "datestart", "Period Start:",
+                             choices=dates)
+        updateSelectizeInput(session, "dateend", "Period End:",
+                             choices=dates)
+        updateSelectizeInput(session, "countryselect", "Country:",
+                             selected = "All",
+                             choices=c("All",noneucountrycode$countryname),
+                             options = list(maxItems = 20))
+        updateSelectizeInput(session, "portselect", "Port:",
+                             selected = "All",
+                             choices=c("All",portcode$portname),
+                             options = list(maxItems = 20))
+        updateSelectizeInput(session, "comcode2", "2-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_2$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "comcode4", "4-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_4$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "comcode6", "6-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_6$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "comcode8", "8-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_8$commoditycode),
+                             options = list(maxItems = 5))
+    })
+
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
     allDescendants <- descendants(comcode,input$comcode2)
@@ -1322,7 +1362,35 @@ server <- function(input, output, session) {
 
     
   # SERVER (EU) ==============================================================
-  
+
+  # CLEAR EU DROPDOWNS -------------------------------------------------------  
+    observeEvent(input$euqueryClear, {
+        updateSelectizeInput(session, "eudatestart", "Period Start:",
+                             choices=dates)
+        updateSelectizeInput(session, "eudateend", "Period End:",
+                             choices=dates)
+        updateSelectizeInput(session, "eucountryselect", "Country:",
+                             selected = "All",
+                             choices=c("All",noneucountrycode$countryname),
+                             options = list(maxItems = 20))
+        updateSelectizeInput(session, "eucomcode2", "2-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_2$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "eucomcode4", "4-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_4$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "eucomcode6", "6-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_6$commoditycode),
+                             options = list(maxItems = 5))
+        updateSelectizeInput(session, "eucomcode8", "8-digit Commodity Code:",
+                             selected = "All",
+                             choices=c("All", comcode_8$commoditycode),
+                             options = list(maxItems = 5))
+    })
+
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
   observe({
     allDescendants <- descendants(comcode,input$eucomcode2)
