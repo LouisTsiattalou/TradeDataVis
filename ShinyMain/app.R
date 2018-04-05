@@ -89,6 +89,18 @@ descendants <- function(data, codes) {
     }
 }
 
+# comcodeshort - Gets comcode from comcode - description format
+comcodeshort <- function(long) {
+    short <- substr(long, 1, str_locate(long, " - ")[,1] - 1)
+    return(short)
+}
+
+# comcodelong - Gets comcode - description from comcode
+comcodelong <- function(short) {
+    long <- paste(short, comcode$description[match(short, comcode$commoditycode)], sep = " - ")
+    return(long)
+}
+
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
 # setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/ShinyMain/")
