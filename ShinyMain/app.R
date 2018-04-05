@@ -297,24 +297,24 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_2$commoditycode),
-                       options = list(maxItems = 5)),
+                       options = list(maxItems = 10)),
         selectizeInput("comcode4", "4-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_4$commoditycode),
-                       options = list(maxItems = 5))
+                       options = list(maxItems = 10))
       ),
       column(3,
         selectizeInput("comcode6", "6-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_6$commoditycode),
-                       options = list(maxItems = 5)),
+                       options = list(maxItems = 10)),
         selectizeInput("comcode8", "8-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_8$commoditycode),
-                       options = list(maxItems = 5))
+                       options = list(maxItems = 10))
       ),
       column(2, align = "center",
         radioButtons("impexpSelect", label = NULL, inline = TRUE,
@@ -420,24 +420,24 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_2$commoditycode),
-                       options = list(maxItems = 5)),
+                       options = list(maxItems = 10)),
         selectizeInput("eucomcode4", "4-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_4$commoditycode),
-                       options = list(maxItems = 5))
+                       options = list(maxItems = 10))
       ),
       column(3,
         selectizeInput("eucomcode6", "6-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_6$commoditycode),
-                       options = list(maxItems = 5)),
+                       options = list(maxItems = 10)),
         selectizeInput("eucomcode8", "8-digit Commodity Code:",
                        selected = "All",
                        width = "100%",
                        choices=c("All", comcode_8$commoditycode),
-                       options = list(maxItems = 5))
+                       options = list(maxItems = 10))
       ),
       column(2, align = "center",
         radioButtons("euimpexpSelect", label = NULL, inline = TRUE,
@@ -634,19 +634,19 @@ server <- function(input, output, session) {
         updateSelectizeInput(session, "comcode2", "2-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_2$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "comcode4", "4-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_4$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "comcode6", "6-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_6$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "comcode8", "8-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_8$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
     })
 
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
@@ -660,28 +660,28 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_4$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_6$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
@@ -696,20 +696,20 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
@@ -724,12 +724,12 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
@@ -1382,19 +1382,19 @@ server <- function(input, output, session) {
         updateSelectizeInput(session, "eucomcode2", "2-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_2$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "eucomcode4", "4-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_4$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "eucomcode6", "6-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_6$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
         updateSelectizeInput(session, "eucomcode8", "8-digit Commodity Code:",
                              selected = "All",
                              choices=c("All", comcode_8$commoditycode),
-                             options = list(maxItems = 5))
+                             options = list(maxItems = 10))
     })
 
   # OBSERVE STATEMENTS FOR MODIFYING DROPDOWNS -------------------------------
@@ -1408,28 +1408,28 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_4$commoditycode ),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"eucomcode4", "4-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 4])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
@@ -1444,20 +1444,20 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_6$commoditycode ),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"eucomcode6", "6-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 6])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
@@ -1472,12 +1472,12 @@ server <- function(input, output, session) {
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", comcode_8$commoditycode),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       } else {
         updateSelectizeInput(session,"eucomcode8", "8-digit Commodity Code:",
                           selected = "All",
                           choices=c("All", sort(allDescendants[nchar(allDescendants) == 8])),
-                          options = list(maxItems = 5))
+                          options = list(maxItems = 10))
       }
     }
   })
