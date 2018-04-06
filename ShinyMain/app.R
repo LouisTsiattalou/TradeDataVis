@@ -549,6 +549,41 @@ server <- function(input, output, session) {
     }
   })
   
+  # CLEAR DROPDOWNS ----------------------------------------------------------
+  observeEvent(input$queryClear, {
+    updateSelectizeInput(session, "datestart", "Period Start:",
+                         choices=dates)
+    updateSelectizeInput(session, "dateend", "Period End:",
+                         choices=dates)
+    updateSelectizeInput(session, "countryselect", "Country:",
+                         selected = "All",
+                         choices=list(`All` = "All",
+                                      `Non-EU` = noneucountrycode$countryname,
+                                      `EU` = eucountrycode$countryname),
+                         options = list(maxItems = 20))
+    updateSelectizeInput(session, "portselect", "Port:",
+                         selected = "All",
+                         choices=c("All",portcode$portname),
+                         options = list(maxItems = 20))
+    updateSelectizeInput(session, "comcode2", "2-digit Commodity Code:",
+                         selected = "All",
+                         choices=c("All", comcodelong(comcode_2$commoditycode)),
+                         options = list(maxItems = 10))
+    updateSelectizeInput(session, "comcode4", "4-digit Commodity Code:",
+                         selected = "All",
+                         choices=c("All", comcodelong(comcode_4$commoditycode)),
+                         options = list(maxItems = 10))
+    updateSelectizeInput(session, "comcode6", "6-digit Commodity Code:",
+                         selected = "All",
+                         choices=c("All", comcodelong(comcode_6$commoditycode)),
+                         options = list(maxItems = 10))
+    updateSelectizeInput(session, "comcode8", "8-digit Commodity Code:",
+                         selected = "All",
+                         choices=c("All", comcodelong(comcode_8$commoditycode)),
+                         options = list(maxItems = 10))
+  })
+
+
   # DROPDOWN CASCADING =========================================================
   observe({
     comcode_2_selection <- comcodeshort(input$comcode2)
