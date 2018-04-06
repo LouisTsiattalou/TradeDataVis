@@ -641,7 +641,14 @@ server <- function(input, output, session) {
     
     # Use selectors information to build plot
     isolate({
-        
+
+      # Create a Progress object
+      progress <- shiny::Progress$new()
+      # Make sure it closes when we exit this reactive, even if there's an error
+      on.exit(progress$close())
+
+      progress$set(message = "Processing Selections", value = 0.25)
+
       # Set nullDataframe flag to FALSE
       nullDataframe$nullDataframe <- FALSE
       
@@ -707,6 +714,8 @@ server <- function(input, output, session) {
                          "')) ",
                          groupbyquery) # import = coo_alpha, export = cod_alpha!
                          
+      progress$set(message = "Querying Non-EU Data", value = 0.5)
+      
       # Run Query
       dataraw <- dbGetQuery(tradedata, dataquery)
 
@@ -812,6 +821,8 @@ server <- function(input, output, session) {
                          "')) ",
                          eugroupbyquery)
 
+      progress$set(message = "Querying EU Data", value = 0.75)
+
       # Query Data
       euDataRaw <- dbGetQuery(tradedata, eudataquery)
 
@@ -875,6 +886,13 @@ server <- function(input, output, session) {
     input$dateSlider
     input$unitSelect
     
+    # Create a Progress object
+    progress <- shiny::Progress$new()
+    # Make sure it closes when we exit this reactive, even if there's an error
+    on.exit(progress$close())
+
+    progress$set(message = "Clean and Shape Data", value = 1)
+
     # Prepare portsum, countrysum and comcodesum into appropriate format for rest of app
     # Based on date and unit, selected from fluidrow beneath comcode legend
     
