@@ -76,35 +76,39 @@ library("xlsx")
 # Descendants - obtain all descendants of a vector of commodity codes.
 # Tested on "01" and "02", takes 0.25 secs for 500 descendants. Quick!
 descendants <- function(data, codes) {
-    # Strip 8-digit codes (these are leaf nodes)
-    codes <- codes[nchar(codes) < 8]
-    if (length(codes) == 0) {
-        return()
-    } else {
-        # get all the children's indices
-        f <- data$parent %in% codes
-        # get current children
-        children <- data$commoditycode[f]
-        return(c(children, descendants(data, children)))
-    }
+  # Strip 8-digit codes (these are leaf nodes)
+  codes <- codes[nchar(codes) < 8]
+  if (length(codes) == 0) {
+    return()
+  } else {
+    # get all the children's indices
+    f <- data$parent %in% codes
+    # get current children
+    children <- data$commoditycode[f]
+    return(c(children, descendants(data, children)))
+  }
 }
 
 # comcodeshort - Gets comcode from comcode - description format
 comcodeshort <- function(long) {
-    short <- substr(long, 1, str_locate(long, " - ")[,1] - 1)
-    return(short)
+  # Handle "All" elements
+  long <- vapply(long, function(x) {if (x == "All") {return(x <- "All - ")} else return(x)}, character(1))
+  short <- substr(long, 1, str_locate(long, " - ")[,1] - 1)
+  return(short)
 }
 
 # comcodelong - Gets comcode - description from comcode
 comcodelong <- function(short) {
-    long <- paste(short, comcode$description[match(short, comcode$commoditycode)], sep = " - ")
-    return(long)
+  # Handle "All - " elements; probably not necessary but will keep commented just in case.
+  # short <- vapply(short, function(x) {if (x == "All - ") {return(x <- "All")} else return(x)}, character(1))
+  long <- paste(short, comcode$description[match(short, comcode$commoditycode)], sep = " - ")
+  return(long)
 }
 
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
 # setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/ShinyMain/")
-dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim(".env.example", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
 # pg <- dbDriver("PostgreSQL")
 # tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
@@ -313,8 +317,6 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
       )
     ),
     hr(),
-    tags$i("Perform a fuzzy search on Commodity Codes using the search box at the top!"),
-    hr(),
     dataTableOutput("ComcodeLookup") %>% withSpinner(type=6)
     ),
   
@@ -506,18 +508,18 @@ server <- function(input, output, session) {
   euTimeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL)
 
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
-   output$ComcodeLookup = renderDataTable(comcodelookup,
-                                          # filter = "top",
-                                          rownames = FALSE,
-                                          colnames = c("Commodity Code", "Description"),
-                                          class = "cell-border stripe",
-                                          options = list(
-                                            #  dom = "t", # disable search bar at top
-                                            pageLength = 25, # set number of elements on page
-                                            language = list(search = "Search Comcodes and Descriptions:"), # Change Search Text.
-                                            columnDefs = list(list(width = "150px", targets = 0))
-                                            )
-                                          )
+  output$ComcodeLookup = renderDataTable(comcodelookup,
+                                         # filter = "top",
+                                         rownames = FALSE,
+                                         colnames = c("Commodity Code", "Description"),
+                                         class = "cell-border stripe",
+                                         options = list(
+                                           #  dom = "t", # disable search bar at top
+                                           pageLength = 25, # set number of elements on page
+                                           language = list(search = "Search Comcodes and Descriptions:"), # Change Search Text.
+                                           columnDefs = list(list(width = "150px", targets = 0))
+                                           )
+                                         )
   
   # SHINYJS ONCLICK STATEMENTS -----------------------------------------------
   shinyjs::onclick("countryselect", {updateSelectizeInput(session, "countryselect", selected = "")})
@@ -550,6 +552,7 @@ server <- function(input, output, session) {
   })
   
   # CLEAR DROPDOWNS ----------------------------------------------------------
+
   observeEvent(input$queryClear, {
     updateSelectizeInput(session, "datestart", "Period Start:",
                          choices=dates)
@@ -585,6 +588,7 @@ server <- function(input, output, session) {
 
 
   # DROPDOWN CASCADING =========================================================
+
   observe({
     comcode_2_selection <- comcodeshort(input$comcode2)
     allDescendants <- descendants(comcode, comcode_2_selection)
@@ -878,18 +882,23 @@ server <- function(input, output, session) {
         })
       } else {
 
-          if (input$impexpSelect == "Imports") {
-              colnames(euDataRaw) = c("country","comcode","month", "consignments", "price", "weight")
-          } else if (input$impexpSelect == "Exports") {
-              colnames(euDataRaw) = c("comcode","country","month", "consignments", "price", "weight")
-          }
-          
-          # Transform month back to readable format 
-          euDataRaw$month <- paste0(substr(euDataRaw$month,2,5),
-                                    "-",
-                                    substr(euDataRaw$month,6,7))
-          # Handle NAs
-          euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
+        # Show a blue notification to notify the user the query was successful
+        showNotification(paste0("EU ",
+                                input$impexpSelect,
+                                " query successful!"), type = "message", duration = NULL, session = session)
+
+        if (input$impexpSelect == "Imports") {
+          colnames(euDataRaw) = c("country","comcode","month", "consignments", "price", "weight")
+        } else if (input$impexpSelect == "Exports") {
+          colnames(euDataRaw) = c("comcode","country","month", "consignments", "price", "weight")
+        }
+        
+        # Transform month back to readable format 
+        euDataRaw$month <- paste0(substr(euDataRaw$month,2,5),
+                                  "-",
+                                  substr(euDataRaw$month,6,7))
+        # Handle NAs
+        euDataRaw$country[is.na(euDataRaw$country)] <- "Unknown Country" # blank country = <NA>
       }
 
       # End Isolate
