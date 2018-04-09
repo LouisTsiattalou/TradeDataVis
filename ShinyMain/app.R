@@ -1223,6 +1223,18 @@ server <- function(input, output, session) {
                           mapData$dataPolygons$region, 
                           "<br><strong>Value: </strong>", 
                           mapData$dataPolygons$value)
+
+    # Format legend figures
+    if (input$unitSelect == "Price (GBP)"){
+      legendModifier <- labelFormat(prefix = "£")
+      legendTitle <- "Price"
+    } else if (input$unitSelect == "Weight (KG)"){
+      legendModifier <- labelFormat(suffix = " kg")
+      legendTitle <- "Weight"
+    } else if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
+      legendModifier <- labelFormat(prefix = "£", suffix = "/kg")
+      legendTitle <- "Price/Weight"
+    }
     
     leaflet(data = mapData$dataPolygons) %>%
       setView(lng = 0, lat = 20, zoom = 2) %>%
@@ -1237,7 +1249,8 @@ server <- function(input, output, session) {
       addLegend(pal = pal,
                 values = 0:max(mapData$dataPolygons$value), 
                 opacity = 0.7, 
-                title = "Colour Scale",
+                title = legendTitle,
+                labFormat = legendModifier,
                 position = "topright")
     
   })
@@ -1774,6 +1787,21 @@ server <- function(input, output, session) {
                           "<br><strong>Value: </strong>", 
                           euMapData$dataPolygons$value)
     
+    # Format legend
+    if (input$euunitSelect == "Price (GBP)"){
+      eulegendModifier <- labelFormat(prefix = "£")
+      eulegendTitle <- "Price"
+    } else if (input$euunitSelect == "Weight (KG)"){
+      eulegendModifier <- labelFormat(suffix = " kg")
+      eulegendTitle <- "Weight"
+    } else if (input$euunitSelect == "Price Per Kilo (GBP/KG)"){
+      eulegendModifier <- labelFormat(prefix = "£", suffix = "/kg")
+      eulegendTitle <- "Price/Weight"
+    } else if (input$euunitSelect == "Number of Consignments"){
+      eulegendModifier <- labelFormat(suffix = " Con.")
+      eulegendTitle <- "# Consignments"
+    }
+
     leaflet(data = euMapData$dataPolygons) %>%
       setView(lng = 21.22574, lat = 48.2361, zoom = 4) %>%
       # addTiles() %>%
@@ -1787,7 +1815,8 @@ server <- function(input, output, session) {
       addLegend(pal = pal,
                 values = 0:max(euMapData$dataPolygons$value), 
                 opacity = 0.7, 
-                title = "Colour Scale",
+                title = eulegendTitle,
+                labFormat = eulegendModifier,
                 position = "topright")
     
   })
