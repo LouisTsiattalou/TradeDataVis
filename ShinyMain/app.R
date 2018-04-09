@@ -533,16 +533,18 @@ server <- function(input, output, session) {
   euTimeseriesData <- reactiveValues(byComcode = NULL, byCountry = NULL)
  
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
-  output$ComcodeLookup = renderDataTable(comcodelookup,
-                                   filter = "top",
-                                   rownames = FALSE,
-                                   colnames = c("Commodity Code", "Description"),
-                                   options = list(
-                                   #  dom = "t", # disable search bar at top
-                                     pageLength = 25, # set number of elements on page
-                                     columnDefs = list(list(width = "150px", targets = 0))
-                                     )
-                                  )
+   output$ComcodeLookup = renderDataTable(comcodelookup,
+                                          # filter = "top",
+                                          rownames = FALSE,
+                                          colnames = c("Commodity Code", "Description"),
+                                          class = "cell-border stripe",
+                                          options = list(
+                                            #  dom = "t", # disable search bar at top
+                                            pageLength = 25, # set number of elements on page
+                                            language = list(search = "Search Comcodes and Descriptions:"), # Change Search Text.
+                                            columnDefs = list(list(width = "150px", targets = 0))
+                                            )
+                                          )
   
   # SHINYJS ONCLICK STATEMENTS -----------------------------------------------
   shinyjs::onclick("countryselect", {updateSelectizeInput(session, "countryselect", selected = "")})
