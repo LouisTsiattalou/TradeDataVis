@@ -557,21 +557,46 @@ server <- function(input, output, session) {
   shinyjs::onclick("eucomcode4", {updateSelectizeInput(session, "eucomcode4", selected = "")})
   shinyjs::onclick("eucomcode6", {updateSelectizeInput(session, "eucomcode6", selected = "")})
   shinyjs::onclick("eucomcode8", {updateSelectizeInput(session, "eucomcode8", selected = "")})
-  
-  observeEvent(input$dateSliderAll, {
-      if (!input$dateSliderAll) {
-          shinyjs::enable("dateSlider")
-      } else {
-          shinyjs::disable("dateSlider")
-      }
+
+  # DATESLIDER OPTIONS ---------------------------------------------------------
+
+  # Hide Dateslider options if the same date is picked.
+  observe({
+    input$datestart
+    input$dateend
+
+    if (input$datestart == input$dateend) {
+      shinyjs::disable("dateSliderAll")
+    } else {
+      shinyjs::enable("dateSliderAll")
+    }
   })
   
+  observeEvent(input$dateSliderAll, {
+    if (!input$dateSliderAll) {
+      shinyjs::enable("dateSlider")
+    } else {
+      shinyjs::disable("dateSlider")
+    }
+  })
+  
+  observe({
+    input$eudatestart
+    input$eudateend
+    
+    if (input$eudatestart == input$eudateend) {
+      shinyjs::disable("eudateSliderAll")
+    } else {
+      shinyjs::enable("eudateSliderAll")
+    }
+  })
+
   observeEvent(input$eudateSliderAll, {
-      if (!input$eudateSliderAll) {
-          shinyjs::enable("eudateSlider")
-      } else {
-          shinyjs::disable("eudateSlider")
-      }
+    if (!input$eudateSliderAll) {
+      shinyjs::enable("eudateSlider")
+    } else {
+      shinyjs::disable("eudateSlider")
+    }
   })
   
   # SERVER (NON-EU) ==========================================================
