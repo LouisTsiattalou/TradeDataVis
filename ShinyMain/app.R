@@ -1259,10 +1259,11 @@ server <- function(input, output, session) {
   # TIME SERIES ---------------------------------------------------------------
   
   output$tsByComcode <- renderPlotly({
+      if (length(unique(timeseriesData$byComcode$month)) < 7) {colposition = "dodge"} else {colposition = "stack"}
       nbars <- length(timeseriesData$byComcode$comcode)
       ggplotly(
           ggplot(data = timeseriesData$byComcode) + 
-          geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+          geom_col(aes(month,value,fill=comcode), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
                fill = "Commodity Codes") + 
@@ -1272,10 +1273,11 @@ server <- function(input, output, session) {
   })
   
   output$tsByCountry <- renderPlotly({
+      if (length(unique(timeseriesData$byCountry$month)) < 7) {colposition = "dodge"} else {colposition = "stack"}
       nbars <- length(timeseriesData$byCountry$country)
       ggplotly(
           ggplot(data = timeseriesData$byCountry) + 
-          geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+          geom_col(aes(month,value,fill=country), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
                fill = "Countries") + 
@@ -1285,10 +1287,11 @@ server <- function(input, output, session) {
   })
   
   output$tsByPort <- renderPlotly({
+      if (length(unique(timeseriesData$byPort$month)) < 7) {colposition = "dodge"} else {colposition = "stack"}
       nbars <- length(timeseriesData$byPort$port)
       ggplotly(
           ggplot(data = timeseriesData$byPort) + 
-          geom_col(aes(month,value,fill=port), show.legend = TRUE) +
+          geom_col(aes(month,value,fill=port), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
                fill = "Ports") + 
@@ -1826,9 +1829,10 @@ server <- function(input, output, session) {
   
   output$eutsByComcode <- renderPlotly({
       nbars <- length(euTimeseriesData$byComcode$comcode)
+      if (length(unique(euTimeseriesData$byComcode$month)) < 7) {colposition = "dodge"} else {colposition = "stack"}
       ggplotly(
           ggplot(data = euTimeseriesData$byComcode) + 
-          geom_col(aes(month,value,fill=comcode), show.legend = TRUE) +
+          geom_col(aes(month,value,fill=comcode), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Commodity Codes") + 
@@ -1838,10 +1842,11 @@ server <- function(input, output, session) {
   })
   
   output$eutsByCountry <- renderPlotly({
+      if (length(unique(euTimeseriesData$byCountry$month)) < 7) {colposition = "dodge"} else {colposition = "stack"}
       nbars <- length(euTimeseriesData$byCountry$country)
       ggplotly(
           ggplot(data = euTimeseriesData$byCountry) + 
-          geom_col(aes(month,value,fill=country), show.legend = TRUE) +
+          geom_col(aes(month,value,fill=country), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$euimpexpSelect,1,nchar(input$euimpexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Countries") + 
