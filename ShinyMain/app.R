@@ -763,18 +763,20 @@ server <- function(input, output, session) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$nullDataframe <- TRUE
         nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
+
+        # Show a red notification warning the user that no data was found.
         isolate({
-            showModal(modalDialog(title = "Alert!",
-                                  paste0("No Non-EU ",
-                                         input$impexpSelect,
-                                         " for Date Range ",
-                                         input$datestart, " - ", input$dateend,
-                                         " and Commodity Code(s) ",
-                                         nullDataframe$comcodequery,
-                                         ".")), session)
+          showNotification(paste0("No Non-EU ",
+                                  input$impexpSelect,
+                                  " for selected query parameters."), type = "error", duration = NULL, session = session)
         })
       } else {
           
+        # Show a blue notification to notify the user the query was successful
+        showNotification(paste0("Non-EU ",
+                                input$impexpSelect,
+                                " query successful!"), type = "message", duration = NULL, session = session)
+
         # Transform month back to readable format 
         dataraw$account_date <- paste0(substr(dataraw$account_date,4,7),
                                        "-",
@@ -870,15 +872,12 @@ server <- function(input, output, session) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$eunullDataframe <- TRUE
         nullDataframe$comcodequery <- paste(gsub("_","",comcodequery),collapse = ",")
+
+        # Show a red notification warning the user that no data was found.
         isolate({
-            showModal(modalDialog(title = "Alert!",
-                                  paste0("No EU ",
-                                         input$impexpSelect,
-                                         " for Date Range ",
-                                         input$datestart, " - ", input$dateend,
-                                         " and Commodity Code(s) ",
-                                         nullDataframe$comcodequery,
-                                          ".")), session)
+          showNotification(paste0("No EU ",
+                                  input$impexpSelect,
+                                  " for selected query parameters."), type = "error", duration = NULL, session = session)
         })
       } else {
 
@@ -1002,16 +1001,13 @@ server <- function(input, output, session) {
     
     # Check again if, after sorting, we're dealing with a blank df.
     if (dim(portsum)[1] == 0) {
-      nullDataframe$nullDataframe <- TRUE
       isolate({
-        showModal(modalDialog(title = "Alert!",
-                              paste0("No ",
-                                     input$impexpSelect,
-                                     " for ",
-                                     input$dateSlider,
-                                     "."),
-                              easyClose = TRUE,
-                              footer = NULL), session)
+        # Show a red notification warning the user that no data was found.
+        showNotification(paste0("No Non-EU ",
+                                input$impexpSelect,
+                                " for selected query in month ",
+                                input$dateSlider,
+                                "."), type = "warning", duration = NULL, session = session)
       })
       # Break out of reactive chain
       req(FALSE)
@@ -1453,16 +1449,13 @@ server <- function(input, output, session) {
     
     # Check again if, after sorting, we're dealing with a blank df.
     if (dim(euData)[1] == 0) {
-      nullDataframe$eunullDataframe <- TRUE
       isolate({
-        showModal(modalDialog(title = "Alert!",
-                              paste0("No ",
-                                     input$impexpSelect,
-                                     " for ",
-                                     input$eudateSlider,
-                                     "."),
-                              easyClose = TRUE,
-                              footer = NULL), session)
+        # Show a red notification warning the user that no data was found.
+        showNotification(paste0("No EU ",
+                                input$impexpSelect,
+                                " for selected query in month ",
+                                input$eudateSlider,
+                                "."), type = "warning", duration = NULL, session = session)
       })
       # Break out of reactive chain
       req(FALSE)
