@@ -37,8 +37,11 @@ library("ggplot2")
 # install_github("rstudio/pool")
 library("pool")
 
-# Same for networkD3 - to get modal dialogs working
-# install_github("christophergandrud/networkD3")
+# NetworkD3 conflicts with many shiny elements.
+# At the time of writing (09/04/2018), you will need to compile this package
+# yourself. Clone the networkD3 Repository, and modify it with Pull Request 215:
+# https://github.com/christophergandrud/networkD3/pull/215/files
+# devtools::install("PATH_TO_LOCAL_NETWORKD3_REPO")
 library("networkD3")
 
 if(require("rgeos") == FALSE) {install.packages("rgeos")}
