@@ -130,7 +130,6 @@ onStop(function() {
     poolClose(tradedata)
 })
 
-
 # Load Metadata
 # conn <- poolCheckout(tradedata)
 
@@ -209,10 +208,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   tabPanel("Welcome",
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
-           HTML("<div class=\"alert alert-dismissible alert-danger\">
-                    <strong>Alert:</strong> This application is currently in beta. You are <i>very likely</i> to encounter bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
+           HTML("<div class=\"alert alert-dismissible alert-success\">
+                    <strong>Welcome!</strong> This is Version 1.0 of the Trade Data Visualisation app. Please take the time to read through this page to familiarise yourself with the functionality of the app. If you encounter any bugs/crashes, please let me know so I can fix them up by going to the <i>Feedback</i> tab or emailing me <a href=mailto:louis.tsiattalou@food.gov.uk>here</a>.<br>
                 Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
-                Lastly, if the app keeps crashing, please close the application for 15 minutes and retry.
                 </div>"),
            tags$hr(),
            tags$h3("Introduction"),
@@ -220,14 +218,14 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$p("This application aims to fix this by providing three key visualisations: ",
                   tags$ul(
                            tags$li("Sankey Diagram"),
-                           tags$li("World Choropleth Map"),
+                           tags$li("Interactive World Map"),
                            tags$li("Bar Charts by Comcode/Country/Port")
                        )
                   ),
-           tags$p("These interactive visualisations provide a level of detail that is very difficult to get quickly using Excel or other end-user analysis tools. The Sankey Diagram is a network diagram describing the flow of absolute quantities (Price and Weight for non-EU, Price and Consignments for EU) between countries, commodities and ports; you can hover over a network relationship to obtain the value. The World Choropleth Map is a colour map of the world showing where our imports/exports are coming in from; click a country for more information. Lastly, the Bar Charts are interactive and show the proportion of the imports/exports contributed by each country, commodity and port. However, since port data is not available in the EU source data, ports are not shown in visualisations for EU imports/exports."),
+           tags$p("These interactive visualisations provide a level of detail that is very difficult to get quickly using Excel or other end-user analysis tools. The Sankey Diagram is a network diagram describing the flow of absolute quantities (Price, Weight and Price Per Kilo for non-EU; Price and Consignments for EU) between countries, commodities and ports; you can hover over a network relationship to obtain the value. The Interactive World Map is a coloured map of the world showing where our imports/exports are coming from/to; the colours of each country tells you the value for your selected unit, and you can click a country for more information. Lastly, the Bar Charts are interactive and show the proportion of the imports/exports contributed by each country, commodity and port. However, since port data is not available in the EU source data, ports are not shown in visualisations for EU imports/exports."),
            tags$hr(),
            tags$h3("How to Use the Application"),
-           tags$p("To use the application, first obtain the commodity codes you wish to find in the ", tags$b("Comcode Lookup"), " tab. There are search functions that are designed to quickly find the codes you need. Then go to either the EU/Non-EU Trade tabs and fill in the options at the top of the page. ", tags$b("You can type in values, or select them from the dropdowns."), "Once you have done this, hit the ", tags$i("\"Run Query\""), " button. All the data will be fetched from the database, and visualisations generated."),
+           tags$p("To use the application, first navigate to the Query Panel tab - this is where you make your selections. I have included a searchable Commodity Code Lookup table. So, if you wanted to search for ", tags$i("Olive Oil"), ", you can type that into the search bar and get the commodity codes related to them. Once you know what you're looking for, make your selections in the dropdown boxes and hit the ", tags$i("Run Query"), " button. This will load all of the matching data from the database into the app and render the visualisations into the ", tags$i("Non-EU Trade"), "and ", tags$i("EU Trade"), " tabs. Little notifications in the bottom right will alert you to progress, and let you know if data was found for your selections."),
            tags$p("Once the visualisations show up, you will see:",
                   tags$ul(
                            tags$li("A mini Commodity Code Lookup table, showing", tags$i("only the commodity codes currently in play.")),
@@ -235,34 +233,29 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                            tags$li("A tab selection panel enabling you to switch between the interactive visualisations."),
                            tags$li("A Download Button, which downloads the results of the unfiltered query you just made by clicking \"Run Query\".")
                            ),
-                  "You can also run another query by changing the selectors at the top and clicking Run Query again."),
-           tags$p("I aim to continue developing this application to maximise its value to the organisation. ", tags$b("Please help in this effort by filling in the Feedback tab"), " after having used the app for a while. This will help me to see exactly where the app needs improvement, and will speed up the iteration process for the application greatly!"),
+                  "You can also run another query by changing the selectors (or clicking the Clear Selections button and starting again), then clicking Run Query again."),
+           tags$p("I aim to continue developing this application to maximise its value to the Civil Service. ", tags$b("Please help in this effort by filling in the Feedback tab"), " after having used the app for a while. This will help me to see exactly where the app needs improvement, and will speed up the iteration process for the application greatly!"),
            tags$hr(),
            tags$h3("Known Bugs"),
-                  tags$p(tags$u("Screen Grey-out"),
-                  tags$br(),
-                  "If you haven't run a successful query yet in your session and you make a query with no underlying data, it will display a message saying \"No Data Found\", which you can exit from and continue working. However, it will not show after a successful query has been made. Since it does not show, you can't exit from it, so the screen is essentially frozen from that point on.",
-                  tags$br(),
-                  tags$b("Solution: "), "Simply reload the App.",
-                  tags$br(),
-                  tags$br(),
-                  tags$u("Small Visualisations/Data Tables not loading"),
+                  tags$p(tags$u("Small Visualisations/Data Tables not loading"),
                   tags$br(),
                   tags$b("Solution: "), "Use Chrome.",
                   tags$br(),
                   tags$br(),
                   tags$u("Sankey Diagram only shows lines, not nodes"),
                   tags$br(),
-                  tags$b("Solution: "), "Too many countries/comcodes/ports. Narrow your query down."),
+                  tags$b("Solution: "), "Too many countries/comcodes/ports. Narrow your query to a smaller Date Range or fewer Commodity Codes."),
            tags$hr(),
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "0.1.2",
+                  "Version Number:", "1.0.0",
+                  tags$br(),
+                  "Release Date:", "16/04/2018",
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),
-           tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with assistance from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research). Alpha-stage QA was performed by Harry Grantham-Hill (Operational Research).")
+           tags$p("This application was developed by Louis Tsiattalou (Operational Research Fast Stream) at the Food Standards Agency; with infrastructure support from Arthur Lugtigheid (Data Science) and Tim Johnston (Operational Research). QA was performed by Harry Grantham-Hill (Operational Research).")
            ),
   
   # QUERY PARAMETERS-----------------------------------------------------
