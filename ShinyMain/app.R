@@ -190,10 +190,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   tabPanel("Welcome",
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
-           HTML("<div class=\"alert alert-dismissible alert-danger\">
-                    <strong>Alert:</strong> This application is currently in beta. You are <i>very likely</i> to encounter bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
+           HTML("<div class=\"alert alert-dismissible alert-info\">
+                This application is currently in beta. You may encounter bugs and unexpected behaviour as you use the application. Please help us improve the application by clicking the <i>Feedback</i> tab at the top of the page. <br>
                 Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
-                Lastly, if the app keeps crashing, please close the application for 15 minutes and retry.
                 </div>"),
            tags$hr(),
            tags$h3("Introduction"),
@@ -239,7 +238,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "0.1.2",
+                  "Version Number:", "v0.1.3 (v1RC2)",
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),
@@ -500,7 +499,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   
   # Feedback Form (I suggest you leave this part folded...)
   tabPanel("Feedback",
-           HTML("
+           HTML("<p>Feedback form not showing up? <a href=https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6/>Fill it out here!</a><hr>
                <div id=\"wufoo-mmr67cc1bqdty6\">
                         Fill out my <a href=\"https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6\">online form</a>.
                </div>
