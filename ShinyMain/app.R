@@ -38,10 +38,7 @@ library("ggplot2")
 library("pool")
 
 # NetworkD3 conflicts with many shiny elements.
-# At the time of writing (09/04/2018), you will need to compile this package
-# yourself. Clone the networkD3 Repository, and modify it with Pull Request 215:
-# https://github.com/christophergandrud/networkD3/pull/215/files
-# devtools::install("PATH_TO_LOCAL_NETWORKD3_REPO")
+# install_github("fsa-analytics/networkD3")
 library("networkD3")
 
 if(require("rgeos") == FALSE) {install.packages("rgeos")}
@@ -111,7 +108,7 @@ comcodelong <- function(short) {
 # Load Prerequisite Static data - Ports, Comcodes, etc. ======================
 # Use pool instead of dbConnect
 # setwd("C:/Users/ltsiattalou/Documents/R/ImportTool/ShinyMain/")
-dbenv <- read_delim(".env.example", delim = "=", col_names = FALSE, trim_ws = TRUE)
+dbenv <- read_delim(".env", delim = "=", col_names = FALSE, trim_ws = TRUE)
 
 # pg <- dbDriver("PostgreSQL")
 # tradedata <- dbConnect(pg, user=dbenv[1,2], password=dbenv[2,2], host=dbenv[3,2], port=dbenv[4,2], dbname=dbenv[5,2])
@@ -131,13 +128,10 @@ onStop(function() {
 })
 
 # Load Metadata
-# conn <- poolCheckout(tradedata)
-
 portcode <- dbGetQuery(tradedata, "SELECT * FROM port")
 comcode <- dbGetQuery(tradedata, "SELECT * FROM comcode")
 countrycode <- dbGetQuery(tradedata, "SELECT * FROM country")
 
-# poolReturn(conn)
 
 # Order Ascending
 portcode <- portcode %>% arrange(portname)
@@ -457,7 +451,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   
   # Feedback Form (I suggest you leave this part folded...)
   tabPanel("Feedback",
-           HTML("
+           HTML("<p>Feedback form not showing up? <a href=https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6/>Fill it out here!</a><hr>
                <div id=\"wufoo-mmr67cc1bqdty6\">
                         Fill out my <a href=\"https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6\">online form</a>.
                </div>
@@ -534,16 +528,26 @@ server <- function(input, output, session) {
 
     if (input$datestart == input$dateend) {
       shinyjs::disable("dateSliderAll")
+      shinyjs::disable("eudateSliderAll")
     } else {
       shinyjs::enable("dateSliderAll")
+      shinyjs::enable("eudateSliderAll")
     }
   })
-  
+
   observeEvent(input$dateSliderAll, {
     if (!input$dateSliderAll) {
       shinyjs::enable("dateSlider")
     } else {
       shinyjs::disable("dateSlider")
+    }
+  })
+
+  observeEvent(input$eudateSliderAll, {
+    if (!input$eudateSliderAll) {
+      shinyjs::enable("eudateSlider")
+    } else {
+      shinyjs::disable("eudateSlider")
     }
   })
   

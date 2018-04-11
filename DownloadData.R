@@ -17,7 +17,7 @@ setwd("datafiles")
 start <- Sys.time()
 errors <- character()
 
-years <- c(2009:2017)
+years <- c(2009:2018)
 # File Downloads =============================================================
 for (i in years ) {
   tryCatch({ suppressWarnings(
@@ -109,7 +109,7 @@ sapply(datafiles, FUN = function(txt) {
 unlink(fullDirFeb09, recursive = TRUE)
 
 # Normal Cases
-syrs <- as.character(sprintf("%02d",c(9:17)))
+syrs <- as.character(sprintf("%02d",c(9:18)))
 smths <- as.character(sprintf("%02d",c(1:12)))
 
 for (i in syrs) {
