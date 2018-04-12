@@ -758,7 +758,7 @@ server <- function(input, output, session) {
       # Run Query
       dataraw <- dbGetQuery(tradedata, dataquery)
 
-      # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
+      # Break out of Non-EU Shaping if query returns no values (ie, df == dim 0,0)
       if (dim(dataraw)[1] == 0) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$nullDataframe <- TRUE
@@ -867,7 +867,7 @@ server <- function(input, output, session) {
       # Query Data
       euDataRaw <- dbGetQuery(tradedata, eudataquery)
 
-      # Break out of observeEvent if query returns no values (ie, df == dim 0,0)
+      # Break out of EU Shaping if query returns no values (ie, df == dim 0,0)
       if (dim(euDataRaw)[1] == 0) {
         # Set nullDataframe flag to TRUE to stop downstream reactivity
         nullDataframe$eunullDataframe <- TRUE
@@ -904,10 +904,13 @@ server <- function(input, output, session) {
       })
     
     queryData$dataraw <- dataraw
-    queryData$portsumraw <- portsumraw
-    queryData$countrysumraw <- countrysumraw
-    queryData$comcodesumraw <- comcodesumraw
     euQueryData$euDataRaw <- euDataRaw 
+    
+    if (!nullDataframe$nullDataframe) {
+      queryData$portsumraw <- portsumraw
+      queryData$countrysumraw <- countrysumraw
+      queryData$comcodesumraw <- comcodesumraw
+    }
 
   })
       
