@@ -270,7 +270,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                                     `Non-EU` = noneucountrycode$countryname,
                                     `EU` = eucountrycode$countryname),
                        options = list(maxItems = 20)),
-        selectizeInput("portselect", "Port:",
+        selectizeInput("portselect", "Port (Applies to Non-EU Only):",
                        selected = "All",
                        choices=c("All",portcode$portname),
                        options = list(maxItems = 20))
@@ -551,36 +551,46 @@ server <- function(input, output, session) {
     }
   })
   
-  # CLEAR DROPDOWNS ----------------------------------------------------------
+  # CONDITIONAL LABELLING/ENTRIES ON QUERY PARAMETERS --------------------------
+ 
+  # Label Country selector appropriately as Origin/Dispatch
+  observeEvent(input$impexpSelect, {
+    if (input$impexpSelect == "Imports") {
+      updateSelectizeInput(session, "countryselect", "Origin Country:")
+    } else {
+      updateSelectizeInput(session, "countryselect", "Dispatch Country:")
+    }
+  })
+  # CLEAR DROPDOWNS ------------------------------------------------------------
 
   observeEvent(input$queryClear, {
-    updateSelectizeInput(session, "datestart", "Period Start:",
+    updateSelectizeInput(session, "datestart",
                          choices=dates)
-    updateSelectizeInput(session, "dateend", "Period End:",
+    updateSelectizeInput(session, "dateend",
                          choices=dates)
-    updateSelectizeInput(session, "countryselect", "Country:",
+    updateSelectizeInput(session, "countryselect",
                          selected = "All",
                          choices=list(`All` = "All",
                                       `Non-EU` = noneucountrycode$countryname,
                                       `EU` = eucountrycode$countryname),
                          options = list(maxItems = 20))
-    updateSelectizeInput(session, "portselect", "Port:",
+    updateSelectizeInput(session, "portselect",
                          selected = "All",
                          choices=c("All",portcode$portname),
                          options = list(maxItems = 20))
-    updateSelectizeInput(session, "comcode2", "2-digit Commodity Code:",
+    updateSelectizeInput(session, "comcode2",
                          selected = "All",
                          choices=c("All", comcodelong(comcode_2$commoditycode)),
                          options = list(maxItems = 10))
-    updateSelectizeInput(session, "comcode4", "4-digit Commodity Code:",
+    updateSelectizeInput(session, "comcode4",
                          selected = "All",
                          choices=c("All", comcodelong(comcode_4$commoditycode)),
                          options = list(maxItems = 10))
-    updateSelectizeInput(session, "comcode6", "6-digit Commodity Code:",
+    updateSelectizeInput(session, "comcode6",
                          selected = "All",
                          choices=c("All", comcodelong(comcode_6$commoditycode)),
                          options = list(maxItems = 10))
-    updateSelectizeInput(session, "comcode8", "8-digit Commodity Code:",
+    updateSelectizeInput(session, "comcode8",
                          selected = "All",
                          choices=c("All", comcodelong(comcode_8$commoditycode)),
                          options = list(maxItems = 10))
@@ -596,28 +606,28 @@ server <- function(input, output, session) {
     # Update Comcodes
     if (is.null(comcode_2_selection) == FALSE) {
       if ("All" %in% comcode_2_selection){
-        updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode4",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_4$commoditycode)),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode6",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_6$commoditycode)),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_8$commoditycode)),
                           options = list(maxItems = 10))
       } else {
-        updateSelectizeInput(session,"comcode4", "4-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode4",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 4]))),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode6",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 6]))),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
                           options = list(maxItems = 10))
@@ -632,20 +642,20 @@ server <- function(input, output, session) {
     # Update Comcodes
     if (is.null(comcode_4_selection) == FALSE) {
       if ("All" %in% comcode_4_selection){
-        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode6",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_6$commoditycode)),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_8$commoditycode)),
                           options = list(maxItems = 10))
       } else {
-        updateSelectizeInput(session,"comcode6", "6-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode6",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 6]))),
                           options = list(maxItems = 10))
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
                           options = list(maxItems = 10))
@@ -660,12 +670,12 @@ server <- function(input, output, session) {
     # Update Comcodes
     if (is.null(comcode_6_selection) == FALSE) {
       if ("All" %in% comcode_6_selection){
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(comcode_8$commoditycode)),
                           options = list(maxItems = 10))
       } else {
-        updateSelectizeInput(session,"comcode8", "8-digit Commodity Code:",
+        updateSelectizeInput(session,"comcode8",
                           selected = "All",
                           choices=c("All", comcodelong(sort(allDescendants[nchar(allDescendants) == 8]))),
                           options = list(maxItems = 10))
