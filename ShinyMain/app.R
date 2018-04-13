@@ -555,6 +555,12 @@ server <- function(input, output, session) {
   
   # CONDITIONAL LABELLING/ENTRIES ON QUERY PARAMETERS --------------------------
  
+  # Remove past dates from dateend selector
+  observeEvent(input$datestart, {
+    updateSelectizeInput(session, "dateend",
+                         choices = dates[1:which(dates == input$datestart)])
+  })
+  
   # Label Country selector appropriately as Origin/Dispatch
   observeEvent(input$impexpSelect, {
     if (input$impexpSelect == "Imports") {
