@@ -140,8 +140,10 @@ countrycode <- countrycode %>% arrange(countryname)
 
 # Remove Duplicate Countrycodes
 countrycode <- countrycode[!duplicated(countrycode$countrycode),]
+
+# Define EU/Non-EU subsets
 eucountrycode <- countrycode %>% filter(eu == TRUE)
-noneucountrycode <- countrycode %>% filter(non_eu == TRUE)
+noneucountrycode <- countrycode %>% filter(non_eu == TRUE) %>% filter(!countrycode %in% eucountrycode$countrycode)
 
 # Factor enables multiple search terms in comcode lookup tab
 comcodelookup <- tibble(commoditycode = as.factor(comcode$commoditycode), description = comcode$description)
