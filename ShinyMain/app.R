@@ -203,7 +203,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
            HTML("<div class=\"alert alert-dismissible alert-success\">
-                    <strong>Welcome!</strong> This is Version 1.0 of the Trade Data Visualisation app. Please take the time to read through this page to familiarise yourself with the functionality of the app. If you encounter any bugs/crashes, please let me know so I can fix them up by going to the <i>Feedback</i> tab or emailing me <a href=mailto:louis.tsiattalou@food.gov.uk>here</a>.<br>
+                    <strong>Welcome!</strong> This is Version 1.0 of the Trade Data Visualisation app. Please take the time to read through this page to familiarise yourself with the functionality of the app. If you encounter any bugs/crashes, please let me know so I can fix them up by going to the <i>Feedback</i> tab or emailing me at louis.tsiattalou@food.gov.uk.<br>
                 Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
                 </div>"),
            tags$hr(),
@@ -768,14 +768,14 @@ server <- function(input, output, session) {
         isolate({
           showNotification(paste0("No Non-EU ",
                                   input$impexpSelect,
-                                  " for selected query parameters."), type = "error", duration = NULL, session = session)
+                                  " for selected query parameters."), type = "error", duration = 10, session = session)
         })
       } else {
           
         # Show a blue notification to notify the user the query was successful
         showNotification(paste0("Non-EU ",
                                 input$impexpSelect,
-                                " query successful!"), type = "message", duration = NULL, session = session)
+                                " query successful!"), type = "message", duration = 10, session = session)
 
         # Transform month back to readable format 
         dataraw$account_date <- paste0(substr(dataraw$account_date,4,7),
@@ -877,14 +877,14 @@ server <- function(input, output, session) {
         isolate({
           showNotification(paste0("No EU ",
                                   input$impexpSelect,
-                                  " for selected query parameters."), type = "error", duration = NULL, session = session)
+                                  " for selected query parameters."), type = "error", duration = 10, session = session)
         })
       } else {
 
         # Show a blue notification to notify the user the query was successful
         showNotification(paste0("EU ",
                                 input$impexpSelect,
-                                " query successful!"), type = "message", duration = NULL, session = session)
+                                " query successful!"), type = "message", duration = 10, session = session)
 
         if (input$impexpSelect == "Imports") {
           colnames(euDataRaw) = c("country","comcode","month", "consignments", "price", "weight")
@@ -1010,7 +1010,7 @@ server <- function(input, output, session) {
                                 input$impexpSelect,
                                 " for selected query in month ",
                                 input$dateSlider,
-                                "."), type = "warning", duration = NULL, session = session)
+                                "."), type = "warning", duration = 10, session = session)
       })
       # Break out of reactive chain
       req(FALSE)
@@ -1458,7 +1458,7 @@ server <- function(input, output, session) {
                                 input$impexpSelect,
                                 " for selected query in month ",
                                 input$eudateSlider,
-                                "."), type = "warning", duration = NULL, session = session)
+                                "."), type = "warning", duration = 10, session = session)
       })
       # Break out of reactive chain
       req(FALSE)
