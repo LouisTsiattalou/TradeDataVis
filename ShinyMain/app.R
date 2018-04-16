@@ -514,12 +514,12 @@ server <- function(input, output, session) {
                                          )
   
   # SHINYJS ONCLICK STATEMENTS -----------------------------------------------
-  shinyjs::onclick("countryselect", {updateSelectizeInput(session, "countryselect", selected = "")})
-  shinyjs::onclick("portselect", {updateSelectizeInput(session, "portselect", selected = "")})
-  shinyjs::onclick("comcode2", {updateSelectizeInput(session, "comcode2", selected = "")})
-  shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = "")})
-  shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = "")})
-  shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = "")})
+  shinyjs::onclick("countryselect", {updateSelectizeInput(session, "countryselect", selected = input$countryselect[which(!input$countryselect == "All")])})
+  shinyjs::onclick("portselect", {updateSelectizeInput(session, "portselect", selected = input$portselect[which(!input$portselect == "All")])})
+  shinyjs::onclick("comcode2", {updateSelectizeInput(session, "comcode2", selected = input$comcode2[which(!input$comcode2 == "All")])})
+  shinyjs::onclick("comcode4", {updateSelectizeInput(session, "comcode4", selected = input$comcode4[which(!input$comcode4 == "All")])})
+  shinyjs::onclick("comcode6", {updateSelectizeInput(session, "comcode6", selected = input$comcode6[which(!input$comcode6 == "All")])})
+  shinyjs::onclick("comcode8", {updateSelectizeInput(session, "comcode8", selected = input$comcode8[which(!input$comcode8 == "All")])})
 
   # DATESLIDER OPTIONS ---------------------------------------------------------
 
