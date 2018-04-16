@@ -37,9 +37,13 @@ library("ggplot2")
 # install_github("rstudio/pool")
 library("pool")
 
-# NetworkD3 conflicts with many shiny elements.
+# NetworkD3 conflicts with many shiny elements. Created an FSA version which fixes issues.
 # install_github("fsa-analytics/networkD3")
 library("networkD3")
+
+# Leaflet had some crashing issues in QA...
+# install_github("rstudio/leaflet")
+library("leaflet")
 
 if(require("rgeos") == FALSE) {install.packages("rgeos")}
 library("rgeos")
@@ -55,9 +59,6 @@ library("DT")
 
 if(require("ggmap") == FALSE) {install.packages("ggmap")}
 library("ggmap")
-
-if(require("leaflet") == FALSE) {install.packages("leaflet")}
-library("leaflet")
 
 if(require("plotly") == FALSE) {install.packages("plotly")}
 library("plotly")
@@ -557,8 +558,10 @@ server <- function(input, output, session) {
  
   # Remove past dates from dateend selector
   observeEvent(input$datestart, {
-    updateSelectizeInput(session, "dateend",
-                         choices = dates[1:which(dates == input$datestart)])
+    if (!input$datestart == "") {
+      updateSelectizeInput(session, "dateend",
+                           choices = dates[1:which(dates == input$datestart)])
+    }
   })
   
   # Label Country selector appropriately as Origin/Dispatch
