@@ -246,7 +246,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "1.0.0",
+                  "Version Number:", "1.0.1",
                   tags$br(),
                   "Release Date:", "16/04/2018",
                   tags$br(),
@@ -1312,27 +1312,41 @@ server <- function(input, output, session) {
     if (input$queryButton == 0) return()
     req(!nullDataframe$nullDataframe)
     
-    pal <- colorNumeric(palette = "inferno",
-                        domain = 0:max(mapData$dataPolygons$value),
-                        reverse = TRUE)
-    
-    value_popup <- paste0(ifelse(input$impexpSelect == "Imports", "<strong>Country of Origin: </strong>","<strong>Country of Dispatch: </strong>"), 
-                          mapData$dataPolygons$region, 
-                          "<br><strong>Value: </strong>", 
-                          mapData$dataPolygons$value)
+    isolate({
+      # Need to scale the map values if we don't want to blow up R...
+      if (max(mapData$dataPolygons$value) > 1e12) {
+        mapData$dataPolygons$value <- mapData$dataPolygons$value/1e9
+        unitSuffix <- "b"
+      } else if (max(mapData$dataPolygons$value) > 1e9) {
+        mapData$dataPolygons$value <- mapData$dataPolygons$value/1e6
+        unitSuffix <- "m"
+      } else {
+        unitSuffix <- ""
+      }
+      
+      pal <- colorNumeric(palette = "inferno",
+                          domain = c(0,max(mapData$dataPolygons$value)),
+                          reverse = TRUE)
+      
+      value_popup <- paste0(ifelse(input$impexpSelect == "Imports", "<strong>Country of Origin: </strong>","<strong>Country of Dispatch: </strong>"), 
+                            mapData$dataPolygons$region, 
+                            "<br><strong>Value: </strong>", 
+                            mapData$dataPolygons$value,
+                            unitSuffix)
+    })
 
     # Format legend figures
     if (input$unitSelect == "Price (GBP)"){
-      legendModifier <- labelFormat(prefix = "£")
+      legendModifier <- labelFormat(prefix = "£", suffix = unitSuffix)
       legendTitle <- "Price"
     } else if (input$unitSelect == "Weight (KG)"){
-      legendModifier <- labelFormat(suffix = " kg")
+      legendModifier <- labelFormat(suffix = paste0(unitSuffix," kg"))
       legendTitle <- "Weight"
     } else if (input$unitSelect == "Price Per Kilo (GBP/KG)"){
-      legendModifier <- labelFormat(prefix = "£", suffix = "/kg")
+      legendModifier <- labelFormat(prefix = "£", suffix = paste0(unitSuffix, "/kg"))
       legendTitle <- "Price/Weight"
     }
-    
+
     leaflet(data = mapData$dataPolygons) %>%
       setView(lng = 0, lat = 20, zoom = 2) %>%
       # addTiles() %>%
@@ -1672,27 +1686,41 @@ server <- function(input, output, session) {
     if (input$queryButton == 0) return()
     req(!nullDataframe$eunullDataframe)
     
-    pal <- colorNumeric(palette = "inferno",
-                        domain = 0:max(euMapData$dataPolygons$value),
-                        reverse = TRUE)
-    
-    value_popup <- paste0("<strong>Country of Dispatch: </strong>", 
-                          euMapData$dataPolygons$region, 
-                          "<br><strong>Value: </strong>", 
-                          euMapData$dataPolygons$value)
-    
+    isolate({
+      # Need to scale the map values if we don't want to blow up R...
+      if (max(euMapData$dataPolygons$value) > 1e12) {
+        euMapData$dataPolygons$value <- euMapData$dataPolygons$value/1e9
+        unitSuffix <- "b"
+      } else if (max(euMapData$dataPolygons$value) > 1e9) {
+        euMapData$dataPolygons$value <- euMapData$dataPolygons$value/1e6
+        unitSuffix <- "m"
+      } else {
+        unitSuffix <- ""
+      }
+
+      pal <- colorNumeric(palette = "inferno",
+                          domain = c(0,max(euMapData$dataPolygons$value)),
+                          reverse = TRUE)
+      
+      value_popup <- paste0("<strong>Country of Dispatch: </strong>", 
+                            euMapData$dataPolygons$region, 
+                            "<br><strong>Value: </strong>", 
+                            euMapData$dataPolygons$value,
+                            unitSuffix)
+    })
+
     # Format legend
     if (input$euunitSelect == "Price (GBP)"){
-      eulegendModifier <- labelFormat(prefix = "£")
+      eulegendModifier <- labelFormat(prefix = "£", suffix = unitSuffix)
       eulegendTitle <- "Price"
     } else if (input$euunitSelect == "Weight (KG)"){
-      eulegendModifier <- labelFormat(suffix = " kg")
+      eulegendModifier <- labelFormat(suffix = paste0(unitSuffix, " kg"))
       eulegendTitle <- "Weight"
     } else if (input$euunitSelect == "Price Per Kilo (GBP/KG)"){
-      eulegendModifier <- labelFormat(prefix = "£", suffix = "/kg")
+      eulegendModifier <- labelFormat(prefix = "£", suffix = paste0(unitSuffix, "/kg"))
       eulegendTitle <- "Price/Weight"
     } else if (input$euunitSelect == "Number of Consignments"){
-      eulegendModifier <- labelFormat(suffix = " Con.")
+      eulegendModifier <- labelFormat(suffix = paste0(unitSuffix, " Con."))
       eulegendTitle <- "# Consignments"
     }
 
