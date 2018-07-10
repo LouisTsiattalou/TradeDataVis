@@ -502,7 +502,7 @@ server <- function(input, output, session) {
 
   # SERVER SIDE COMMODITY CODE LOOKUP -----------------------------------------
   output$ComcodeLookup = renderDataTable(comcodelookup,
-                                         # filter = "top",
+                                         filter = "top",
                                          rownames = FALSE,
                                          colnames = c("Commodity Code", "Description"),
                                          class = "cell-border stripe",
