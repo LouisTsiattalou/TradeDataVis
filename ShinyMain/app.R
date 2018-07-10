@@ -1377,7 +1377,8 @@ server <- function(input, output, session) {
           geom_col(aes(month,value,fill=comcode), show.legend = TRUE, position = colposition) +
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
-               fill = "Commodity Codes") + 
+               fill = "Commodity Codes") +
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
           scale_y_continuous(labels = comma) + 
           scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
       )
@@ -1392,6 +1393,7 @@ server <- function(input, output, session) {
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
                fill = "Countries") + 
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
           scale_y_continuous(labels = comma) + 
           scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
       )
@@ -1406,6 +1408,7 @@ server <- function(input, output, session) {
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$unitSelect, " \n"),
                fill = "Ports") + 
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
           scale_y_continuous(labels = comma) + 
           scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
       )
@@ -1757,6 +1760,7 @@ server <- function(input, output, session) {
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Commodity Codes") + 
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
           scale_y_continuous(labels = comma) + 
           scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
       )
@@ -1771,6 +1775,7 @@ server <- function(input, output, session) {
           labs(x = paste(substr(input$impexpSelect,1,nchar(input$impexpSelect)-1),"Month"),
                y = paste(input$euunitSelect, " \n"),
                fill = "Countries") + 
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
           scale_y_continuous(labels = comma) + 
           scale_fill_manual(values = rainbow(nbars, s=.6, v=.8)[sample(1:nbars,nbars)])
       )
