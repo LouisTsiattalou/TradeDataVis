@@ -21,46 +21,46 @@ years <- c(2009:2018)
 # File Downloads =============================================================
 for (i in years ) {
   tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_", i , "archive.zip", sep = ""), paste("SMKE19_", i, "archive.zip", sep = ""))
+    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKE19_", i , "archive.zip", sep = ""), paste("SMKE19_", i, "archive.zip", sep = ""))
   )}, error = function(e){errors <<- c(errors, paste("SMKE19_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_", i , "archive.zip", sep = ""), paste("SMKI19_", i, "archive.zip", sep = ""))
+    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKI19_", i , "archive.zip", sep = ""), paste("SMKI19_", i, "archive.zip", sep = ""))
   )}, error = function(e){errors <<- c(errors, paste("SMKI19_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_", i , "archive.zip", sep = ""), paste("SMKX46_", i, "archive.zip", sep = ""))
+    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKX46_", i , "archive.zip", sep = ""), paste("SMKX46_", i, "archive.zip", sep = ""))
   )}, error = function(e){errors <<- c(errors, paste("SMKX46_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_", i , "archive.zip", sep = ""), paste("SMKM46_", i, "archive.zip", sep = ""))
+    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKM46_", i , "archive.zip", sep = ""), paste("SMKM46_", i, "archive.zip", sep = ""))
   )}, error = function(e){errors <<- c(errors, paste("SMKM46_", i,"archive.zip", sep = ""))})
   
   tryCatch({ suppressWarnings(
-    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_", i , "archive.zip", sep = ""), paste("SMKA12_", i, "archive.zip", sep = ""))
+    download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKA12_", i , "archive.zip", sep = ""), paste("SMKA12_", i, "archive.zip", sep = ""))
   )}, error = function(e){errors <<- c(errors, paste("SMKA12_", i,"archive.zip", sep = ""))})
 
 # 2016/17 all files have been split into half years for some reason. Need JulDec files too!
     
   if (i >= 2016) {
     tryCatch({ suppressWarnings(
-      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKE19_", i , "archive_JulDec.zip", sep = ""), paste("SMKE19_", i, "archive_JulDec.zip", sep = ""))
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKE19_", i , "archive_JulDec.zip", sep = ""), paste("SMKE19_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKE19_", i,"archive_JulDec.zip", sep = ""))})
       
     tryCatch({ suppressWarnings(
-      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKI19_", i , "archive_JulDec.zip", sep = ""), paste("SMKI19_", i, "archive_JulDec.zip", sep = ""))
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKI19_", i , "archive_JulDec.zip", sep = ""), paste("SMKI19_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKI19_", i,"archive_JulDec.zip", sep = ""))})
       
     tryCatch({ suppressWarnings(
-      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKX46_", i , "archive_JulDec.zip", sep = ""), paste("SMKX46_", i, "archive_JulDec.zip", sep = ""))
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKX46_", i , "archive_JulDec.zip", sep = ""), paste("SMKX46_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKX46_", i,"archive_JulDec.zip", sep = ""))})
       
     tryCatch({ suppressWarnings(
-      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKM46_", i , "archive_JulDec.zip", sep = ""), paste("SMKM46_", i, "archive_JulDec.zip", sep = ""))
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKM46_", i , "archive_JulDec.zip", sep = ""), paste("SMKM46_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKM46_", i,"archive_JulDec.zip", sep = ""))})
       
     tryCatch({ suppressWarnings(
-      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/SMKA12_", i , "archive_JulDec.zip", sep = ""), paste("SMKA12_", i, "archive_JulDec.zip", sep = ""))
+      download.file(paste("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/SMKA12_", i , "archive_JulDec.zip", sep = ""), paste("SMKA12_", i, "archive_JulDec.zip", sep = ""))
     )}, error = function(e){errors <<- c(errors, paste("SMKA12_", i,"archive_JulDec.zip", sep = ""))})
        
   }    

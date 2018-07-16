@@ -38,7 +38,7 @@ dbSafeNames = function(names) {
 ### Always check uktradeinfo.com/Statistics/Documents for new data.
 
 syr <- "18"
-smth <- "01"
+smth <- "05"
 
 # Data Structure constants
 files <- c("SMKA12", "SMKE19", "SMKI19", "SMKX46", "SMKM46", "SESX16", "SESM16")
@@ -51,25 +51,24 @@ controlfilecols <- c("MK-COMCODE","MK-INTRA-EXTRA-IND","MK-INTRA-MMYY-ON","MK-IN
 
 
 ## File Downloads =============================================================
-
 tryCatch({ suppressWarnings(
-    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/smke19", syr, smth, ".zip"), paste0("smke19", syr, smth, ".zip"))
+    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/smke19", syr, smth, ".zip"), paste0("smke19", syr, smth, ".zip"))
 )}, error = function(e){errors <<- c(errors, paste0("smke19", syr, smth, ".zip"))})
 
 tryCatch({ suppressWarnings(
-    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/smki19", syr, smth, ".zip"), paste0("smki19", syr, smth, ".zip"))
+    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/smki19", syr, smth, ".zip"), paste0("smki19", syr, smth, ".zip"))
 )}, error = function(e){errors <<- c(errors, paste0("smki19", syr, smth, ".zip"))})
 
 tryCatch({ suppressWarnings(
-    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/smkx46", syr, smth, ".zip"), paste0("smkx46", syr, smth, ".zip"))
+    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/smkx46", syr, smth, ".zip"), paste0("smkx46", syr, smth, ".zip"))
 )}, error = function(e){errors <<- c(errors, paste0("smkx46", syr, smth, ".zip"))})
 
 tryCatch({ suppressWarnings(
-    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/smkm46", syr, smth, ".zip"), paste0("smkm46", syr, smth, ".zip"))
+    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/smkm46", syr, smth, ".zip"), paste0("smkm46", syr, smth, ".zip"))
 )}, error = function(e){errors <<- c(errors, paste0("smkm46", syr, smth, ".zip"))})
 
 tryCatch({ suppressWarnings(
-    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/smka12", syr, smth, ".zip"), paste0("smka12", syr, smth, ".zip"))
+    download.file(paste0("https://www.uktradeinfo.com/Statistics/Documents/Data%20Downloads/smka12", syr, smth, ".zip"), paste0("smka12", syr, smth, ".zip"))
 )}, error = function(e){errors <<- c(errors, paste0("smka12", syr, smth, ".zip"))})
 
 # Unzip monthly files --------------------------------------------------------

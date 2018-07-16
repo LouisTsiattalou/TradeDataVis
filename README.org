@@ -1,5 +1,5 @@
-#+TITLE: Trade Data Visualisation Developer Guide v0.1
-#+DATE: <2018-01-22 Mon>
+#+TITLE: Trade Data Visualisation Developer Guide v1.0.2
+#+DATE: <2018-07-16 Mon>
 #+AUTHOR: Louis Tsiattalou
 #+EMAIL: louis.tsiattalou@food.gov.uk
 #+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
@@ -32,7 +32,6 @@ The data itself isn't very descriptive. You have to cross reference a bunch of d
 A similar tool existed in the past, but was not robust and not entirely suited to the FSA's needs; it broke in 2016 and was never repaired henceforth. This application was designed from the ground up to the FSA's specific stakeholder requirements and is far more robust. This readme is to serve as the administration guide for the application, so it can be maintained by anyone, not just myself.
 
 * Live R Scripts
-  
 ** Data Cleaning and Setup
 
 *** ~DownloadData.R~
@@ -98,18 +97,15 @@ Note that there is some logic to strip out minor ports. When the port file is im
 **** ~country~ table
 This one's easy. UKTradeInfo has a list of country codes available with a very static URL. It's downloaded, cleaned, and entered into the ~country~ table. Then we have a lookup table for countries, the same as we have for ports and comcodes, that can be imported into the application /as-is/ so it can be used for lookups.
 
-*** Other Scripts
-
-**** ~MonthlyUpdate.R~
+*** ~MonthlyUpdate.R~
      
 This is a modified ~InitialiseDataTables.R~, with some additional bells and whistles. By modifying the ~syr~ and ~smth~ variables, you can load a single month of data into the database. Before loading anything, it checks if there's more than 50 records with that month, to stop double-loading into the database.
 
-***** TODO I plan on creating a UI for this using Shiny.
-
-**** ~QueryTemplate.R~
-     
-This is essentially a scratch script providing a way to query data from either a local/remote copy of the trade data database to play around with in the console. You may need to make some changes to it, as with the other scripts, to get it working with your setup. 
-
+** TODO Other Scripts
+*** ~checkLoad.R~
+A simple script which queries the ~imports~, ~exports~, ~arrivals~ and ~dispatches~ databases and aggregates the number of records per month, then plots these on a line graph together. Useful to run to make sure that the Monthly Update worked.
+*** ~checkFoodBalance.R~
+Similar to ~checkLoad.R~, but this actually collects trade values/volumes per month for food products (Commodities 01-23, very rough metric for "food"!).
 * Shiny Application Script ~app.R~
   
 You can find this in the /Shiny/ folder in the root of the repository. This contains its own ~.env~ file, which is published with ~app.R~ to [[https://shinyapps.io/][shinyapps.io]] from the RStudio Publish function.
@@ -232,13 +228,22 @@ The application first defines all reactive values necessary for the application.
     
 This section contains the code necessary for rendering the DataTable (which is essentially a bunch of arguments for the different options offered by the ~DT~ package for the ~renderDataTable()~ function).
 
-*** ShinyJS OnClick Statements
+*** App Behaviour Settings 
+**** ShinyJS OnClick Statements
     
 We use the ~shinyjs~ package for some fine tuned javascript settings. This section contains code to:
 - Blank out the commodity code selectors when clicked (Non-EU and EU)
 - Disable/Enable the Date Slider according to whether the All tickbox is Enabled/Disabled (respectively)
 
-*** Observe Statements for Modifying Dropdowns
+**** Conditional Labelling/Entries on Query Parameters
+
+The first ~observeEvent~ removes past dates from the /dateend/ selector. The second ~observeEvent~ changes the label of the Country selector to Origin/Dispatch (for Non-EU/EU respectively).
+
+**** Clear Dropdowns
+    
+This is just an ~observeEvent~ to reset all the selectors back to their defaults.
+
+**** Observe Statements for Modifying Dropdowns
     
 When the commodity code selectors are changed, then all of the descendant levels need to be updated to show only descendants of those commodity codes. By default, the selectors show all valid commodity codes to begin with. Then, when the 2-digit selector is changed to, say, =01=, then the 4-digit, 6-digit and 8-digit selectors need to be updated to show /only the descendants of commodity code =01=/.
 
@@ -254,187 +259,190 @@ The point of this block of code is to essentially take the input information fro
 
 The following list is the tasks executed and how they work.
 
-- Pop a progress bar onto the screen.
-- Ensure the ~nullDataframe~ reactive object is set to FALSE for error handling.
-- Construct the commodity codes to be queried
-  - If the selector was set to "All" or left blank, sub in two underscores ~__~. This is a wildcard character in PostgreSQL's regular expression engine, which we use to filter on commodity codes.
-  - Once the four vectors of commodity codes are constructed, paste them together to get a vector of (maximum) 20-character strings. Take the final 8 characters from these strings to obtain the commodity codes to query.
-  - This is a very weird way of doing things; ordinarily one would use if/elseif/else logic to determine what the lowest level of detail selected in the query pane was, and append trailing underscores to get all 8-digit commodity codes that descend from it. But, this is less computationally intensive, and elegant in it's own stupid way...!
-- Create a list of Ports and Countries to be queried, either by taking the full list defined in the ~portcode~ and ~countrycode~ dataframes, or filter by those chosen in the Port and Country selectors.
-- Modify the DateSlider with values between the Date Start and Date End selectors
-- Convert the ~daterangequery~ vector to the format used in the ~import~ and ~export~ tables.
-- Construct the query and store it in the ~dataquery~ character string. It is heavily parametrized due to the number of options that need to be added in.
-  - Define the parts of the query that are dependent on whether the user wants Imports or Exports. This affects:
-    - The ordering of fields in the ~SELECT~ statement.
-    - The field selected in the ~country~ section of the ~WHERE~ statement. For Imports, you want /Country of Origin/. For Exports, you want /Country of Dispatch/.
-    - The ordering of fields in the ~GROUP BY~ statement.
-  - Paste together the various components of the query to get a single string.
-    - Note that this string will be /extremely/ long. The string constructed will have a very large number of commodity codes, ports and countries in it. This is because the ~comcodequery~, ~countryquery~, ~portquery~ and ~daterangequery~ vectors will likely contain a large number of elements, which are collapsed into a format recognisable to PostgreSQL's Regular Expression (~regex~) engine. This is of the form ~(<item1>|<item2>|...|<itemN>)~, where the pipe ~|~ is a logical ~OR~ operator.
-- Execute the query and store the result in the ~dataraw~ dataframe.
-- Check if the query returned data:
-  - If not, set the ~nullDataframe~ flag to ~TRUE~, and display a modalDialog with an error message. Then break out of the reactive chain with ~req(FALSE)~.
-- Simplify the column names of ~dataraw~.
-- Split ~dataraw~ into two dataframes:
-  - ~portsumraw~: Eliminate the /port/ field, group by /country/ and /comcode/, and aggregate numeric values.
-  - ~countrysumraw~: Eliminate the /country/ field, group by /comcode/ and /port/, and aggregate numeric values.
-- Translate the months in ~portsumraw~ and ~countrysumraw~ back into the ~YYYY-MM~ format used elsewhere in the application.
-- Handle missing values in ~portsumraw~ and ~countrysumraw~ by replacing with "Unknown Country/Port".
-- Store ~dataraw~, ~portsumraw~, and ~countrysumraw~ in the ~queryData~ reactive variable defined at the beginning of the ~server~ section.
+  - Pop a progress bar onto the screen.
+  - Ensure the ~nullDataframe~ reactive object is set to FALSE for error handling.
+  - Construct the commodity codes to be queried
+    - If the selector was set to "All" or left blank, sub in two underscores ~__~. This is a wildcard character in PostgreSQL's regular expression engine, which we use to filter on commodity codes.
+    - Once the four vectors of commodity codes are constructed, paste them together to get a vector of (maximum) 20-character strings. Take the final 8 characters from these strings to obtain the commodity codes to query.
+      - This is a very weird way of doing things; ordinarily one would use if/elseif/else logic to determine what the lowest level of detail selected in the query pane was, and append trailing underscores to get all 8-digit commodity codes that descend from it. But, this is less computationally intensive, and elegant in it's own stupid way...!
+  - Create a list of Ports and Countries to be queried, either by taking the full list defined in the ~portcode~ and ~countrycode~ dataframes, or filter by those chosen in the Port and Country selectors.
+  - Modify the DateSlider with values between the Date Start and Date End selectors
+  - Convert the ~daterangequery~ vector to the format used in the ~import~ and ~export~ tables.
+  - Construct the query and store it in the ~dataquery~ character string. It is heavily parametrized due to the number of options that need to be added in.
+    - Define the parts of the query that are dependent on whether the user wants Imports or Exports. This affects:
+      - The ordering of fields in the ~SELECT~ statement.
+      - The field selected in the ~country~ section of the ~WHERE~ statement. For Imports, you want /Country of Origin/. For Exports, you want /Country of Dispatch/.
+      - The ordering of fields in the ~GROUP BY~ statement.
+    - Paste together the various components of the query to get a single string.
+      - Note that this string will be /extremely/ long. The string constructed will have a very large number of commodity codes, ports and countries in it. This is because the ~comcodequery~, ~countryquery~, ~portquery~ and ~daterangequery~ vectors will likely contain a large number of elements, which are collapsed into a format recognisable to PostgreSQL's Regular Expression (~regex~) engine. This is of the form ~(<item1>|<item2>|...|<itemN>)~, where the pipe ~|~ is a logical ~OR~ operator.
+  - Execute the query and store the result in the ~dataraw~ dataframe.
+  - Check if the query returned data:
+    - If not, set the ~nullDataframe~ flag to ~TRUE~, and display a modalDialog with an error message. Then break out of the reactive chain with ~req(FALSE)~.
+  - Simplify the column names of ~dataraw~.
+  - Split ~dataraw~ into two dataframes:
+    - ~portsumraw~: Eliminate the /port/ field, group by /country/ and /comcode/, and aggregate numeric values.
+    - ~countrysumraw~: Eliminate the /country/ field, group by /comcode/ and /port/, and aggregate numeric values.
+  - Translate the months in ~portsumraw~ and ~countrysumraw~ back into the ~YYYY-MM~ format used elsewhere in the application.
+  - Handle missing values in ~portsumraw~ and ~countrysumraw~ by replacing with "Unknown Country/Port".
+  - Store ~dataraw~, ~portsumraw~, and ~countrysumraw~ in the ~queryData~ reactive variable defined at the beginning of the ~server~ section.
 
 *** Filter Date/Unit in Data 
     
-This section, and all the ones that follow it, will run both when the query data has been loaded into R /and/ when the Date Slider/Unit Selectors are changed. 
+    This section, and all the ones that follow it, will run both when the query data has been loaded into R /and/ when the Date Slider/Unit Selectors are changed. 
 
-We need to take the raw query data and transform it into formats accepted by the three types of visualisation.
+    We need to take the raw query data and transform it into formats accepted by the three types of visualisation.
 
-Firstly, we filter out irrelevant data according to the Date Slider and Unit Selectors.
+    Firstly, we filter out irrelevant data according to the Date Slider and Unit Selectors.
 
-- Check whether the query that was run has data. If not, break out of the reactive chain.
-- Filter by correct month:
-  - If the ~All~ checkbox is ticked, remove the /month/ column and aggregate the data.
-  - If the ~All~ checkbox is unticked, select records where the Date Slider matches the /month/ field.
-- Filter by correct unit:
-  - If /Price (GBP)/ is selected, remove the /weight/ column in the data.
-  - If /Weight (KG)/ is selected, remove the /price/ column in the data.
-  - If /Price Per Kilo (GBP/KG)/ is selected, calculate the value by taking /value/ = /price/ / /weight/ and removing the /price/ and /weight/ columns.
-- Rename /price/ or /weight/ to /value/ from this point forward (to prevent death by ~if~ statement later on)
-  
-We now have ~portsum~ and ~countrysum~ dataframes with just the relevant data; /country/ or /port/, /comcode/, and /value/.
+    - Check whether the query that was run has data. If not, break out of the reactive chain.
+    - Filter by correct month:
+      - If the ~All~ checkbox is ticked, remove the /month/ column and aggregate the data.
+      - If the ~All~ checkbox is unticked, select records where the Date Slider matches the /month/ field.
+    - Filter by correct unit:
+      - If /Price (GBP)/ is selected, remove the /weight/ column in the data.
+      - If /Weight (KG)/ is selected, remove the /price/ column in the data.
+      - If /Price Per Kilo (GBP/KG)/ is selected, calculate the value by taking /value/ = /price/ / /weight/ and removing the /price/ and /weight/ columns.
+    - Rename /price/ or /weight/ to /value/ from this point forward (to prevent death by ~if~ statement later on)
 
-- ~ungroup~ the ~portsum~ and ~countrysum~ dataframes to prevent weird ~dplyr~ errors when aggregating.
-- Check once again for empty dataframe. If the dataframe is empty, then show the modal dialog error message and break out of the reactive chain.
+    We now have ~portsum~ and ~countrysum~ dataframes with just the relevant data; /country/ or /port/, /comcode/, and /value/.
+
+    - ~ungroup~ the ~portsum~ and ~countrysum~ dataframes to prevent weird ~dplyr~ errors when aggregating.
+    - Check once again for empty dataframe. If the dataframe is empty, then show the modal dialog error message and break out of the reactive chain.
 
 *** Clean and Shape Data
     
-This is the section where we take our ~portsum~ and ~countrysum~ dataframes and convert them over to the formats that ~renderSankeyNetwork~, ~renderLeaflet~ and ~ggplotly~ take, for the three visualisations.
+    This is the section where we take our ~portsum~ and ~countrysum~ dataframes and convert them over to the formats that ~renderSankeyNetwork~, ~renderLeaflet~ and ~ggplotly~ take, for the three visualisations.
 
-- Update Progress Bar
-- Create the ~comcodelegend~ dataframe by joining descriptions to a unique vector of commodity codes found in the query.
+    - Create the ~comcodelegend~ dataframe by joining descriptions to a unique vector of commodity codes found in the query.
 
 **** Sankey Specific
      
-The /Sankey Diagram/ (pictured below) is a type of network diagram that details the flow of absolute quantities between nodes. A Sankey Diagram takes two dataframes as its arguments:
-- *nodes*: m x 1 dataframe with column /name/.
-- *links*: n x 3 dataframe with columns /source/, /target/, /value/. 
+     The /Sankey Diagram/ (pictured below) is a type of network diagram that details the flow of absolute quantities between nodes. A Sankey Diagram takes two dataframes as its arguments:
+     - *nodes*: m x 1 dataframe with column /name/.
+     - *links*: n x 3 dataframe with columns /source/, /target/, /value/. 
 
-#+NAME: fig:SankeyExample
-#+CAPTION: Example Sankey Diagram output from the application.
-[[./Documentation/SankeyExample.png]]
+     #+NAME: fig:SankeyExample
+     #+CAPTION: Example Sankey Diagram output from the application.
+     [[./Documentation/SankeyExample.png]]
 
-The /nodes/ dataframe is just a full list of unique, ordered nodes found in the Sankey Diagram.
+     The /nodes/ dataframe is just a full list of unique, ordered nodes found in the Sankey Diagram.
 
-The /links/ dataframe is a bit more complex. Each record is a /link/; a /source/ node, a /target/ node, and the size of the quantity that links them (the /value/). The source and target nodes in the /links/ dataframe are indices, as ordered in the /nodes/ dataframe.
+     The /links/ dataframe is a bit more complex. Each record is a /link/; a /source/ node, a /target/ node, and the size of the quantity that links them (the /value/). The source and target nodes in the /links/ dataframe are indices, as ordered in the /nodes/ dataframe.
 
-With this information in mind, the steps should be clear.
+     With this information in mind, the steps should be clear.
 
-- Create copies of ~portsum~ and ~countrysum~. Change their column names to /source/, /target/, /value/.
-- Create the ~links~ dataframe by binding together the ~portsum~ and ~countrysum~ copies.
-- Create the ~nodes~ dataframe by creating a vector of all the sources and targets (and therefore, all the nodes) in the ~links~ dataframe, and creating a unique dataframe of these nodes.
-- Replace the /source/ and /target/ columns in ~links~ with their indices as defined in ~nodes~.
-- Replace the codes in ~nodes~ with their names as defined in the ~desclookup~ dataframe, which is essentially a lookup table of all port/country codes and their corresponding names.
-  - We truncate names > 30 characters long.
-  - Leave commodity code nodes alone, as almost all descriptions are far too long to look good on a Sankey Network Diagram.
+     - Create copies of ~portsum~ and ~countrysum~. Change their column names to /source/, /target/, /value/.
+     - Create the ~links~ dataframe by binding together the ~portsum~ and ~countrysum~ copies.
+     - Create the ~nodes~ dataframe by creating a vector of all the sources and targets (and therefore, all the nodes) in the ~links~ dataframe, and creating a unique dataframe of these nodes.
+     - Replace the /source/ and /target/ columns in ~links~ with their indices as defined in ~nodes~.
+     - Replace the codes in ~nodes~ with their names as defined in the ~desclookup~ dataframe, which is essentially a lookup table of all port/country codes and their corresponding names.
+       - We truncate names > 30 characters long.
+       - Leave commodity code nodes alone, as almost all descriptions are far too long to look good on a Sankey Network Diagram.
+
+This process is then repeated to create a country -> port sankey diagram, effectively skipping out the commodity code nodes in the middle. This is to see what countries export to which ports, and whether any anomalies arise out of this relationship.
 
 **** World Map Specific
      
-The ~maps~ library has a whole bunch of standardised dataframes that can be called with ~ggplot2::map_data("<map>")~. These maps have /long/, /lat/, /group/, /order/, /region/ and /subregion/ columns. Each /group/ defines a polygon to be drawn; for most countries there will be one /group/, but other countries with exclaves/island archipelagos etc will have more than one /group/. The /order/ defines the order in which to connect the /long/ and /lat/ coordinates.
+     The ~maps~ library has a whole bunch of standardised dataframes that can be called with ~ggplot2::map_data("<map>")~. These maps have /long/, /lat/, /group/, /order/, /region/ and /subregion/ columns. Each /group/ defines a polygon to be drawn; for most countries there will be one /group/, but other countries with exclaves/island archipelagos etc will have more than one /group/. The /order/ defines the order in which to connect the /long/ and /lat/ coordinates.
 
-|--------+-------+-------+-------+--------+-----------|
-|   long |   lat | group | order | region | subregion |
-|--------+-------+-------+-------+--------+-----------|
-| -69.90 | 12.45 |     1 |     1 | Aruba  | <NA>      |
-| -69.90 | 12.42 |     1 |     2 | Aruba  | <NA>      |
-| -69.94 | 12.44 |     1 |     3 | Aruba  | <NA>      |
-| -70.00 | 12.50 |     1 |     4 | Aruba  | <NA>      |
-| -70.07 | 12.55 |     1 |     5 | Aruba  | <NA>      |
-| -70.05 | 12.60 |     1 |     6 | Aruba  | <NA>      |
-|--------+-------+-------+-------+--------+-----------|
+     |--------+-------+-------+-------+--------+-----------|
+     |   long |   lat | group | order | region | subregion |
+     |--------+-------+-------+-------+--------+-----------|
+     | -69.90 | 12.45 |     1 |     1 | Aruba  | <NA>      |
+     | -69.90 | 12.42 |     1 |     2 | Aruba  | <NA>      |
+     | -69.94 | 12.44 |     1 |     3 | Aruba  | <NA>      |
+     | -70.00 | 12.50 |     1 |     4 | Aruba  | <NA>      |
+     | -70.07 | 12.55 |     1 |     5 | Aruba  | <NA>      |
+     | -70.05 | 12.60 |     1 |     6 | Aruba  | <NA>      |
+     |--------+-------+-------+-------+--------+-----------|
 
-You can convert these dataframes into a ~SpatialPolygons~ object, which is the format the interactive maps package ~leaflet~ uses for its data input. This section is about obtaining obtaining the relevant polygons for the returned countries, and converting them into this ~SpatialPolygons~ object with appropriate descriptors when a country's polygon is clicked, and a colour assigned based on how much the trade value with that country is (/this is called a choropleth map/).
+     You can convert these dataframes into a ~SpatialPolygons~ object, which is the format the interactive maps package ~leaflet~ uses for its data input. This section is about obtaining obtaining the relevant polygons for the returned countries, and converting them into this ~SpatialPolygons~ object with appropriate descriptors when a country's polygon is clicked, and a colour assigned based on how much the trade value with that country is (this is called a /choropleth/ map).
 
-#+NAME: fig:MapExample
-#+CAPTION: Example World Map output from the application. Clicking a country brings up information about the country and the value driving that colour.
-[[./Documentation/MapExample.png]]
+     #+NAME: fig:MapExample
+     #+CAPTION: Example World Map output from the application. Clicking a country brings up information about the country and the value driving that colour.
+     [[./Documentation/MapExample.png]]
 
-- Define ~mapWorld~ by getting the ~world~ map from ~map_data~.
-- Convert the /region/ table to ISO-alpha codes used in our lookup tables.
-- Replace Serbia's iso code ~RS~ with ~XS~, which is what our HMRC-sourced ~portcode~ lookup table uses for some reason.
-- Get the total trade value by country from ~portsum~ and put it in a dataframe ~portsum_countrytotal~.
-  - This will be different for Price Per Kilo. ~portsum~ has already been divided by this point in the application, but the aggregation needs to happen before calculating /Price per Kilo/; so we use the version that has already been aggregated and later divided from when ~portsum~ is initially calculated from ~portsumraw~.
-- Join ~portsum_countrytotal~ to ~mapWorld~ to obtain values for plotting.
-- Join ~countrycode~ to ~mapWorld~ so the dataframe has country names as well as codes.
-- Remove the /region/ column, which had country codes in it, and rename the /countryname/ field joined from ~countrycode~ to /region/.
+     - Define ~mapWorld~ by getting the ~world~ map from ~map_data~.
+     - Convert the /region/ table to ISO-alpha codes used in our lookup tables.
+     - Replace Serbia's iso code ~RS~ with ~XS~, which is what our HMRC-sourced ~portcode~ lookup table uses for some reason.
+     - Get the total trade value by country from ~portsum~ and put it in a dataframe ~portsum_countrytotal~.
+       - This will be different for Price Per Kilo. ~portsum~ has already been divided by this point in the application, but the aggregation needs to happen before calculating /Price per Kilo/; so we use the version that has already been aggregated and later divided from when ~portsum~ is initially calculated from ~portsumraw~.
+     - Join ~portsum_countrytotal~ to ~mapWorld~ to obtain values for plotting.
+     - Join ~countrycode~ to ~mapWorld~ so the dataframe has country names as well as codes.
+     - Remove the /region/ column, which had country codes in it, and rename the /countryname/ field joined from ~countrycode~ to /region/.
 
-We now have a ~mapWorld~ dataframe with the values we obtained from the query and /region/ names from the HMRC data. This would be sufficient to plot using just ~ggplot~, but we want to go one step further and create an /interactive/ map using the excellent ~Leaflet~ package; which is essentially a wrapper around a JavaScript library ~Leaflet.js~.
+     We now have a ~mapWorld~ dataframe with the values we obtained from the query and /region/ names from the HMRC data. This would be sufficient to plot using just ~ggplot~, but we want to go one step further and create an /interactive/ map using the excellent ~Leaflet~ package; which is essentially a wrapper around a JavaScript library ~Leaflet.js~.
 
-- Define ~mapWorld_relevant~ by stripping away countries that aren't in our query's result dataframe (can do this simply by checking if /value/ is ~<NA>~).
-- Reset the indices/rownames of ~mapWorld_relevant~.
-- Create a list ~sp_Mapworld~ of ~Polygon~ objects by running a ~lapply~ on each unique /group/ from ~mapWorld_relevant~, which corresponds to a distinct polygon.
-- Turn into a ~SpatialPolygonsDataFrame~ by turning ~sp_mapWorld~ into a ~SpatialPolygons~ object, and append the /region/, /group/ and /value/ columns from ~mapWorld_relevant~.
+     - Define ~mapWorld_relevant~ by stripping away countries that aren't in our query's result dataframe (can do this simply by checking if /value/ is ~<NA>~).
+     - Reset the indices/rownames of ~mapWorld_relevant~.
+     - Create a list ~sp_Mapworld~ of ~Polygon~ objects by running a ~lapply~ on each unique /group/ from ~mapWorld_relevant~, which corresponds to a distinct polygon.
+     - Turn into a ~SpatialPolygonsDataFrame~ by turning ~sp_mapWorld~ into a ~SpatialPolygons~ object, and append the /region/, /group/ and /value/ columns from ~mapWorld_relevant~.
 
-We can now pass this ~SpatialPolygonsDataFrame~ into the Leaflet function to render the interactive map.
+     We can now pass this ~SpatialPolygonsDataFrame~ into the Leaflet function to render the interactive map.
 
 **** Time Series Specific
      
-This section actually renders three visualisations; a stacked bar chart showing Price/Weight/Price per kilo per Month by Comcode, by Port, and by Country. We do this by creating three separate dataframes to plot; ~byComcode~, ~byPort~ and ~byCountry~.
+     This section actually renders three visualisations; a stacked bar chart showing Price/Weight/Price per kilo per Month by Comcode, by Port, and by Country. We do this by creating three separate dataframes to plot; ~byComcode~, ~byPort~ and ~byCountry~.
 
-#+NAME: fig:TimeSeriesExample
-#+CAPTION: Example Time Series Diagram output from the application. Hovering over a bar brings up more information about it.
-[[./Documentation/TimeSeriesExample.png]]
+     #+NAME: fig:TimeSeriesExample
+     #+CAPTION: Example Time Series Diagram output from the application. Hovering over a bar brings up more information about it.
+     [[./Documentation/TimeSeriesExample.png]]
 
-In order to do this correctly, Price per Kilo must be treated a bit differently. It needs to be calculated /after/ the aggregation of comcodes and ports to get a correct figure. So we start from the raw data query stored in the reactive variable ~queryData$dataraw~
+     In order to do this correctly, Price per Kilo must be treated a bit differently. It needs to be calculated /after/ the aggregation of comcodes and ports to get a correct figure. So we start from the raw data query stored in the reactive variable ~queryData$dataraw~
 
-- Filter by unit
-  - If /price/ or /weight/ is selected, simply strip the non-relevant measures out of the dataframe to get ~byComcode~, ~byCountry~ and ~byPort~.
-  - If /Price Per Kilo/ is selected, first check the Date Slider and strip out irrelevant months if necessary. Then load ~byComcode~, ~byCountry~ and ~byPort~ with ~queryData$dataraw~. Lastly, strip out all irrelevant information, aggregate /price/ and /weight/, then calculate /price per kilo/ and store it in the /value/ column. Lastly, get rid of the /price/ and /weight/ columns.
-- If /Price Per Kilo/ wasn't selected, some processing still needs to take place. Rename the /price/ or /weight/ column to /value/ (the other one would have been stripped out by this point). Then strip away irrelevant months if the Date Slider is active, and aggregate.
-- Ungroup the data frames to prevent ~dplyr~ nastiness.
-- For ~byCountry~ and ~byPort~, replace the /country/ and /port/ codes with full names as defined in ~desclookup~.
+     - Filter by unit
+       - If /price/ or /weight/ is selected, simply strip the non-relevant measures out of the dataframe to get ~byComcode~, ~byCountry~ and ~byPort~.
+       - If /Price Per Kilo/ is selected, first check the Date Slider and strip out irrelevant months if necessary. Then load ~byComcode~, ~byCountry~ and ~byPort~ with ~queryData$dataraw~. Lastly, strip out all irrelevant information, aggregate /price/ and /weight/, then calculate /price per kilo/ and store it in the /value/ column. Lastly, get rid of the /price/ and /weight/ columns.
+     - If /Price Per Kilo/ wasn't selected, some processing still needs to take place. Rename the /price/ or /weight/ column to /value/ (the other one would have been stripped out by this point). Then strip away irrelevant months if the Date Slider is active, and aggregate.
+     - Ungroup the data frames to prevent ~dplyr~ nastiness.
+     - For ~byCountry~ and ~byPort~, replace the /country/ and /port/ codes with full names as defined in ~desclookup~.
 
 **** Trigger Plot Rendering
      
-The final thing to do after all this data processing is to save the objects used in the plotting functions into reactive variables. The reason for this is that dataframes etc defined in an ~observe()~ function disappear when you exit the function, so obviously you want to save them.
+     The final thing to do after all this data processing is to save the objects used in the plotting functions into reactive variables. The reason for this is that dataframes etc defined in an ~observe()~ function disappear when you exit the function, so obviously you want to save them.
 
-We can also use this need to trigger the visualisation rendering functions to run when the reactive variables ~comcodeLegendData~, ~sankeyData~, ~mapData~ and ~timeseriesData~ are modified. They all get modified now, so all our visualisations will render!
+     We can also use this need to trigger the visualisation rendering functions to run when the reactive variables ~comcodeLegendData~, ~sankeyData~, ~mapData~ and ~timeseriesData~ are modified. They all get modified now, so all our visualisations will render!
 
 *** Fill in the Plots
 
 **** Sankey Diagram
      
-Render using ~renderSankeyNetwork~, a specialised form of ~renderPlot~ just for Sankey Diagrams. Set font size to 12, and node width to 30. Takes data ~sankeyData$links~, ~sankeyData$nodes~.
+     Render using ~renderSankeyNetwork~, a specialised form of ~renderPlot~ just for Sankey Diagrams. Set font size to 12, and node width to 30. Takes data ~sankeyData$links~, ~sankeyData$nodes~.
 
 **** World Map
      
-Render using ~renderLeaflet~, a specialised form of ~renderPlot~ just for Leaflet maps. Defines a colour palette ~pal~ using the /inferno/ colour scheme, from values 0 to the maximum value found in the data set.
+     Render using ~renderLeaflet~, a specialised form of ~renderPlot~ just for Leaflet maps. Defines a colour palette ~pal~ using the /inferno/ colour scheme, from values 0 to the maximum value found in the data set.
 
-When clicking a polygon, its /region/ and /value/ (either Price, Weight, or Price Per Kilo) will be displayed, as well as whether it's the country of Origin or Dispatch.
+     Since Leaflet in the backend works by creating a vector of values from the minimum to the maximum value of the dataset and assigning hex codes in a gradient; if you have an extremely large value/weight aggregation (for say crude oil), the R process will kill itself by attempting to create a 100b+ length vector. We combat this by scaling if we detect large values.
 
-Takes the ~mapData$dataPolygons~ SpatialPolygonsDataFrame object as its data input. I set the view to an appropriate area, use CartoDB's /Positron/ map overlay, and assign colourings from ~pal~. Lastly, I put a legend in the top right hand corner.
+     When clicking a polygon, its /region/ and /value/ (either Price, Weight, or Price Per Kilo) will be displayed, as well as whether it's the country of Origin or Dispatch.
+
+     Takes the ~mapData$dataPolygons~ SpatialPolygonsDataFrame object as its data input. I set the view to an appropriate area, use CartoDB's /Positron/ map overlay, and assign colourings from ~pal~. Lastly, I put a legend in the top right hand corner.
 
 **** Time Series
      
-Another specialised plotting function... ~renderPlotly~. The ~Plotly~ package is nice in that it can take ~ggplot2~ objects and make them interactive. This is ideal for Shiny apps, so the user can hover over the visualisation and get more information. The code you see is just a stacked bar chart, with appropriate labelling and formatting. 
+     Another specialised plotting function... ~renderPlotly~. The ~Plotly~ package is nice in that it can take ~ggplot2~ objects and make them interactive. This is ideal for Shiny apps, so the user can hover over the visualisation and get more information. The code you see is just a stacked bar chart, with appropriate labelling and formatting. 
 
-I also randomise the colours for each bar using the ~sample~ function. This needs to be done otherwise they're assigned alphabetically in each bar and in the legend; meaning it's very difficult to see the difference between, say, United States and United Arab Emirates when there's lots of different countries in the bar.
+     I also randomise the colours for each bar using the ~sample~ function. This needs to be done otherwise they're assigned alphabetically in each bar and in the legend; meaning it's very difficult to see the difference between, say, United States and United Arab Emirates when there's lots of different countries in the bar.
 
 *** Data Download
 
-The final function to perform is the Download button. It's obviously important that the users can perform further analysis in other applications. So, I provide the ability to download whatever was queried in the Query Pane in .CSV format. It takes the query's raw format, and appends the commodity code's description, the port code's full name, and the country code's full name. It organises these fields into a reasonable format and writes to CSV, leaving out row names (since they're just crappy indices).
+    The final function to perform is the Download button. It's obviously important that the users can perform further analysis in other applications. So, I provide the ability to download whatever was queried in the Query Pane in .CSV format. It takes the query's raw format, and appends the commodity code's description, the port code's full name, and the country code's full name. It also contains the 2-digit ancestor of the commodity code and the description for that, as well. It organises these fields into a reasonable format and writes to CSV, leaving out row names (since they're just useless indices).
 
 *** EU Data
     
-I'm not going to go into much detail here; the EU section of the server function is essentially a copy of the Non-EU section, with different date format manipulation, the removal of the /ports/ field, and commented out code for /weight/ and /price per kilo/ fields, as the /weight/ field is highly unreliable for EU Trade Data. It also contains a new unit, /number of consignments/, which is included for EU Data, but not Non-EU Data.
+    I'm not going to go into much detail here; the EU section of the server function is essentially a copy of the Non-EU section, with different date format manipulation, the removal of the /ports/ field, and commented out code for /weight/ and /price per kilo/ fields, as the /weight/ field is unreliable for EU Trade Data. It also contains a new unit, /number of consignments/, which is included for EU Data, but not Non-EU Data.
 
 * Complexities
 ** Commodity Codes
    
-Commodity Codes Control Files (SMKA_) contain some serious complexities. They are listed below in bulletted form. 
-- Commodity Codes are obviously primary keys - you can't have the same commodity code contain completely different types of data! The way this is handled is that the commodity code is _added_ if it does not exist within the table. If it _already exists_, that entry is updated with the information in the current SMKA file. This method of adding/updating is referred to as ~UPSERT~ (portmanteau of update-insert). This has to be done using line-by-line SQL queries, as R's ~DBI~ package does not support UPSERT operations. As we consider SMKA files sequentially from 200901, we always have the most up-to-date description for each commodity code.
-- SMKA files prior to 201201 have the SUB unicode character in one of the commodity code descriptions. All data analysis tools use this character as the EOF marker - stopping the dataload! This is an outstanding issue.
-- Older pre-2012 SMKA files also split the description up with a | delimiter after it reaches a certain character limit for god knows what reason. SQL table limits pre-2012 maybe? I don't know. I do know that it's annoying to deal with. There's some lines which merge the final two columns in the data frame if they exceed the number of columns in the new data format to homogenise the data structures so everything can be loaded into the same table.
-- Lastly, since the descriptions contain both " and ' chars, quoting is set to null for the ~read.table~ load. Apostrophes are all converted to double apostrophes ~''~ during the data cleaning routine, as SQL statements rely on the ~'~ char for denoting strings!
-  
+   Commodity Codes Control Files (SMKA_) contain some serious complexities. They are listed below in bulletted form. 
+   - Commodity Codes are obviously primary keys - you can't have the same commodity code contain completely different types of data! The way this is handled is that the commodity code is _added_ if it does not exist within the table. If it _already exists_, that entry is updated with the information in the current SMKA file. This method of adding/updating is referred to as ~UPSERT~ (portmanteau of update-insert). This has to be done using line-by-line SQL queries, as R's ~DBI~ package does not support UPSERT operations. As we consider SMKA files sequentially from 200901, we always have the most up-to-date description for each commodity code.
+   - SMKA files prior to 201201 have the SUB unicode character in one of the commodity code descriptions. All data analysis tools use this character as the EOF marker - stopping the dataload! This is an outstanding issue.
+   - Older pre-2012 SMKA files also split the description up with a | delimiter after it reaches a certain character limit for god knows what reason. SQL table limits pre-2012 maybe? I don't know. I do know that it's annoying to deal with. There's some lines which merge the final two columns in the data frame if they exceed the number of columns in the new data format to homogenise the data structures so everything can be loaded into the same table.
+   - Lastly, since the descriptions contain both " and ' chars, quoting is set to null for the ~read.table~ load. Apostrophes are all converted to double apostrophes ~''~ during the data cleaning routine, as SQL statements rely on the ~'~ char for denoting strings!
+
 ** Shiny Application
 *** Price per KG
     
-It should be noted here that it's impossible to have the same number matching up on either side of the commodity code node on the Sankey Diagram and still have detail from both sides. Price per KG is a relative quantity, not an absolute one. Sankey diagrams are meant to show the flow of an absolute quantity, not a collection of ratios. The map is still valuable in this case. For H1-2009, we can see that Brazil's GBP/KG value is higher than the UAE, despite the magnitude of UAE's total exports to us dwarfing that of Brazil.
+    It should be noted here that it's impossible to have the same number matching up on either side of the commodity code node on the Sankey Diagram and still have detail from both sides. Price per KG is a relative quantity, not an absolute one. Sankey diagrams are meant to show the flow of an absolute quantity, not a collection of ratios. The map is still valuable in this case. For H1-2009, we can see that Brazil's GBP/KG value is higher than the UAE, despite the magnitude of UAE's total exports to us dwarfing that of Brazil.

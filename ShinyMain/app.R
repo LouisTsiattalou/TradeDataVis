@@ -246,9 +246,9 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h3("About"),
            tags$p("Github:", tags$a(href = "https://github.com/fsa-analytics/TradeDataVis", "FSA Analytics Github"),
                   tags$br(),
-                  "Version Number:", "1.0.1",
+                  "Version Number:", "1.0.2",
                   tags$br(),
-                  "Release Date:", "16/04/2018",
+                  "Release Date:", "10/07/2018",
                   tags$br(),
                   "Contact:", tags$a(href = "mailto:louis.tsiattalou@food.gov.uk", "Louis Tsiattalou")
                   ),
@@ -510,7 +510,7 @@ server <- function(input, output, session) {
                                            #  dom = "t", # disable search bar at top
                                            pageLength = 25, # set number of elements on page
                                            language = list(search = "Search Comcodes and Descriptions:"), # Change Search Text.
-                                           columnDefs = list(list(width = "150px", targets = 0))
+                                           columnDefs = list(list(width = "150px", targets = 0)) # Set width of Commodity Code column to be 150px wide
                                            )
                                          )
   
