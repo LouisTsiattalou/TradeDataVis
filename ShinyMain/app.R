@@ -30,19 +30,21 @@ if(require("RPostgreSQL") == FALSE) {install.packages("RPostgreSQL")}
 library("RPostgreSQL")
 
 # The development version of ggplot2 is necessary for the plotly time series plots to render correctly
-# install_github("tidyverse/ggplot2")
+# Connect to mobile tether to install from github - FSA Firewall blocks it!
+# Comment out install_github lines when installed on your machine
+install_github("tidyverse/ggplot2")
 library("ggplot2")
 
 # Same for pool - otherwise it's all over the place with my app
-# install_github("rstudio/pool")
+install_github("rstudio/pool")
 library("pool")
 
 # NetworkD3 conflicts with many shiny elements. Created an FSA version which fixes issues.
-# install_github("fsa-analytics/networkD3")
+install_github("fsa-analytics/networkD3")
 library("networkD3")
 
 # Leaflet had some crashing issues in QA...
-# install_github("rstudio/leaflet")
+install_github("rstudio/leaflet")
 library("leaflet")
 
 if(require("rgeos") == FALSE) {install.packages("rgeos")}
@@ -206,7 +208,7 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
            tags$h1("Welcome to the Trade Data Visualisation Application!"),
            tags$hr(),
            HTML("<div class=\"alert alert-dismissible alert-success\">
-                    <strong>Welcome!</strong> This is Version 1.0 of the Trade Data Visualisation app. Please take the time to read through this page to familiarise yourself with the functionality of the app. If you encounter any bugs/crashes, please let me know so I can fix them up by going to the <i>Feedback</i> tab or emailing me at louis.tsiattalou@food.gov.uk.<br>
+                    <strong>Welcome!</strong> This is Version 1.0.2 of the Trade Data Visualisation app. Please take the time to read through this page to familiarise yourself with the functionality of the app. If you encounter any bugs/crashes, please let me know so I can fix them up by going to the <i>Feedback</i> tab or emailing me at louis.tsiattalou@food.gov.uk.<br>
                 Please only use in Chrome. Internet Explorer and Microsoft Edge are unsupported.
                 </div>"),
            tags$hr(),
@@ -231,7 +233,6 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
                            tags$li("A Download Button, which downloads the results of the unfiltered query you just made by clicking \"Run Query\".")
                            ),
                   "You can also run another query by changing the selectors (or clicking the Clear Selections button and starting again), then clicking Run Query again."),
-           tags$p("I aim to continue developing this application to maximise its value to the Civil Service. ", tags$b("Please help in this effort by filling in the Feedback tab"), " after having used the app for a while. This will help me to see exactly where the app needs improvement, and will speed up the iteration process for the application greatly!"),
            tags$hr(),
            tags$h3("Known Bugs"),
                   tags$p(tags$u("Small Visualisations/Data Tables not loading"),
@@ -453,30 +454,30 @@ ui <- navbarPage(theme = shinytheme("flatly"), inverse = TRUE,
   ),
   
   # Feedback Form (I suggest you leave this part folded...)
-  tabPanel("Feedback",
-           HTML("<p>Feedback form not showing up? <a href=https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6/>Fill it out here!</a><hr>
-               <div id=\"wufoo-mmr67cc1bqdty6\">
-                        Fill out my <a href=\"https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6\">online form</a>.
-               </div>
-                 <div id=\"wuf-adv\" style=\"font-family:inherit;font-size: small;color:#a7a7a7;text-align:center;display:block;\">The easy to use <a href=\"http://wufoo.co.uk/form-builder/\">Wufoo form builder</a> helps you make forms easy, fast, and fun.</div>
-                                                                                                                                                                                                                                                            <script type=\"text/javascript\">var mmr67cc1bqdty6;(function(d, t) {
-                                                                                                                                                                                                                                                                var s = d.createElement(t), options = {
-                                                                                                                                                                                                                                                                    'userName':'fsaanalytics',
-                                                                                                                                                                                                                                                                    'formHash':'mmr67cc1bqdty6',
-                                                                                                                                                                                                                                                                    'autoResize':true,
-                                                                                                                                                                                                                                                                    'height':'1262',
-                                                                                                                                                                                                                                                                    'async':true,
-                                                                                                                                                                                                                                                                    'host':'wufoo.co.uk',
-                                                                                                                                                                                                                                                                    'header':'show',
-                                                                                                                                                                                                                                                                    'ssl':true};
-                                                                                                                                                                                                                                                                s.src = ('https:' == d.location.protocol ? 'https://' : 'http://') + 'www.wufoo.co.uk/scripts/embed/form.js';
-                                                                                                                                                                                                                                                                s.onload = s.onreadystatechange = function() {
-                                                                                                                                                                                                                                                                    var rs = this.readyState; if (rs) if (rs != 'complete') if (rs != 'loaded') return;
-                                                                                                                                                                                                                                                                    try { mmr67cc1bqdty6 = new WufooForm();mmr67cc1bqdty6.initialize(options);mmr67cc1bqdty6.display(); } catch (e) {}};
-                                                                                                                                                                                                                                                                var scr = d.getElementsByTagName(t)[0], par = scr.parentNode; par.insertBefore(s, scr);
-                                                                                                                                                                                                                                                            })(document, 'script');</script>"
-           )
-        ),
+  # tabPanel("Feedback",
+  #          HTML("<p>Feedback form not showing up? <a href=https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6/>Fill it out here!</a><hr>
+  #              <div id=\"wufoo-mmr67cc1bqdty6\">
+  #                       Fill out my <a href=\"https://fsaanalytics.wufoo.co.uk/forms/mmr67cc1bqdty6\">online form</a>.
+  #              </div>
+  #                <div id=\"wuf-adv\" style=\"font-family:inherit;font-size: small;color:#a7a7a7;text-align:center;display:block;\">The easy to use <a href=\"http://wufoo.co.uk/form-builder/\">Wufoo form builder</a> helps you make forms easy, fast, and fun.</div>
+  #                                                                                                                                                                                                                                                           <script type=\"text/javascript\">var mmr67cc1bqdty6;(function(d, t) {
+  #                                                                                                                                                                                                                                                               var s = d.createElement(t), options = {
+  #                                                                                                                                                                                                                                                                   'userName':'fsaanalytics',
+  #                                                                                                                                                                                                                                                                   'formHash':'mmr67cc1bqdty6',
+  #                                                                                                                                                                                                                                                                   'autoResize':true,
+  #                                                                                                                                                                                                                                                                   'height':'1262',
+  #                                                                                                                                                                                                                                                                   'async':true,
+  #                                                                                                                                                                                                                                                                   'host':'wufoo.co.uk',
+  #                                                                                                                                                                                                                                                                   'header':'show',
+  #                                                                                                                                                                                                                                                                   'ssl':true};
+  #                                                                                                                                                                                                                                                               s.src = ('https:' == d.location.protocol ? 'https://' : 'http://') + 'www.wufoo.co.uk/scripts/embed/form.js';
+  #                                                                                                                                                                                                                                                               s.onload = s.onreadystatechange = function() {
+  #                                                                                                                                                                                                                                                                   var rs = this.readyState; if (rs) if (rs != 'complete') if (rs != 'loaded') return;
+  #                                                                                                                                                                                                                                                                   try { mmr67cc1bqdty6 = new WufooForm();mmr67cc1bqdty6.initialize(options);mmr67cc1bqdty6.display(); } catch (e) {}};
+  #                                                                                                                                                                                                                                                               var scr = d.getElementsByTagName(t)[0], par = scr.parentNode; par.insertBefore(s, scr);
+  #                                                                                                                                                                                                                                                           })(document, 'script');</script>"
+  #          )
+  #       ),
   # Enable ShinyJS support for cleaner on-click and disable features.
   shinyjs::useShinyjs()
 )
